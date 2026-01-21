@@ -6,7 +6,7 @@ import (
 
 func main() {
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK from Dealna API"))
+		w.Write([]byte("Saleem's Context !"))
 	})
 
 	http.ListenAndServe(":8080", nil)
