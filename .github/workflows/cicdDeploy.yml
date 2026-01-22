@@ -22,6 +22,14 @@ jobs:
           go mod tidy
           GOOS=linux GOARCH=amd64 go build -o dealna ./cmd/server
 
+      - name: Stop service on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo systemctl stop dealna || true
 
       - name: Upload binary to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -33,7 +41,7 @@ jobs:
           target: "/opt/dealna"
           overwrite: true
 
-      - name: Restart service on EC2
+      - name: Start service on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -41,5 +49,5 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             chmod +x /opt/dealna/dealna
-            sudo systemctl restart dealna
+            sudo systemctl start dealna
             sudo systemctl status dealna --no-pager -l
