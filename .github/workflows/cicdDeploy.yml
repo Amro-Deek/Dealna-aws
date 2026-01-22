@@ -1,0 +1,45 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Build Linux binary
+        run: |
+          go mod tidy
+          GOOS=linux GOARCH=amd64 go build -o dealna ./cmd/server
+
+
+      - name: Upload binary to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "dealna"
+          target: "/opt/dealna"
+          overwrite: true
+
+      - name: Restart service on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            chmod +x /opt/dealna/dealna
+            sudo systemctl restart dealna
+            sudo systemctl status dealna --no-pager -l
