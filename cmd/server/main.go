@@ -29,12 +29,13 @@ func connectDB() *sql.DB {
 		log.Fatal(err)
 	}
 
-	log.Println("✅ DATABASE CONNECTED")
+	log.Println("DB CONNECTED")
 	return db
 }
 
 func main() {
 	db := connectDB()
+	_ = db // 👈 IMPORTANT
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Dealna backend running"))
