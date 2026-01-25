@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +10,11 @@ import (
 
 	_ "github.com/lib/pq"
 )
+
+type HealthRow struct {
+	ID   int    `json:"id"`
+	Note string `json:"note"`
+}
 
 func connectDB() *sql.DB {
 	dsn := fmt.Sprintf(
@@ -33,41 +39,40 @@ func connectDB() *sql.DB {
 	return db
 }
 
-ffunc main() {
+func main() {
 	db := connectDB()
 
+	// Basic health endpoint
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Dealna backend running"))
 	})
 
+	// Database verification endpoint
 	http.HandleFunc("/db-test", func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query("SELECT id, note FROM health_test ORDER BY id DESC LIMIT 5")
+		rows, err := db.Query(
+			"SELECT id, note FROM health_test ORDER BY id DESC LIMIT 5",
+		)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
 
-		type Row struct {
-			ID   int    `json:"id"`
-			Note string `json:"note"`
-		}
-
-		var results []Row
+		var results []HealthRow
 
 		for rows.Next() {
-			var r Row
-			if err := rows.Scan(&r.ID, &r.Note); err != nil {
-				http.Error(w, err.Error(), 500)
+			var row HealthRow
+			if err := rows.Scan(&row.ID, &row.Note); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			results = append(results, r)
+			results = append(results, row)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, "%v", results)
+		json.NewEncoder(w).Encode(results)
 	})
 
+	log.Println("Server running on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
-
