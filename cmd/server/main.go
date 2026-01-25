@@ -33,13 +33,41 @@ func connectDB() *sql.DB {
 	return db
 }
 
-func main() {
+ffunc main() {
 	db := connectDB()
-	_ = db // 👈 IMPORTANT
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Dealna backend running"))
 	})
 
+	http.HandleFunc("/db-test", func(w http.ResponseWriter, r *http.Request) {
+		rows, err := db.Query("SELECT id, note FROM health_test ORDER BY id DESC LIMIT 5")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		type Row struct {
+			ID   int    `json:"id"`
+			Note string `json:"note"`
+		}
+
+		var results []Row
+
+		for rows.Next() {
+			var r Row
+			if err := rows.Scan(&r.ID, &r.Note); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			results = append(results, r)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, "%v", results)
+	})
+
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
+
