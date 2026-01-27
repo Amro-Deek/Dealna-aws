@@ -15,7 +15,7 @@ type APIResponse struct {
 func WriteJSON(w http.ResponseWriter, status int, success bool, message string, data interface{}, err interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	
+
 	var errStr interface{}
 	if e, ok := err.(error); ok {
 		errStr = e.Error()

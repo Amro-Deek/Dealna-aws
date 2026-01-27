@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/Amro-Deek/Dealna-aws/internal/database"
-	"github.com/Amro-Deek/Dealna-aws/internal/model"
+	models "github.com/Amro-Deek/Dealna-aws/internal/models"
 	"github.com/Amro-Deek/Dealna-aws/internal/utils"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -20,6 +20,19 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+// Login godoc
+//
+//	@Summary		User login
+//	@Description	Authenticate user and return JWT token
+//	@Tags			Auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			credentials	body		LoginRequest	true	"Login credentials"
+//	@Success		200			{object}	utils.APIResponse{data=models.LoginResponse}
+//	@Failure		400			{object}	utils.APIResponse
+//	@Failure		401			{object}	utils.APIResponse
+//	@Failure		500			{object}	utils.APIResponse
+//	@Router			/auth/login [post]
 func Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 

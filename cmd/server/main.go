@@ -10,9 +10,11 @@ import (
 	"github.com/Amro-Deek/Dealna-aws/internal/middleware"
 	"github.com/Amro-Deek/Dealna-aws/internal/utils"
 
+	_ "github.com/Amro-Deek/Dealna-aws/docs"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func main() {
@@ -38,6 +40,8 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.Logger)
 	r.Use(chiMiddleware.Recoverer)
+
+	r.Get("/swagger/*", httpSwagger.WrapHandler)
 
 	// 4. Routes
 	r.Route("/api/v1", func(r chi.Router) {
