@@ -1,119 +1,79 @@
 package main
 
 import (
-	"database/sql"
-	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 
-	_ "github.com/lib/pq"
+	"github.com/Amro-Deek/Dealna-aws/internal/database"
+	"github.com/Amro-Deek/Dealna-aws/internal/handlers"
+	"github.com/Amro-Deek/Dealna-aws/internal/middleware"
+	"github.com/Amro-Deek/Dealna-aws/internal/utils"
+
+	"github.com/go-chi/chi/v5"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/joho/godotenv"
 )
 
-type HealthRow struct {
-	ID   int    `json:"id"`
-	Note string `json:"note"`
-}
+func main() {
+	// 1. Load .env
+	_ = godotenv.Load()
 
-type InsertRequest struct {
-	Note string `json:"note"`
-}
-
-// --------------------
-// Database Connection
-// --------------------
-func connectDB() *sql.DB {
-	dsn := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+	// 2. Database Connection
+	db, err := database.Connect(
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_PORT"),
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_NAME"),
+		os.Getenv("DB_SSLMODE"),
 	)
-
-	db, err := sql.Open("postgres", dsn)
 	if err != nil {
-		log.Fatal("DB open error:", err)
+		log.Fatalf("❌ Database Error: %v", err)
+	}
+	database.SetDB(db)
+	defer db.Close()
+
+	// 3. Router
+	r := chi.NewRouter()
+	r.Use(chiMiddleware.Logger)
+	r.Use(chiMiddleware.Recoverer)
+
+	// 4. Routes
+	r.Route("/api/v1", func(r chi.Router) {
+
+		// Health
+		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+			utils.WriteJSON(w, http.StatusOK, true, "Dealna API is online", map[string]string{
+				"status": "ok",
+			}, nil)
+		})
+
+		// Auth
+		r.Post("/auth/login", handlers.Login)
+
+		// Protected
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.AuthMiddleware(os.Getenv("JWT_SECRET")))
+
+			r.Get("/me", func(w http.ResponseWriter, r *http.Request) {
+				userID := r.Context().Value("user_id")
+				role := r.Context().Value("role")
+
+				utils.WriteJSON(w, http.StatusOK, true, "Profile fetched", map[string]interface{}{
+					"user_id": userID,
+					"role":    role,
+				}, nil)
+			})
+		})
+	})
+
+	// 5. Start Server
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
 	}
 
-	if err := db.Ping(); err != nil {
-		log.Fatal("DB ping error:", err)
-	}
-
-	log.Println("✅ DB CONNECTED")
-	return db
-}
-
-// --------------------
-// Main
-// --------------------
-func main() {
-	db := connectDB()
-
-	// Basic health check
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Dealna backend running"))
-	})
-
-	// Read from DB
-	http.HandleFunc("/db-test", func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query(
-			"SELECT id, note FROM health_test ORDER BY id DESC LIMIT 10",
-		)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer rows.Close()
-
-		var results []HealthRow
-
-		for rows.Next() {
-			var row HealthRow
-			if err := rows.Scan(&row.ID, &row.Note); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			results = append(results, row)
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(results)
-	})
-
-	// Insert into DB
-	http.HandleFunc("/db-insert", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		var req InsertRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "Invalid JSON body", http.StatusBadRequest)
-			return
-		}
-
-		if req.Note == "" {
-			http.Error(w, "note field is required", http.StatusBadRequest)
-			return
-		}
-
-		_, err := db.Exec(
-			"INSERT INTO health_test(note) VALUES ($1)",
-			req.Note,
-		)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte("Row inserted successfully"))
-	})
-
-	log.Println("🚀 Server running on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Printf("🚀 Dealna Server running on :%s", port)
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }
