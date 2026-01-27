@@ -7,7 +7,9 @@ package main
 // @BasePath        /api/v1
 
 // @securityDefinitions.apikey BearerAuth
-// @in              header
-// @name            Authorization
+// @in          header
+// @name        Authorization
+
+// @security    BearerAuth
 
 func SwaggerInfo() {}
