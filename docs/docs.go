@@ -132,6 +132,19 @@ const docTemplate = `{
                 }
             }
         },
+        "models.MeResponse": {
+            "type": "object",
+            "properties": {
+                "role": {
+                    "type": "string",
+                    "example": "Verified Student"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
         "utils.APIResponse": {
             "type": "object",
             "properties": {

@@ -92,3 +92,30 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		"token": tokenStr,
 	}, nil)
 }
+// GetProfile godoc
+//
+//	@Summary		Get current user profile
+//	@Description	Returns authenticated user's ID and role
+//	@Tags			User
+//	@Security		BearerAuth
+//	@Produce		json
+//	@Success		200	{object}	utils.APIResponse{data=models.MeResponse}
+//	@Failure		401	{object}	utils.APIResponse
+//	@Router			/api/v1/me [get]
+func GetMe(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("user_id")
+	role := r.Context().Value("role")
+
+	utils.WriteJSON(
+		w,
+		http.StatusOK,
+		true,
+		"Profile fetched",
+		models.MeResponse{
+			UserID: userID.(string),
+			Role:   role.(string),
+		},
+		nil,
+	)
+}
+

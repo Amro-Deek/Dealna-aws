@@ -60,15 +60,7 @@ func main() {
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.AuthMiddleware(os.Getenv("JWT_SECRET")))
 
-			r.Get("/me", func(w http.ResponseWriter, r *http.Request) {
-				userID := r.Context().Value("user_id")
-				role := r.Context().Value("role")
-
-				utils.WriteJSON(w, http.StatusOK, true, "Profile fetched", map[string]interface{}{
-					"user_id": userID,
-					"role":    role,
-				}, nil)
-			})
+			r.Get("/me", handlers.GetMe)
 		})
 	})
 
