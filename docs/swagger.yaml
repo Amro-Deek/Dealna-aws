@@ -24,7 +24,7 @@ definitions:
 info:
   contact: {}
 paths:
-  /auth/login:
+  /api/v1/auth/login:
     post:
       consumes:
       - application/json
@@ -63,7 +63,7 @@ paths:
       summary: User login
       tags:
       - Auth
-  /me:
+  /api/v1/me:
     get:
       description: Returns authenticated user's ID and role
       produces:

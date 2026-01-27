@@ -32,7 +32,7 @@ type LoginRequest struct {
 //	@Failure		400			{object}	utils.APIResponse
 //	@Failure		401			{object}	utils.APIResponse
 //	@Failure		500			{object}	utils.APIResponse
-//	@Router			/auth/login [post]
+//  @Router 			/api/v1/auth/login [post]
 func Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 

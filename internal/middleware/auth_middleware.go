@@ -18,7 +18,7 @@ import (
 //	@Produce		json
 //	@Success		200	{object}	utils.APIResponse
 //	@Failure		401	{object}	utils.APIResponse
-//	@Router			/me [get]
+//	@Router			/api/v1/me [get]
 func AuthMiddleware(secret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
