@@ -1,3 +1,13 @@
+// @title           Dealna API
+// @version         1.0
+// @description     Dealna backend API 
+// @contact.name    Amro Deek
+// @securityDefinitions.apikey BearerAuth
+// @in              header
+// @name            Authorization
+// @BasePath        /api/v1
+
+
 package main
 
 import (

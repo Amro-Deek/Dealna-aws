@@ -9,16 +9,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// GetProfile godoc
-//
-//	@Summary		Get current user profile
-//	@Description	Returns authenticated user's ID and role
-//	@Tags			User
-//	@Security		BearerAuth
-//	@Produce		json
-//	@Success		200	{object}	utils.APIResponse
-//	@Failure		401	{object}	utils.APIResponse
-//	@Router			/api/v1/me [get]
 func AuthMiddleware(secret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

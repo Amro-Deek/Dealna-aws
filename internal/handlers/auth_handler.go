@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"time"
-
+	"fmt"
 	"github.com/Amro-Deek/Dealna-aws/internal/database"
 	models "github.com/Amro-Deek/Dealna-aws/internal/models"
 	"github.com/Amro-Deek/Dealna-aws/internal/utils"
@@ -32,7 +32,7 @@ type LoginRequest struct {
 //	@Failure		400			{object}	utils.APIResponse
 //	@Failure		401			{object}	utils.APIResponse
 //	@Failure		500			{object}	utils.APIResponse
-//  @Router 			/api/v1/auth/login [post]
+//  @Router 		/api/v1/auth/login [post]
 func Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 
@@ -103,8 +103,16 @@ func Login(w http.ResponseWriter, r *http.Request) {
 //	@Failure		401	{object}	utils.APIResponse
 //	@Router			/api/v1/me [get]
 func GetMe(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id")
-	role := r.Context().Value("role")
+	userIDVal := r.Context().Value("user_id")
+	roleVal := r.Context().Value("role")
+
+	if userIDVal == nil || roleVal == nil {
+		utils.WriteJSON(w, http.StatusUnauthorized, false, "Unauthorized", nil, "Missing auth context")
+		return
+	}
+
+	userID := fmt.Sprintf("%v", userIDVal)
+	role := fmt.Sprintf("%v", roleVal)
 
 	utils.WriteJSON(
 		w,
@@ -112,10 +120,11 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 		true,
 		"Profile fetched",
 		models.MeResponse{
-			UserID: userID.(string),
-			Role:   role.(string),
+			UserID: userID,
+			Role:   role,
 		},
 		nil,
 	)
 }
+
 

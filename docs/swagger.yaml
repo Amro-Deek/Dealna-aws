@@ -31,7 +31,11 @@ definitions:
         type: boolean
     type: object
 info:
-  contact: {}
+  contact:
+    name: Amro Deek
+  description: Dealna backend API
+  title: Dealna API
+  version: "1.0"
 paths:
   /api/v1/auth/login:
     post:
@@ -81,7 +85,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/utils.APIResponse'
+            allOf:
+            - $ref: '#/definitions/utils.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.MeResponse'
+              type: object
         "401":
           description: Unauthorized
           schema:
@@ -91,4 +100,9 @@ paths:
       summary: Get current user profile
       tags:
       - User
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
