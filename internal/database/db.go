@@ -1,13 +1,13 @@
 package database
 
-import "database/sql"
+import "github.com/jackc/pgx/v5/pgxpool"
 
-var db *sql.DB
+var pool *pgxpool.Pool
 
-func SetDB(database *sql.DB) {
-	db = database
+func SetPool(p *pgxpool.Pool) {
+	pool = p
 }
 
-func GetDB() *sql.DB {
-	return db
+func GetPool() *pgxpool.Pool {
+	return pool
 }

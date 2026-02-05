@@ -1,28 +1,28 @@
 package database
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"log"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func Connect(host, port, user, password, dbname, sslmode string) (*sql.DB, error) {
-	connStr := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		host, port, user, password, dbname, sslmode,
+func Connect(host, port, user, password, dbname, sslmode string) (*pgxpool.Pool, error) {
+	dsn := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		user, password, host, port, dbname, sslmode,
 	)
 
-	db, err := sql.Open("postgres", connStr)
+	pool, err := pgxpool.New(context.Background(), dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := db.Ping(); err != nil {
+	if err := pool.Ping(context.Background()); err != nil {
 		return nil, err
 	}
 
-	log.Println("✅ Database connected")
-	return db, nil
+	log.Println("✅ Database connected (pgx)")
+	return pool, nil
 }

@@ -1,17 +1,20 @@
 package handlers
 
 import (
-	"database/sql"
+	"context"
 	"encoding/json"
 	"net/http"
 	"os"
 	"time"
-	"fmt"
+
 	"github.com/Amro-Deek/Dealna-aws/internal/database"
-	models "github.com/Amro-Deek/Dealna-aws/internal/models"
+	"github.com/Amro-Deek/Dealna-aws/internal/database/generated"
+	"github.com/Amro-Deek/Dealna-aws/internal/middleware"
+	"github.com/Amro-Deek/Dealna-aws/internal/models"
 	"github.com/Amro-Deek/Dealna-aws/internal/utils"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -46,37 +49,39 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := database.GetDB()
-	if db == nil {
+	pool := database.GetPool()
+	if pool == nil {
 		utils.WriteJSON(w, http.StatusInternalServerError, false, "Database not initialized", nil, nil)
 		return
 	}
 
-	var user models.User
-	var hashedPassword string
+	queries := generated.New(pool)
 
-	err := db.QueryRow(`
-		SELECT user_id, email, password_hash, role
-		FROM "User"
-		WHERE email = $1
-	`, req.Email).Scan(&user.ID, &user.Email, &hashedPassword, &user.Role)
-
-	if err == sql.ErrNoRows {
-		utils.WriteJSON(w, http.StatusUnauthorized, false, "Invalid credentials", nil, nil)
-		return
-	}
+	user, err := queries.GetUserForLogin(context.Background(), req.Email)
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			utils.WriteJSON(w, http.StatusUnauthorized, false, "Invalid credentials", nil, nil)
+			return
+		}
 		utils.WriteJSON(w, http.StatusInternalServerError, false, "Database error", nil, err)
 		return
 	}
 
-	if bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(req.Password)) != nil {
+	if !user.PasswordHash.Valid {
+		utils.WriteJSON(w, http.StatusUnauthorized, false, "Invalid credentials", nil, nil)
+		return
+	}
+
+	if bcrypt.CompareHashAndPassword(
+		[]byte(user.PasswordHash.String),
+		[]byte(req.Password),
+	) != nil {
 		utils.WriteJSON(w, http.StatusUnauthorized, false, "Invalid credentials", nil, nil)
 		return
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID,
+		"user_id": user.UserID.String(),
 		"role":    user.Role,
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	})
@@ -103,16 +108,17 @@ func Login(w http.ResponseWriter, r *http.Request) {
 //	@Failure		401	{object}	utils.APIResponse
 //	@Router			/api/v1/me [get]
 func GetMe(w http.ResponseWriter, r *http.Request) {
-	userIDVal := r.Context().Value("user_id")
-	roleVal := r.Context().Value("role")
-
-	if userIDVal == nil || roleVal == nil {
-		utils.WriteJSON(w, http.StatusUnauthorized, false, "Unauthorized", nil, "Missing auth context")
+	userID, ok := r.Context().Value(middleware.ContextUserID).(string)
+	if !ok || userID == "" {
+		utils.WriteJSON(w, http.StatusUnauthorized, false, "Unauthorized", nil, "Missing user_id")
 		return
 	}
 
-	userID := fmt.Sprintf("%v", userIDVal)
-	role := fmt.Sprintf("%v", roleVal)
+	role, ok := r.Context().Value(middleware.ContextRole).(string)
+	if !ok || role == "" {
+		utils.WriteJSON(w, http.StatusUnauthorized, false, "Unauthorized", nil, "Missing role")
+		return
+	}
 
 	utils.WriteJSON(
 		w,
@@ -126,5 +132,4 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 		nil,
 	)
 }
-
 

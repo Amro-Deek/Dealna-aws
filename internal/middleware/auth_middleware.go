@@ -22,6 +22,10 @@ func AuthMiddleware(secret string) func(http.Handler) http.Handler {
 			tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 
 			token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
+				// Enforce HMAC signing method
+				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, jwt.ErrSignatureInvalid
+				}
 				return []byte(secret), nil
 			})
 
@@ -30,10 +34,26 @@ func AuthMiddleware(secret string) func(http.Handler) http.Handler {
 				return
 			}
 
-			claims := token.Claims.(jwt.MapClaims)
+			claims, ok := token.Claims.(jwt.MapClaims)
+			if !ok {
+				utils.WriteJSON(w, http.StatusUnauthorized, false, "Unauthorized", nil, "Invalid claims")
+				return
+			}
 
-			ctx := context.WithValue(r.Context(), "user_id", claims["user_id"])
-			ctx = context.WithValue(ctx, "role", claims["role"])
+			userID, ok := claims["user_id"].(string)
+			if !ok || userID == "" {
+				utils.WriteJSON(w, http.StatusUnauthorized, false, "Unauthorized", nil, "Missing user_id")
+				return
+			}
+
+			role, ok := claims["role"].(string)
+			if !ok || role == "" {
+				utils.WriteJSON(w, http.StatusUnauthorized, false, "Unauthorized", nil, "Missing role")
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), ContextUserID, userID)
+			ctx = context.WithValue(ctx, ContextRole, role)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

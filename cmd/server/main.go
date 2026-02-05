@@ -43,7 +43,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("❌ Database Error: %v", err)
 	}
-	database.SetDB(db)
+	database.SetPool(db)
 	defer db.Close()
 
 	// 3. Router
@@ -55,6 +55,7 @@ func main() {
 
 	// 4. Routes
 	r.Route("/api/v1", func(r chi.Router) {
+
 
 		// Health
 		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
