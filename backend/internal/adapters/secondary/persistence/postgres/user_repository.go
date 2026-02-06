@@ -2,7 +2,7 @@ package postgres
 
 import (
     "context"
-
+    "log"
     "github.com/jackc/pgx/v5/pgtype"
     "github.com/jackc/pgx/v5/pgxpool"
 
@@ -40,12 +40,17 @@ func (r *UserRepository) GetByID(
     if err != nil {
         return nil, err
     }
-
+log.Printf(
+  "DEBUG GetUserByID: user_id=%s role=%s email='%s'",
+  row.UserID.String(),
+  row.Role,
+  row.Email,
+)
     // mapping من DB model → Domain model
     return &domain.User{
         ID:   row.UserID.String(),
-        Email: row.Email,
         Role: row.Role,
+        Email: row.Email,
     }, nil
 }
 

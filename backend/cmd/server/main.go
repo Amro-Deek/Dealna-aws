@@ -33,6 +33,8 @@ import (
 )
 
 func main() {
+	log.Println("🔥🔥🔥 MAIN STARTED 🔥🔥🔥")
+
 	cfg := config.Load()
 
 	db, err := database.Connect(
