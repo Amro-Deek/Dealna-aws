@@ -44,6 +44,7 @@ func (r *UserRepository) GetByID(
     // mapping من DB model → Domain model
     return &domain.User{
         ID:   row.UserID.String(),
+        Email: row.Email,
         Role: row.Role,
     }, nil
 }
