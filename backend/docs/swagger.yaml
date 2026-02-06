@@ -71,7 +71,7 @@ paths:
       - Auth
   /api/v1/users/me:
     get:
-      description: Returns authenticated user profile
+      description: Returns authenticated user profile -test
       produces:
       - application/json
       responses:

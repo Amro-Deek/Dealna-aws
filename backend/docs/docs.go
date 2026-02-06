@@ -64,7 +64,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns authenticated user profile",
+                "description": "Returns authenticated user profile -test",
                 "produces": [
                     "application/json"
                 ],

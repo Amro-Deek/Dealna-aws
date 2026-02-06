@@ -21,7 +21,7 @@ func NewRoutes(handler *users.Handler) *Routes {
 
 // GetMe godoc
 // @Summary Get current user
-// @Description Returns authenticated user profile
+// @Description Returns authenticated user profile -test
 // @Tags Users
 // @Security BearerAuth
 // @Produce json
