@@ -27,6 +27,9 @@ import (
 
 	"github.com/Amro-Deek/Dealna-aws/internal/adapters/secondary/persistence"
 	"github.com/Amro-Deek/Dealna-aws/internal/core/services"
+
+	httpSwagger "github.com/swaggo/http-swagger"
+	_ "github.com/Amro-Deek/Dealna-aws/docs"
 )
 
 func main() {
@@ -65,6 +68,8 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.Logger)
 	r.Use(chiMiddleware.Recoverer)
+
+	r.Get("/swagger/*", httpSwagger.WrapHandler)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		authRoutes.Register(r)
