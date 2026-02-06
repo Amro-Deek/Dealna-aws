@@ -1,7 +1,11 @@
 -- name: GetUserByID :one
-SELECT user_id, role
+SELECT
+    user_id,
+    role,
+    email
 FROM "User"
 WHERE user_id = $1;
+
 
 
 -- name: CreateUser :one

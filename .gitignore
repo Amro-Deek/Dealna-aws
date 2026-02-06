@@ -1,38 +1,8 @@
-# =========================
-# Environment & Secrets
-# =========================
+# Root ignores
 .env
 .env.*
-!.env.example
-
-# =========================
-# Go build artifacts
-# =========================
-/dealna
-*.exe
-*.out
-*.test
-
-# =========================
-# Go tooling
-# =========================
-/bin/
-/pkg/
-
-# =========================
-# SQLC generated files
-# =========================
-internal/database/generated/
-
-# =========================
-# OS / Editor noise
-# =========================
+*.log
 .DS_Store
 Thumbs.db
-.vscode/
-.idea/
+/dealna
 
-# =========================
-# Logs
-# =========================
-*.log

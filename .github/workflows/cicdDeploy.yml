@@ -16,6 +16,16 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.22"
+          
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Install sqlc
         run: |
@@ -23,7 +33,9 @@ jobs:
           echo "$HOME/go/bin" >> $GITHUB_PATH
 
       - name: Build Linux binary
+        working-directory: backend
         run: make build-linux #to define build target in your Makefile (e.g., for sqlc )
+
 
       - name: Stop service on EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -40,7 +52,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "dealna"
+          source: "backend/dealna"
           target: "/opt/dealna"
           overwrite: true
 
