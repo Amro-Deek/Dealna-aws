@@ -27,7 +27,7 @@ func NewRoutes(handler *users.Handler) *Routes {
 // @Produce json
 // @Success 200 {object} dto.MeResponse
 // @Failure 401 {object} utils.APIResponse
-// @Router /users/me [get]
+// @Router /api/v1/users/me [get]
 func (rt *Routes) Register(router chi.Router, jwtSecret string) {
 	router.Route("/users", func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware(jwtSecret))

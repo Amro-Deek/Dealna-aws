@@ -23,19 +23,7 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-// Login godoc
-//
-//	@Summary		User login
-//	@Description	Authenticate user and return JWT token
-//	@Tags			Auth
-//	@Accept			json
-//	@Produce		json
-//	@Param			credentials	body		LoginRequest	true	"Login credentials"
-//	@Success		200			{object}	utils.APIResponse{data=models.LoginResponse}
-//	@Failure		400			{object}	utils.APIResponse
-//	@Failure		401			{object}	utils.APIResponse
-//	@Failure		500			{object}	utils.APIResponse
-//  @Router 		/api/v1/auth/login [post]
+
 func Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 
@@ -97,16 +85,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		"token": tokenStr,
 	}, nil)
 }
-// GetProfile godoc
-//
-//	@Summary		Get current user profile
-//	@Description	Returns authenticated user's ID and role
-//	@Tags			User
-//	@Security		BearerAuth
-//	@Produce		json
-//	@Success		200	{object}	utils.APIResponse{data=models.MeResponse}
-//	@Failure		401	{object}	utils.APIResponse
-//	@Router			/api/v1/me [get]
+
 func GetMe(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.ContextUserID).(string)
 	if !ok || userID == "" {

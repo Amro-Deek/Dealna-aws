@@ -27,7 +27,7 @@ func NewRoutes(handler *auth.Handler) *Routes {
 // @Param payload body dto.LoginRequest true "Login payload"
 // @Success 200 {object} dto.LoginResponse
 // @Failure 401 {object} utils.APIResponse
-// @Router /auth/login [post]
+// @Router /api/v1/auth/login [post]
 func (rt *Routes) Register(router chi.Router) {
 	router.Route("/auth", func(r chi.Router) {
 		r.Post("/login", func(w http.ResponseWriter, req *http.Request) {
