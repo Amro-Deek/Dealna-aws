@@ -52,7 +52,10 @@ endif
 .PHONY: swagger swagger-clean
 
 swagger:
-	swag init -g cmd/server/main.go --dir cmd/server,internal --output docs
+	swag init \
+		-g cmd/server/main.go \
+		--dir . \
+		--output docs
 
 swagger-clean:
 	rm -rf docs
