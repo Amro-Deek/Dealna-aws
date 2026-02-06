@@ -33,7 +33,7 @@ import (
 )
 
 func main() {
-	log.Println("🔥🔥🔥 MAIN STARTED 🔥🔥🔥")
+	log.Println("🔥🔥🔥 unignnnore logs 🔥🔥🔥")
 
 	cfg := config.Load()
 
