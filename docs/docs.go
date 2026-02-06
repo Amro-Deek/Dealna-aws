@@ -123,9 +123,120 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "Authenticate user and return JWT",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login",
+                "parameters": [
+                    {
+                        "description": "Login payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LoginResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns authenticated user profile",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get current user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MeResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utils.APIResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "dto.LoginRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@bzu.edu"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "secret123"
+                }
+            }
+        },
+        "dto.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+            }
+        },
+        "dto.MeResponse": {
+            "description": "Current authenticated user",
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@bzu.edu"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "b3c2f9a1"
+                },
+                "role": {
+                    "type": "string",
+                    "example": "STUDENT"
+                }
+            }
+        },
         "handlers.LoginRequest": {
             "type": "object",
             "properties": {

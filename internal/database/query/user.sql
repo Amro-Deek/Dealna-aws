@@ -23,3 +23,13 @@ SELECT
 FROM "User"
 WHERE email = $1;
 
+-- name: GetUserByEmail :one
+SELECT
+    user_id,
+    email,
+    password_hash,
+    role
+FROM "User"
+WHERE email = $1
+LIMIT 1;
+

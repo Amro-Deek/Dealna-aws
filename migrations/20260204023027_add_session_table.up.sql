@@ -7,9 +7,6 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_id        UUID NOT NULL,
     jti            UUID NOT NULL UNIQUE,
 
-    user_agent     TEXT,
-    ip_address     INET,
-
     revoked        BOOLEAN NOT NULL DEFAULT FALSE,
 
     expires_at     TIMESTAMP NOT NULL,

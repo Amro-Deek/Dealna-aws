@@ -1,86 +1,76 @@
 // @title           Dealna API
 // @version         1.0
-// @description     Dealna backend API 
+// @description     Dealna backend API
 // @contact.name    Amro Deek
 // @securityDefinitions.apikey BearerAuth
 // @in              header
 // @name            Authorization
 // @BasePath        /api/v1
 
-
 package main
 
 import (
 	"log"
 	"net/http"
-	"os"
 
-	"github.com/Amro-Deek/Dealna-aws/internal/database"
-	"github.com/Amro-Deek/Dealna-aws/internal/handlers"
-	"github.com/Amro-Deek/Dealna-aws/internal/middleware"
-	"github.com/Amro-Deek/Dealna-aws/internal/utils"
-
-	_ "github.com/Amro-Deek/Dealna-aws/docs"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/joho/godotenv"
-	httpSwagger "github.com/swaggo/http-swagger"
+
+	"github.com/Amro-Deek/Dealna-aws/internal/config"
+	"github.com/Amro-Deek/Dealna-aws/internal/database"
+
+	authHandler "github.com/Amro-Deek/Dealna-aws/internal/adapters/primary/auth"
+	authHTTP "github.com/Amro-Deek/Dealna-aws/internal/adapters/primary/auth/http"
+
+	userHandler "github.com/Amro-Deek/Dealna-aws/internal/adapters/primary/users"
+	userHTTP "github.com/Amro-Deek/Dealna-aws/internal/adapters/primary/users/http"
+
+	"github.com/Amro-Deek/Dealna-aws/internal/adapters/secondary/persistence"
+	"github.com/Amro-Deek/Dealna-aws/internal/core/services"
 )
 
 func main() {
-	// 1. Load .env
-	_ = godotenv.Load()
+	cfg := config.Load()
 
-	// 2. Database Connection
 	db, err := database.Connect(
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_SSLMODE"),
+		cfg.DBHost,
+		cfg.DBPort,
+		cfg.DBUser,
+		cfg.DBPassword,
+		cfg.DBName,
+		cfg.DBSSLMode,
 	)
 	if err != nil {
-		log.Fatalf("❌ Database Error: %v", err)
+		log.Fatalf("DB error: %v", err)
 	}
-	database.SetPool(db)
 	defer db.Close()
 
-	// 3. Router
+	// Repositories
+	repoFactory := persistence.NewRepositoryFactory(db)
+	userRepo := repoFactory.User()
+
+	// Services
+	userService := services.NewUserService(userRepo)
+	authService := services.NewAuthService(userRepo, cfg.JWTSecret)
+
+	// Handlers
+	userH := userHandler.NewHandler(userService)
+	authH := authHandler.NewHandler(authService)
+
+	// Routes
+	userRoutes := userHTTP.NewRoutes(userH)
+	authRoutes := authHTTP.NewRoutes(authH)
+
+	// Router
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.Logger)
 	r.Use(chiMiddleware.Recoverer)
 
-	r.Get("/swagger/*", httpSwagger.WrapHandler)
-
-	// 4. Routes
 	r.Route("/api/v1", func(r chi.Router) {
-
-
-		// Health
-		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-			utils.WriteJSON(w, http.StatusOK, true, "Dealna API is online", map[string]string{
-				"status": "ok",
-			}, nil)
-		})
-
-		// Auth
-		r.Post("/auth/login", handlers.Login)
-
-		// Protected
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.AuthMiddleware(os.Getenv("JWT_SECRET")))
-
-			r.Get("/me", handlers.GetMe)
-		})
+		authRoutes.Register(r)
+		userRoutes.Register(r, cfg.JWTSecret)
 	})
 
-	// 5. Start Server
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	log.Printf("🚀 Dealna Server running on :%s", port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	log.Printf("🚀 Dealna server running on :%s", cfg.Port)
+	log.Fatal(http.ListenAndServe(":"+cfg.Port, r))
 }
