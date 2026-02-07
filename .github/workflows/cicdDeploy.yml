@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy Dealna Backend to EC2
 
 on:
   push:
@@ -9,14 +9,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      # =========================
+      # 1️⃣ Checkout
+      # =========================
+      - name: Checkout repository
         uses: actions/checkout@v4
 
+      # =========================
+      # 2️⃣ Setup Go
+      # =========================
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: "1.22"
-          
+
+      # =========================
+      # 3️⃣ Cache Go modules
+      # =========================
       - name: Cache Go modules
         uses: actions/cache@v4
         with:
@@ -27,6 +36,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      # =========================
+      # 4️⃣ Install tools (sqlc + swag)
+      # =========================
       - name: Install sqlc
         run: |
           go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0
@@ -37,16 +49,29 @@ jobs:
           go install github.com/swaggo/swag/cmd/swag@latest
           echo "$HOME/go/bin" >> $GITHUB_PATH
 
-
+      # =========================
+      # 5️⃣ Build backend (Swagger + Binary)
+      # =========================
       - name: Build Linux binary
         working-directory: backend
-        run: make build-linux #to define build target in your Makefile (e.g., for sqlc )
+        run: |
+          make build-linux
 
-      - name: Debug backend contents
-        run: ls -lh backend
+      # =========================
+      # 6️⃣ Debug build output (CRITICAL)
+      # =========================
+      - name: Debug built binary
+        working-directory: backend
+        run: |
+          echo "== Built binary info =="
+          ls -lh dealna
+          file dealna
+          sha256sum dealna
 
-
-      - name: Stop service on EC2
+      # =========================
+      # 7️⃣ Stop service on EC2
+      # =========================
+      - name: Stop Dealna service on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -55,23 +80,51 @@ jobs:
           script: |
             sudo systemctl stop dealna || true
 
-      - name: Upload binary to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "backend/dealna"
-          target: "/opt/dealna"
-          overwrite: true
-
-      - name: Start service on EC2
+      # =========================
+      # 8️⃣ Remove old binary (HARD GUARANTEE)
+      # =========================
+      - name: Remove old binary on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            chmod +x /opt/dealna/dealna
+            sudo mkdir -p /opt/dealna
+            sudo rm -f /opt/dealna/dealna
+
+      # =========================
+      # 9️⃣ Upload new binary (NO SCP ACTION)
+      # =========================
+      - name: Upload new binary to EC2
+        run: |
+          scp -o StrictHostKeyChecking=no backend/dealna \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/opt/dealna/dealna
+
+      # =========================
+      # 🔟 Fix permissions & restart
+      # =========================
+      - name: Start Dealna service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo chmod +x /opt/dealna/dealna
             sudo systemctl start dealna
             sudo systemctl status dealna --no-pager -l
+
+      # =========================
+      # 1️⃣1️⃣ Verify binary on EC2
+      # =========================
+      - name: Verify deployed binary
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "== EC2 binary info =="
+            ls -lh /opt/dealna/dealna
+            sha256sum /opt/dealna/dealna
