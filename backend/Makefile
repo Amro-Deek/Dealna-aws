@@ -8,10 +8,13 @@ build:
 	go mod tidy
 	go build -o dealna ./cmd/server
 
+
 build-linux:
 	sqlc generate
+	swag init -g cmd/server/main.go --output docs
 	go mod tidy
 	GOOS=linux GOARCH=amd64 go build -o dealna ./cmd/server
+
 
 
 # =========================
