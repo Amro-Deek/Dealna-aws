@@ -58,7 +58,7 @@ jobs:
           make build-linux
 
       # =========================
-      # 6️⃣ Debug build output (CRITICAL)
+      # 6️⃣ Debug build output
       # =========================
       - name: Debug built binary
         working-directory: backend
@@ -81,7 +81,7 @@ jobs:
             sudo systemctl stop dealna || true
 
       # =========================
-      # 8️⃣ Remove old binary (HARD GUARANTEE)
+      # 8️⃣ Remove old binary
       # =========================
       - name: Remove old binary on EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -92,25 +92,25 @@ jobs:
           script: |
             sudo mkdir -p /opt/dealna
             sudo rm -f /opt/dealna/dealna
-# =========================
-# Setup SSH agent (REQUIRED)
-# =========================
+
+      # =========================
+      # 9️⃣ Setup SSH agent
+      # =========================
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
-        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
-
-# =========================
-# Upload new binary
-# =========================
-      - name: Upload new binary to EC2
-        run: |
-        scp -o StrictHostKeyChecking=no backend/dealna \
-        ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/opt/dealna/dealna
-
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
       # =========================
-      # 🔟 Fix permissions & restart
+      # 🔟 Upload new binary
+      # =========================
+      - name: Upload new binary to EC2
+        run: |
+          scp -o StrictHostKeyChecking=no backend/dealna \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/opt/dealna/dealna
+
+      # =========================
+      # 1️⃣1️⃣ Fix permissions & restart
       # =========================
       - name: Start Dealna service
         uses: appleboy/ssh-action@v1.0.3
@@ -124,7 +124,7 @@ jobs:
             sudo systemctl status dealna --no-pager -l
 
       # =========================
-      # 1️⃣1️⃣ Verify binary on EC2
+      # 1️⃣2️⃣ Verify deployed binary
       # =========================
       - name: Verify deployed binary
         uses: appleboy/ssh-action@v1.0.3
