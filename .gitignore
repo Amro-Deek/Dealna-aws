@@ -4,5 +4,5 @@
 *.log
 .DS_Store
 Thumbs.db
-/dealna
+/backend/dealna
 

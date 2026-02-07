@@ -9,23 +9,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # =========================
-      # Checkout source
-      # =========================
       - name: Checkout
         uses: actions/checkout@v4
 
-      # =========================
-      # Setup Go
-      # =========================
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: "1.22"
+          
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-      # =========================
-      # Install tools
-      # =========================
       - name: Install sqlc
         run: |
           go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0
@@ -36,18 +37,15 @@ jobs:
           go install github.com/swaggo/swag/cmd/swag@latest
           echo "$HOME/go/bin" >> $GITHUB_PATH
 
-      # =========================
-      # Build & generate artifacts
-      # =========================
+
       - name: Build Linux binary
         working-directory: backend
-        run: |
-          make build-linux
-          make swagger
+        run: make build-linux #to define build target in your Makefile (e.g., for sqlc )
 
-      # =========================
-      # Stop service on EC2
-      # =========================
+      - name: Debug backend contents
+        run: ls -lh backend
+
+
       - name: Stop service on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -57,24 +55,16 @@ jobs:
           script: |
             sudo systemctl stop dealna || true
 
-      # =========================
-      # Upload binary + swagger docs
-      # =========================
-      - name: Upload artifacts to EC2
+      - name: Upload binary to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: |
-            backend/dealna
-            backend/docs
+          source: "backend/dealna"
           target: "/opt/dealna"
           overwrite: true
 
-      # =========================
-      # Start service on EC2
-      # =========================
       - name: Start service on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
