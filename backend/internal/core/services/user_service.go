@@ -3,8 +3,8 @@ package services
 import (
     "context"
 
-    "github.com/Amro-Deek/Dealna-aws/internal/core/domain"
-    "github.com/Amro-Deek/Dealna-aws/internal/core/ports"
+    "github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
+    "github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
 )
 
 type UserService struct {

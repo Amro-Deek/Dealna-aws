@@ -6,9 +6,9 @@ import (
     "github.com/jackc/pgx/v5/pgtype"
     "github.com/jackc/pgx/v5/pgxpool"
 
-    "github.com/Amro-Deek/Dealna-aws/internal/core/domain"
-    "github.com/Amro-Deek/Dealna-aws/internal/core/ports"
-    "github.com/Amro-Deek/Dealna-aws/internal/database/generated"
+    "github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
+    "github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
+    "github.com/Amro-Deek/Dealna-aws/backend/internal/database/generated"
 )
 
 type UserRepository struct {

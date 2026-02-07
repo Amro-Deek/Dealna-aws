@@ -1,4 +1,4 @@
-module github.com/Amro-Deek/Dealna-aws
+module github.com/Amro-Deek/Dealna-aws/backend
 
 go 1.25.5
 

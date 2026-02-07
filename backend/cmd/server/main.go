@@ -16,20 +16,19 @@ import (
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 
-	"github.com/Amro-Deek/Dealna-aws/internal/config"
-	"github.com/Amro-Deek/Dealna-aws/internal/database"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/config"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/database"
 
-	authHandler "github.com/Amro-Deek/Dealna-aws/internal/adapters/primary/auth"
-	authHTTP "github.com/Amro-Deek/Dealna-aws/internal/adapters/primary/auth/http"
+	authHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth"
+	authHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/http"	
+	userHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users"
+	userHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/http"
 
-	userHandler "github.com/Amro-Deek/Dealna-aws/internal/adapters/primary/users"
-	userHTTP "github.com/Amro-Deek/Dealna-aws/internal/adapters/primary/users/http"
-
-	"github.com/Amro-Deek/Dealna-aws/internal/adapters/secondary/persistence"
-	"github.com/Amro-Deek/Dealna-aws/internal/core/services"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/persistence"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/services"
 
 	httpSwagger "github.com/swaggo/http-swagger"
-	_ "github.com/Amro-Deek/Dealna-aws/docs"
+	_ "github.com/Amro-Deek/Dealna-aws/backend/docs"
 )
 
 func main() {

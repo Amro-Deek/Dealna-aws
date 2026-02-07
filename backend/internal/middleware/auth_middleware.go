@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Amro-Deek/Dealna-aws/internal/utils"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/utils"
 	"github.com/golang-jwt/jwt/v5"
 )
 

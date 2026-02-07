@@ -3,10 +3,10 @@ package http
 import (
 	"net/http"
 
-	"github.com/Amro-Deek/Dealna-aws/internal/adapters/primary/users"
-	"github.com/Amro-Deek/Dealna-aws/internal/adapters/primary/users/dto"
-	"github.com/Amro-Deek/Dealna-aws/internal/middleware"
-	"github.com/Amro-Deek/Dealna-aws/internal/utils"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/dto"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/utils"
 
 	"github.com/go-chi/chi/v5"
 )

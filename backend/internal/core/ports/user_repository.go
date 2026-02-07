@@ -2,7 +2,7 @@ package ports
 
 import (
     "context"
-    "github.com/Amro-Deek/Dealna-aws/internal/core/domain"
+    "github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 )
 
 type IUserRepository interface {

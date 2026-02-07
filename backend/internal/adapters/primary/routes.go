@@ -3,10 +3,10 @@ package httpadapter
 import (
 	"net/http"
 
-	"github.com/Amro-Deek/Dealna-aws/internal/config"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/config"
 
-	authHTTP "github.com/Amro-Deek/Dealna-aws/internal/adapters/primary/auth/http"
-	userHTTP "github.com/Amro-Deek/Dealna-aws/internal/adapters/primary/users/http"
+	authHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/http"
+	userHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/http"
 
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"

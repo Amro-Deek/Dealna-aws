@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Amro-Deek/Dealna-aws/internal/adapters/primary/auth"
-	"github.com/Amro-Deek/Dealna-aws/internal/adapters/primary/auth/dto"
-	"github.com/Amro-Deek/Dealna-aws/internal/utils"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/dto"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/utils"
 
 	"github.com/go-chi/chi/v5"
 )

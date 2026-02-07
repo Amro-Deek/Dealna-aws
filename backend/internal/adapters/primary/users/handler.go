@@ -3,8 +3,8 @@ package users
 import (
 	"context"
 
-	"github.com/Amro-Deek/Dealna-aws/internal/core/domain"
-	"github.com/Amro-Deek/Dealna-aws/internal/core/services"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/services"
 )
 
 type Handler struct {

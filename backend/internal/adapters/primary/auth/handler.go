@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	"github.com/Amro-Deek/Dealna-aws/internal/core/services"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/services"
 )
 
 type Handler struct {
