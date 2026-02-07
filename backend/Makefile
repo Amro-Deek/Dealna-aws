@@ -11,7 +11,10 @@ build:
 
 build-linux:
 	sqlc generate
-	swag init -g cmd/server/main.go --dir ./cmd,./internal --output docs
+	swag init \
+		-g server/main.go \
+		--dir ./cmd,./internal \
+		--output docs
 	go mod tidy
 	GOOS=linux GOARCH=amd64 go build -o dealna ./cmd/server
 
