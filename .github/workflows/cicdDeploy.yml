@@ -92,14 +92,22 @@ jobs:
           script: |
             sudo mkdir -p /opt/dealna
             sudo rm -f /opt/dealna/dealna
+# =========================
+# Setup SSH agent (REQUIRED)
+# =========================
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-      # =========================
-      # 9️⃣ Upload new binary (NO SCP ACTION)
-      # =========================
+# =========================
+# Upload new binary
+# =========================
       - name: Upload new binary to EC2
         run: |
-          scp -o StrictHostKeyChecking=no backend/dealna \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/opt/dealna/dealna
+        scp -o StrictHostKeyChecking=no backend/dealna \
+        ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/opt/dealna/dealna
+
 
       # =========================
       # 🔟 Fix permissions & restart
