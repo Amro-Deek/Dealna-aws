@@ -19,6 +19,11 @@ func NewRoutes(handler *users.Handler) *Routes {
 	return &Routes{handler: handler}
 }
 
+func (rt *Routes) Register(router chi.Router) {
+	router.Route("/users", func(r chi.Router) {
+		r.Get("/me", rt.getMe)
+	})
+}
 // GetMe godoc
 // @Summary Get current user
 // @Description Returns authenticated user profile -test
@@ -28,31 +33,24 @@ func NewRoutes(handler *users.Handler) *Routes {
 // @Success 200 {object} dto.MeResponse
 // @Failure 401 {object} utils.APIResponse
 // @Router /api/v1/users/me [get]
-func (rt *Routes) Register(router chi.Router, jwtSecret string) {
-	router.Route("/users", func(r chi.Router) {
-		r.Use(middleware.AuthMiddleware(jwtSecret))
+func (rt *Routes) getMe(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
 
-		r.Get("/me", func(w http.ResponseWriter, req *http.Request) {
+	userID := middleware.UserIDFromContext(ctx)
 
-			userID := middleware.UserIDFromContext(req.Context())
-			if userID == "" {
-				utils.WriteJSON(w, http.StatusUnauthorized, false, "Unauthorized", nil, nil)
-				return
-			}
+	user, err := rt.handler.GetMe(ctx, userID)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
-			user, err := rt.handler.GetMe(req.Context(), userID)
-			if err != nil {
-				utils.WriteJSON(w, http.StatusUnauthorized, false, "Unauthorized", nil, nil)
-				return
-			}
+	resp := dto.MeResponse{
+		ID:    user.ID,
+		Email: user.Email,
+		Role:  user.Role,
+	}
 
-			resp := dto.MeResponse{
-				ID:    user.ID,
-				Email: user.Email,
-				Role:  user.Role,
-			}
-
-			utils.WriteJSON(w, http.StatusOK, true, "OK", resp, nil)
-		})
-	})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	utils.WriteJSON(w, http.StatusOK, true, "OK", resp, nil)
 }

@@ -29,7 +29,7 @@ func NewRouter(
 
 	r.Route("/api/v1", func(r chi.Router) {
 		authRoutes.Register(r)
-		userRoutes.Register(r, cfg.JWTSecret)
+		userRoutes.Register(r)
 	})
 
 	return r

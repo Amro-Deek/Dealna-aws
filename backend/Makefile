@@ -1,4 +1,14 @@
 # =========================
+# Run (Local Development)
+# =========================
+.PHONY: run
+
+run:
+	go run cmd/server/main.go
+
+
+
+# =========================
 # Build
 # =========================
 .PHONY: build build-linux

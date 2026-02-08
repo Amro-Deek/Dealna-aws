@@ -16,26 +16,39 @@ import (
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 
+	// Config & Infra
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/config"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/database"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
 
+	// Primary adapters (Handlers + Routes)
 	authHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth"
-	authHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/http"	
+	authHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/http"
 	userHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users"
 	userHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/http"
 
+	// Secondary adapters
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/auth"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/persistence"
+
+	// Core services
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/services"
 
-	httpSwagger "github.com/swaggo/http-swagger"
+	// Swagger
 	_ "github.com/Amro-Deek/Dealna-aws/backend/docs"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func main() {
-	log.Println("🔥🔥🔥 unignnnore logs 🔥🔥🔥")
 
+	// =========================
+	// Load config
+	// =========================
 	cfg := config.Load()
 
+	// =========================
+	// Database
+	// =========================
 	db, err := database.Connect(
 		cfg.DBHost,
 		cfg.DBPort,
@@ -49,32 +62,71 @@ func main() {
 	}
 	defer db.Close()
 
+	// =========================
 	// Repositories
+	// =========================
 	repoFactory := persistence.NewRepositoryFactory(db)
 	userRepo := repoFactory.User()
 
-	// Services
+	// =========================
+	// Secondary adapters (Auth)
+	// =========================
+	hasher := auth.NewBcryptHasher()
+	jwtProvider := auth.NewJWTProvider(cfg.JWTSecret)
+
+	// =========================
+	// Logger (Middleware)
+	// =========================
+	appLogger := middleware.NewStdLogger()
+
+	// =========================
+	// Core services
+	// =========================
+	authService := services.NewAuthService(
+		userRepo,
+		hasher,
+		jwtProvider,
+	)
+
 	userService := services.NewUserService(userRepo)
-	authService := services.NewAuthService(userRepo, cfg.JWTSecret)
 
-	// Handlers
-	userH := userHandler.NewHandler(userService)
+	// =========================
+	// Handlers (Primary)
+	// =========================
 	authH := authHandler.NewHandler(authService)
+	userH := userHandler.NewHandler(userService)
 
-	// Routes
+	// =========================
+	// Routes (Primary HTTP)
+	// =========================
+	authRoutes := authHTTP.NewRoutes(authH, appLogger)
 	userRoutes := userHTTP.NewRoutes(userH)
-	authRoutes := authHTTP.NewRoutes(authH)
 
+	// =========================
 	// Router
+	// =========================
 	r := chi.NewRouter()
+
+	// Global middlewares
 	r.Use(chiMiddleware.Logger)
 	r.Use(chiMiddleware.Recoverer)
 
+	// Swagger
 	r.Get("/swagger/*", httpSwagger.WrapHandler)
 
+	// =========================
+	// API v1
+	// =========================
 	r.Route("/api/v1", func(r chi.Router) {
+
+		// Public routes
 		authRoutes.Register(r)
-		userRoutes.Register(r, cfg.JWTSecret)
+
+		// Protected routes
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.AuthMiddleware(jwtProvider, appLogger))
+			userRoutes.Register(r)
+		})
 	})
 
 	log.Printf("🚀 Dealna server running on :%s", cfg.Port)

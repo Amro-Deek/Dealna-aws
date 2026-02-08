@@ -1,8 +1,20 @@
 package middleware
 
-import (
-	"context"
-)
+import "context"
+
+// =========================
+// Getters
+// =========================
+
+func CorrelationIDFromContext(ctx context.Context) string {
+	id, _ := ctx.Value(ContextCorrelationID).(string)
+	return id
+}
+
+func IsVerbose(ctx context.Context) bool {
+	v, _ := ctx.Value(ContextVerbose).(bool)
+	return v
+}
 
 func UserIDFromContext(ctx context.Context) string {
 	userID, _ := ctx.Value(ContextUserID).(string)

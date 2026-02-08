@@ -1,59 +1,37 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
-	"strings"
 
-	"github.com/Amro-Deek/Dealna-aws/backend/internal/utils"
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
 )
+// middleware are just pipe , it calls , passes ,does not decide what to do with the error 
+// , it just passes it to the next layer (handler) to decide how to handle it
+func AuthMiddleware(
+	auth ports.IAuthContextProvider,
+	logger StructuredLoggerInterface,
+) func(http.Handler) http.Handler {
 
-func AuthMiddleware(secret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 			authHeader := r.Header.Get("Authorization")
-			if !strings.HasPrefix(authHeader, "Bearer ") {
-				utils.WriteJSON(w, http.StatusUnauthorized, false, "Unauthorized", nil, "Missing token")
+
+			authCtx, err := auth.Authenticate(r.Context(), authHeader)
+			if err != nil {
+				// ✅ مرّر الخطأ كما هو (NO duplication)
+				WriteErrorResponse(
+					w,
+					r.Context(),
+					err,
+					logger,
+				)
 				return
 			}
 
-			tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-
-			token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
-				// Enforce HMAC signing method
-				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, jwt.ErrSignatureInvalid
-				}
-				return []byte(secret), nil
-			})
-
-			if err != nil || !token.Valid {
-				utils.WriteJSON(w, http.StatusUnauthorized, false, "Unauthorized", nil, "Invalid token")
-				return
-			}
-
-			claims, ok := token.Claims.(jwt.MapClaims)
-			if !ok {
-				utils.WriteJSON(w, http.StatusUnauthorized, false, "Unauthorized", nil, "Invalid claims")
-				return
-			}
-
-			userID, ok := claims["user_id"].(string)
-			if !ok || userID == "" {
-				utils.WriteJSON(w, http.StatusUnauthorized, false, "Unauthorized", nil, "Missing user_id")
-				return
-			}
-
-			role, ok := claims["role"].(string)
-			if !ok || role == "" {
-				utils.WriteJSON(w, http.StatusUnauthorized, false, "Unauthorized", nil, "Missing role")
-				return
-			}
-
-			ctx := context.WithValue(r.Context(), ContextUserID, userID)
-			ctx = context.WithValue(ctx, ContextRole, role)
+			ctx := r.Context()
+			ctx = WithUserID(ctx, authCtx.UserID)
+			ctx = WithRole(ctx, authCtx.Role)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
