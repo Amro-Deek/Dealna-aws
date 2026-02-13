@@ -6,6 +6,7 @@ import "context"
 type AuthContext struct {
 	UserID string
 	Role   string
+	JTI    string
 }
 
 // IAuthContextProvider abstracts auth mechanism (JWT, Cognito, Auth0...)

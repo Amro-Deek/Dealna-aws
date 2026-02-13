@@ -1,17 +1,29 @@
 definitions:
+  dto.CompleteStudentRegistrationRequest:
+    properties:
+      academicYear:
+        type: integer
+      displayName:
+        type: string
+      email:
+        type: string
+      major:
+        type: string
+      password:
+        type: string
+    type: object
   dto.LoginRequest:
     properties:
       email:
-        example: user@bzu.edu
         type: string
       password:
-        example: secret123
         type: string
     type: object
   dto.LoginResponse:
     properties:
-      access_token:
-        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      accessToken:
+        type: string
+      refreshToken:
         type: string
     type: object
   dto.MeResponse:
@@ -27,14 +39,93 @@ definitions:
         example: STUDENT
         type: string
     type: object
-  utils.APIResponse:
+  dto.RefreshRequest:
     properties:
-      data: {}
-      error: {}
+      refreshToken:
+        type: string
+    type: object
+  dto.RefreshResponse:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+    type: object
+  dto.RequestActivationRequest:
+    properties:
+      email:
+        type: string
+    type: object
+  dto.ResendActivationRequest:
+    properties:
+      email:
+        type: string
+    type: object
+  middleware.ErrCode:
+    enum:
+    - USER_NOT_FOUND
+    - EMAIL_ALREADY_USED
+    - INVALID_CREDENTIALS
+    - ACCOUNT_SUSPENDED
+    - EMAIL_NOT_VERIFIED
+    - UNAUTHORIZED
+    - FORBIDDEN
+    - TOKEN_INVALID
+    - TOKEN_EXPIRED
+    - LISTING_NOT_FOUND
+    - LISTING_CLOSED
+    - LISTING_LIMIT_REACHED
+    - ALREADY_REVIEWED
+    - REVIEW_NOT_ALLOWED
+    - VALIDATION_FAILED
+    - INVALID_INPUT
+    - CONFLICT
+    - RATE_LIMITED
+    - DATABASE_ERROR
+    - INTERNAL_ERROR
+    type: string
+    x-enum-varnames:
+    - CodeUserNotFound
+    - CodeEmailAlreadyUsed
+    - CodeInvalidCredentials
+    - CodeAccountSuspended
+    - CodeEmailNotVerified
+    - CodeUnauthorized
+    - CodeForbidden
+    - CodeTokenInvalid
+    - CodeTokenExpired
+    - CodeListingNotFound
+    - CodeListingClosed
+    - CodeListingLimitReached
+    - CodeAlreadyReviewed
+    - CodeReviewNotAllowed
+    - CodeValidationFailed
+    - CodeInvalidInput
+    - CodeConflict
+    - CodeRateLimited
+    - CodeDatabaseError
+    - CodeInternalError
+  middleware.ErrorFrame:
+    properties:
+      code:
+        $ref: '#/definitions/middleware.ErrCode'
+      correlationId:
+        type: string
+      details:
+        additionalProperties: {}
+        type: object
       message:
         type: string
-      success:
+      retryable:
         type: boolean
+      statusCode:
+        type: integer
+      ts:
+        type: integer
+      type:
+        type: string
+      version:
+        type: string
     type: object
 info:
   contact:
@@ -47,7 +138,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Authenticate user and return JWT
+      description: Authenticate user and return access & refresh tokens
       parameters:
       - description: Login payload
         in: body
@@ -62,11 +153,149 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/utils.APIResponse'
+            $ref: '#/definitions/middleware.ErrorFrame'
       summary: Login
+      tags:
+      - Auth
+  /api/v1/auth/logout:
+    post:
+      description: Revoke current session
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Logout
+      tags:
+      - Auth
+  /api/v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refresh access token using refresh token
+      parameters:
+      - description: Refresh payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RefreshResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      summary: Refresh token
+      tags:
+      - Auth
+  /api/v1/auth/student/activate:
+    get:
+      description: Check activation link validity
+      parameters:
+      - description: Activation token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      summary: Verify activation token
+      tags:
+      - Auth
+  /api/v1/auth/student/complete:
+    post:
+      consumes:
+      - application/json
+      description: Finalize student account
+      parameters:
+      - description: Registration data
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CompleteStudentRegistrationRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      summary: Complete registration
+      tags:
+      - Auth
+  /api/v1/auth/student/request-activation:
+    post:
+      consumes:
+      - application/json
+      description: Send activation email to university address
+      parameters:
+      - description: Email
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RequestActivationRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      summary: Request activation link
+      tags:
+      - Auth
+  /api/v1/auth/student/resend:
+    post:
+      consumes:
+      - application/json
+      description: Resend activation email
+      parameters:
+      - description: Email
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ResendActivationRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      summary: Resend activation link
       tags:
       - Auth
   /api/v1/users/me:
@@ -82,7 +311,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/utils.APIResponse'
+            $ref: '#/definitions/middleware.ErrorFrame'
       security:
       - BearerAuth: []
       summary: Get current user

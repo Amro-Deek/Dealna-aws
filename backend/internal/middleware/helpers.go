@@ -25,3 +25,12 @@ func RoleFromContext(ctx context.Context) string {
 	role, _ := ctx.Value(ContextRole).(string)
 	return role
 }
+// ✅ NEW
+func WithJTI(ctx context.Context, jti string) context.Context {
+	return context.WithValue(ctx, ContextJTI, jti)
+}
+func JTIFromContext(ctx context.Context) string {
+	jti, _ := ctx.Value(ContextJTI).(string)
+	return jti
+}
+

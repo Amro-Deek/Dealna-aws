@@ -2,11 +2,12 @@ package postgres
 
 import (
     "context"
-    "log"
     "github.com/jackc/pgx/v5/pgtype"
     "github.com/jackc/pgx/v5/pgxpool"
+    "strings"
+	"regexp"
 
-    "github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
+	coreDomain "github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
     "github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
     "github.com/Amro-Deek/Dealna-aws/backend/internal/database/generated"
 )
@@ -28,7 +29,7 @@ func NewUserRepository(pool *pgxpool.Pool) *UserRepository {
 func (r *UserRepository) GetByID(
     ctx context.Context,
     userID string,
-) (*domain.User, error) {
+) (*coreDomain.User, error) {
 
     var uid pgtype.UUID
     if err := uid.Scan(userID); err != nil {
@@ -40,14 +41,9 @@ func (r *UserRepository) GetByID(
     if err != nil {
         return nil, err
     }
-log.Printf(
-  "DEBUG GetUserByID: user_id=%s role=%s email='%s'",
-  row.UserID.String(),
-  row.Role,
-  row.Email,
-)
+
     // mapping من DB model → Domain model
-    return &domain.User{
+    return &coreDomain.User{
         ID:   row.UserID.String(),
         Role: row.Role,
         Email: row.Email,
@@ -60,7 +56,7 @@ log.Printf(
 func (r *UserRepository) GetByEmail(
 	ctx context.Context,
 	email string,
-) (*domain.User, error) {
+) (*coreDomain.User, error) {
 
 	row, err := r.q.GetUserByEmail(ctx, email)
 	if err != nil {
@@ -78,11 +74,61 @@ func mapUser(
 	email string,
 	passwordHash string,
 	role string,
-) *domain.User {
-	return &domain.User{
+) *coreDomain.User {
+	return &coreDomain.User{
 		ID:           id.String(),
 		Email:        email,
 		PasswordHash: passwordHash,
 		Role:         role,
 	}
 }
+func (r *UserRepository) CreateStudent(
+	ctx context.Context,
+	displayName string,
+	email string,
+	passwordHash string,
+	major *string,
+	year *int,
+	universityID string,
+	studentID string,
+) (*coreDomain.User, error) {
+
+	userRow, err := r.q.CreateStudentUser(ctx, generated.CreateStudentUserParams{
+		Email:        email,
+		PasswordHash: toText(passwordHash),
+		UniversityID: toUUID(universityID),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.q.CreateStudent(ctx, generated.CreateStudentParams{
+		UserID:       userRow.UserID,
+		StudentID:    studentID,
+		Major:        toNullableText(major),
+		AcademicYear: toNullableInt32(year),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &coreDomain.User{
+		ID:    userRow.UserID.String(),
+		Email: userRow.Email,
+		Role:  userRow.Role,
+	}, nil
+}
+
+
+
+
+func extractStudentID(email string) string {
+	parts := strings.Split(email, "@")
+	local := parts[0]
+
+	re := regexp.MustCompile(`\d+`)
+	return re.FindString(local)
+}
+
+
+

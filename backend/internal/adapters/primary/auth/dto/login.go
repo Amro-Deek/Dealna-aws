@@ -1,12 +1,20 @@
 package dto
 
-// LoginRequest login payload
 type LoginRequest struct {
-	Email    string `json:"email" example:"user@bzu.edu"`
-	Password string `json:"password" example:"secret123"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-// LoginResponse JWT response
 type LoginResponse struct {
-	AccessToken string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+}
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refreshToken"`
+}
+
+type RefreshResponse struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
 }

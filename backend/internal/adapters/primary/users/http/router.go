@@ -6,7 +6,6 @@ import (
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/dto"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
-	"github.com/Amro-Deek/Dealna-aws/backend/internal/utils"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -31,7 +30,7 @@ func (rt *Routes) Register(router chi.Router) {
 // @Security BearerAuth
 // @Produce json
 // @Success 200 {object} dto.MeResponse
-// @Failure 401 {object} utils.APIResponse
+// @Failure 401 {object} middleware.ErrorFrame
 // @Router /api/v1/users/me [get]
 func (rt *Routes) getMe(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
@@ -52,5 +51,5 @@ func (rt *Routes) getMe(w http.ResponseWriter, req *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	utils.WriteJSON(w, http.StatusOK, true, "OK", resp, nil)
+	middleware.WriteJSONResponse(w, http.StatusOK, resp)
 }

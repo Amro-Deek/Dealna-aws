@@ -1,27 +1,15 @@
-// @title           Dealna API
-// @version         1.0
-// @description     Dealna backend API
-// @contact.name    Amro Deek
-// @securityDefinitions.apikey BearerAuth
-// @in              header
-// @name            Authorization
-// @BasePath        /api/v1
-
 package main
 
 import (
 	"log"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	chiMiddleware "github.com/go-chi/chi/v5/middleware"
-
-	// Config & Infra
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/config"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/database"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
 
-	// Primary adapters (Handlers + Routes)
+	// Primary adapters
+	httpadapter "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary"
 	authHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth"
 	authHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/http"
 	userHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users"
@@ -34,15 +22,25 @@ import (
 	// Core services
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/services"
 
-	// Swagger
+	// Swagger docs (USED via routes.go)
 	_ "github.com/Amro-Deek/Dealna-aws/backend/docs"
-	httpSwagger "github.com/swaggo/http-swagger"
+
+	emailAdapter "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/email"
 )
+
+// @title           Dealna API
+// @version         1.0
+// @description     Dealna backend API
+// @contact.name    Amro Deek
+// @securityDefinitions.apikey BearerAuth
+// @in              header
+// @name            Authorization
+// @BasePath        /api/v1
 
 func main() {
 
 	// =========================
-	// Load config
+	// Config
 	// =========================
 	cfg := config.Load()
 
@@ -67,15 +65,18 @@ func main() {
 	// =========================
 	repoFactory := persistence.NewRepositoryFactory(db)
 	userRepo := repoFactory.User()
+	sessionRepo := repoFactory.Session()
+	studentPreRegRepo := repoFactory.StudentPreRegistration()
+	universityRepo := repoFactory.University()
 
 	// =========================
-	// Secondary adapters (Auth)
+	// Secondary adapters
 	// =========================
 	hasher := auth.NewBcryptHasher()
-	jwtProvider := auth.NewJWTProvider(cfg.JWTSecret)
+	jwtProvider := auth.NewJWTProvider(cfg.JWTSecret, sessionRepo)
 
 	// =========================
-	// Logger (Middleware)
+	// Logger
 	// =========================
 	appLogger := middleware.NewStdLogger()
 
@@ -86,49 +87,43 @@ func main() {
 		userRepo,
 		hasher,
 		jwtProvider,
+		sessionRepo,
+	)
+	userService := services.NewUserService(userRepo)
+	StudentRegistrationService := services.NewStudentRegistrationService(
+		userRepo,
+		studentPreRegRepo,
+		emailAdapter.NewSMTPEmailService(), // TODO: replace with real email service
+		hasher,
+		universityRepo,
 	)
 
-	userService := services.NewUserService(userRepo)
-
 	// =========================
-	// Handlers (Primary)
+	// Handlers
 	// =========================
-	authH := authHandler.NewHandler(authService)
+	authH := authHandler.NewHandler(authService, StudentRegistrationService, userService)
 	userH := userHandler.NewHandler(userService)
 
 	// =========================
-	// Routes (Primary HTTP)
+	// Routes
 	// =========================
 	authRoutes := authHTTP.NewRoutes(authH, appLogger)
 	userRoutes := userHTTP.NewRoutes(userH)
 
 	// =========================
-	// Router
+	// HTTP Router Adapter
 	// =========================
-	r := chi.NewRouter()
-
-	// Global middlewares
-	r.Use(chiMiddleware.Logger)
-	r.Use(chiMiddleware.Recoverer)
-
-	// Swagger
-	r.Get("/swagger/*", httpSwagger.WrapHandler)
+	router := httpadapter.NewRouter(
+		cfg,
+		authRoutes,
+		userRoutes,
+		jwtProvider,
+		appLogger,
+	)
 
 	// =========================
-	// API v1
+	// Server
 	// =========================
-	r.Route("/api/v1", func(r chi.Router) {
-
-		// Public routes
-		authRoutes.Register(r)
-
-		// Protected routes
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.AuthMiddleware(jwtProvider, appLogger))
-			userRoutes.Register(r)
-		})
-	})
-
 	log.Printf("🚀 Dealna server running on :%s", cfg.Port)
-	log.Fatal(http.ListenAndServe(":"+cfg.Port, r))
+	log.Fatal(http.ListenAndServe(":"+cfg.Port, router))
 }

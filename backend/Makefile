@@ -35,7 +35,7 @@ build-linux:
 # =========================
 MIGRATIONS_DIR := ../database/migrations
 
-.PHONY: migrate-up migrate-down-1 migrate-down migrate-status
+.PHONY: migrate-up migrate-down-1 migrate-down migrate-status migrate-create
 
 migrate-up:
 ifndef DATABASE_URL
@@ -61,6 +61,11 @@ ifndef DATABASE_URL
 endif
 	migrate -path $(MIGRATIONS_DIR) -database "$(DATABASE_URL)" version
 
+migrate-create:
+ifndef name
+	$(error ❌ please provide a name for the migration. Example: make migrate-create name=create_users_table)
+endif
+	migrate create -ext sql -dir $(MIGRATIONS_DIR) -format "20060102150405" $(name)
 
 # =========================
 # Swagger

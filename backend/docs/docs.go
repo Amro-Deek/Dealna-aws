@@ -19,7 +19,7 @@ const docTemplate = `{
     "paths": {
         "/api/v1/auth/login": {
             "post": {
-                "description": "Authenticate user and return JWT",
+                "description": "Authenticate user and return access \u0026 refresh tokens",
                 "consumes": [
                     "application/json"
                 ],
@@ -48,10 +48,224 @@ const docTemplate = `{
                             "$ref": "#/definitions/dto.LoginResponse"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/utils.APIResponse"
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Revoke current session",
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Logout",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/refresh": {
+            "post": {
+                "description": "Refresh access token using refresh token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Refresh token",
+                "parameters": [
+                    {
+                        "description": "Refresh payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RefreshResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/student/activate": {
+            "get": {
+                "description": "Check activation link validity",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Verify activation token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Activation token",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/student/complete": {
+            "post": {
+                "description": "Finalize student account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Complete registration",
+                "parameters": [
+                    {
+                        "description": "Registration data",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompleteStudentRegistrationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/student/request-activation": {
+            "post": {
+                "description": "Send activation email to university address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Request activation link",
+                "parameters": [
+                    {
+                        "description": "Email",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestActivationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/student/resend": {
+            "post": {
+                "description": "Resend activation email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Resend activation link",
+                "parameters": [
+                    {
+                        "description": "Email",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ResendActivationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
                         }
                     }
                 }
@@ -82,7 +296,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/utils.APIResponse"
+                            "$ref": "#/definitions/middleware.ErrorFrame"
                         }
                     }
                 }
@@ -90,25 +304,45 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.CompleteStudentRegistrationRequest": {
+            "type": "object",
+            "properties": {
+                "academicYear": {
+                    "type": "integer"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "major": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.LoginRequest": {
             "type": "object",
             "properties": {
                 "email": {
-                    "type": "string",
-                    "example": "user@bzu.edu"
+                    "type": "string"
                 },
                 "password": {
-                    "type": "string",
-                    "example": "secret123"
+                    "type": "string"
                 }
             }
         },
         "dto.LoginResponse": {
             "type": "object",
             "properties": {
-                "access_token": {
-                    "type": "string",
-                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                "accessToken": {
+                    "type": "string"
+                },
+                "refreshToken": {
+                    "type": "string"
                 }
             }
         },
@@ -130,16 +364,118 @@ const docTemplate = `{
                 }
             }
         },
-        "utils.APIResponse": {
+        "dto.RefreshRequest": {
             "type": "object",
             "properties": {
-                "data": {},
-                "error": {},
+                "refreshToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RefreshResponse": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
+                "refreshToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RequestActivationRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ResendActivationRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "middleware.ErrCode": {
+            "type": "string",
+            "enum": [
+                "USER_NOT_FOUND",
+                "EMAIL_ALREADY_USED",
+                "INVALID_CREDENTIALS",
+                "ACCOUNT_SUSPENDED",
+                "EMAIL_NOT_VERIFIED",
+                "UNAUTHORIZED",
+                "FORBIDDEN",
+                "TOKEN_INVALID",
+                "TOKEN_EXPIRED",
+                "LISTING_NOT_FOUND",
+                "LISTING_CLOSED",
+                "LISTING_LIMIT_REACHED",
+                "ALREADY_REVIEWED",
+                "REVIEW_NOT_ALLOWED",
+                "VALIDATION_FAILED",
+                "INVALID_INPUT",
+                "CONFLICT",
+                "RATE_LIMITED",
+                "DATABASE_ERROR",
+                "INTERNAL_ERROR"
+            ],
+            "x-enum-varnames": [
+                "CodeUserNotFound",
+                "CodeEmailAlreadyUsed",
+                "CodeInvalidCredentials",
+                "CodeAccountSuspended",
+                "CodeEmailNotVerified",
+                "CodeUnauthorized",
+                "CodeForbidden",
+                "CodeTokenInvalid",
+                "CodeTokenExpired",
+                "CodeListingNotFound",
+                "CodeListingClosed",
+                "CodeListingLimitReached",
+                "CodeAlreadyReviewed",
+                "CodeReviewNotAllowed",
+                "CodeValidationFailed",
+                "CodeInvalidInput",
+                "CodeConflict",
+                "CodeRateLimited",
+                "CodeDatabaseError",
+                "CodeInternalError"
+            ]
+        },
+        "middleware.ErrorFrame": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "$ref": "#/definitions/middleware.ErrCode"
+                },
+                "correlationId": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
                 "message": {
                     "type": "string"
                 },
-                "success": {
+                "retryable": {
                     "type": "boolean"
+                },
+                "statusCode": {
+                    "type": "integer"
+                },
+                "ts": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
                 }
             }
         }
