@@ -31,7 +31,7 @@ func (s *SMTPEmailService) SendActivationLink(email, token string) error {
 	auth := smtp.PlainAuth("", s.username, s.password, s.host)
 	addr := fmt.Sprintf("%s:%s", s.host, s.port)
 
-	link := fmt.Sprintf("http://localhost:8080/api/v1/auth/student/activate?token=%s", token)
+	link := fmt.Sprintf("http://98.92.82.224:8080/api/v1/auth/student/activate?token=%s", token)
 
 	body := fmt.Sprintf(`Activate your Dealna account:
 
