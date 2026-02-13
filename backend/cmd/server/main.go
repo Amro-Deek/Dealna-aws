@@ -93,7 +93,7 @@ func main() {
 	StudentRegistrationService := services.NewStudentRegistrationService(
 		userRepo,
 		studentPreRegRepo,
-		emailAdapter.NewSMTPEmailService(), // TODO: replace with real email service
+		emailAdapter.NewSMTPEmailService(cfg.SMTP), // TODO: replace with real email service
 		hasher,
 		universityRepo,
 	)

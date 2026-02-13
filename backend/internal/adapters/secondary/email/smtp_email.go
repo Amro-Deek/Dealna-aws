@@ -5,6 +5,7 @@ import (
 	"net/smtp"
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/config"
 )
 
 type SMTPEmailService struct {
@@ -17,15 +18,17 @@ type SMTPEmailService struct {
 
 var _ ports.IEmailService = (*SMTPEmailService)(nil)
 
-func NewSMTPEmailService() *SMTPEmailService {
+
+func NewSMTPEmailService(cfg config.SMTPConfig) *SMTPEmailService {
 	return &SMTPEmailService{
-		host:     "smtp.gmail.com",
-		port:     "587",
-		username: "amrobasheer242@gmail.com",
-		password: "ydvn uwjc xbqj yvhi",
-		from:     "amrobasheer242@gmail.com",
+		host:     cfg.Host,
+		port:     cfg.Port,
+		username: cfg.Username,
+		password: cfg.Password,
+		from:     cfg.From,
 	}
 }
+
 
 func (s *SMTPEmailService) SendActivationLink(email, token string) error {
 	auth := smtp.PlainAuth("", s.username, s.password, s.host)
