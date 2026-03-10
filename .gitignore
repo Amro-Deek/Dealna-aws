@@ -5,4 +5,4 @@
 .DS_Store
 Thumbs.db
 /backend/dealna
-
+/infra/keycloak/.env
