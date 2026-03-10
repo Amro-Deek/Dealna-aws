@@ -2,38 +2,32 @@ package services
 
 import (
 	"context"
-	"time"
 
-	"github.com/google/uuid"
-
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
 )
 
 type AuthService struct {
 	users    ports.IUserRepository
-	hasher   ports.IPasswordHasher
-	tokens   ports.ITokenProvider
-	sessions ports.ISessionRepository
+	identity ports.IIdentityProvider
 }
 
 func NewAuthService(
 	users ports.IUserRepository,
-	hasher ports.IPasswordHasher,
-	tokens ports.ITokenProvider,
-	sessions ports.ISessionRepository,
+	identity ports.IIdentityProvider,
 ) *AuthService {
 	return &AuthService{
 		users:    users,
-		hasher:   hasher,
-		tokens:   tokens,
-		sessions: sessions,
+		identity: identity,
 	}
 }
 
 type AuthResult struct {
 	AccessToken  string
 	RefreshToken string
+	ExpiresIn    int
+	User         *domain.User
 }
 
 func (s *AuthService) Login(
@@ -42,52 +36,21 @@ func (s *AuthService) Login(
 	password string,
 ) (*AuthResult, error) {
 
-	user, err := s.users.GetByEmail(ctx, email)
+	loginRes, err := s.identity.Login(ctx, email, password)
 	if err != nil {
-		return nil, middleware.NewInvalidCredentialsError()
+		return nil, err
 	}
 
-	if err := s.hasher.Compare(user.PasswordHash, password); err != nil {
-		return nil, middleware.NewInvalidCredentialsError()
-	}
-
-	// 1️⃣ revoke ALL previous sessions (single active session)
-	if err := s.sessions.RevokeAllForUser(ctx, user.ID); err != nil {
-		return nil, middleware.NewInternalError(err)
-	}
-
-	jti := uuid.NewString()
-	refreshExp := time.Now().Add(30 * 24 * time.Hour)
-
-	if err := s.sessions.Create(ctx, user.ID, jti, refreshExp); err != nil {
-		return nil, middleware.NewDatabaseError("create session", err)
-	}
-
-	accessExp := time.Now().Add(15 * time.Minute)
-
-	access, err := s.tokens.GenerateAccessToken(
-		user.ID,
-		user.Role,
-		jti,
-		accessExp,
-	)
+	user, err := s.users.GetByKeycloakSub(ctx, loginRes.Subject)
 	if err != nil {
-		return nil, middleware.NewInternalError(err)
-	}
-
-	refresh, err := s.tokens.GenerateRefreshToken(
-		user.ID,
-		user.Role,
-		jti,
-		refreshExp,
-	)
-	if err != nil {
-		return nil, middleware.NewInternalError(err)
+		return nil, middleware.NewUnauthorizedError("authenticated keycloak user is not linked to an internal account")
 	}
 
 	return &AuthResult{
-		AccessToken:  access,
-		RefreshToken: refresh,
+		AccessToken:  loginRes.AccessToken,
+		RefreshToken: loginRes.RefreshToken,
+		ExpiresIn:    loginRes.ExpiresIn,
+		User:         user,
 	}, nil
 }
 
@@ -95,68 +58,9 @@ func (s *AuthService) Refresh(
 	ctx context.Context,
 	refreshToken string,
 ) (*AuthResult, error) {
-
-	parsed, err := s.tokens.ParseToken(refreshToken)
-	if err != nil {
-		return nil, err // already DomainError
-	}
-
-	if parsed.Type != ports.TokenRefresh {
-		return nil, middleware.NewUnauthorizedError("invalid refresh token")
-	}
-
-	session, err := s.sessions.GetByJTI(ctx, parsed.JTI)
-	if err != nil {
-		return nil, middleware.NewDatabaseError("get session", err)
-	}
-
-	if session.Revoked || time.Now().After(session.ExpiresAt) {
-		return nil, middleware.NewUnauthorizedError("session expired or revoked")
-	}
-
-	// rotate session
-	if err := s.sessions.RevokeByJTI(ctx, parsed.JTI); err != nil {
-		return nil, middleware.NewDatabaseError("revoke session", err)
-	}
-
-	newJTI := uuid.NewString()
-	newRefreshExp := time.Now().Add(30 * 24 * time.Hour)
-
-	if err := s.sessions.Create(ctx, parsed.UserID, newJTI, newRefreshExp); err != nil {
-		return nil, middleware.NewDatabaseError("create session", err)
-	}
-
-	accessExp := time.Now().Add(15 * time.Minute)
-
-	access, err := s.tokens.GenerateAccessToken(
-		parsed.UserID,
-		parsed.Role,
-		newJTI,
-		accessExp,
-	)
-	if err != nil {
-		return nil, middleware.NewInternalError(err)
-	}
-
-	refresh, err := s.tokens.GenerateRefreshToken(
-		parsed.UserID,
-		parsed.Role,
-		newJTI,
-		newRefreshExp,
-	)
-	if err != nil {
-		return nil, middleware.NewInternalError(err)
-	}
-
-	return &AuthResult{
-		AccessToken:  access,
-		RefreshToken: refresh,
-	}, nil
+	return nil, middleware.NewUnauthorizedError("refresh endpoint not migrated yet")
 }
 
 func (s *AuthService) Logout(ctx context.Context, jti string) error {
-	if err := s.sessions.RevokeByJTI(ctx, jti); err != nil {
-		return middleware.NewDatabaseError("revoke session", err)
-	}
-	return nil
+	return middleware.NewUnauthorizedError("logout endpoint not migrated yet")
 }

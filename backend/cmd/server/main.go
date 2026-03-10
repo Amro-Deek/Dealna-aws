@@ -65,15 +65,23 @@ func main() {
 	// =========================
 	repoFactory := persistence.NewRepositoryFactory(db)
 	userRepo := repoFactory.User()
-	sessionRepo := repoFactory.Session()
 	studentPreRegRepo := repoFactory.StudentPreRegistration()
 	universityRepo := repoFactory.University()
 
 	// =========================
 	// Secondary adapters
 	// =========================
-	hasher := auth.NewBcryptHasher()
-	jwtProvider := auth.NewJWTProvider(cfg.JWTSecret, sessionRepo)
+	//hasher := auth.NewBcryptHasher()
+	jwtProvider := auth.NewJWTProvider(cfg.JWTSecret, nil)
+	// =========================
+// Secondary adapters
+// =========================
+keycloakIdentity := auth.NewKeycloakIdentityProvider(
+	cfg.KeycloakBaseURL,
+	cfg.KeycloakRealm,
+	cfg.KeycloakClientID,
+	&http.Client{},
+)
 
 	// =========================
 	// Logger
@@ -84,17 +92,15 @@ func main() {
 	// Core services
 	// =========================
 	authService := services.NewAuthService(
-		userRepo,
-		hasher,
-		jwtProvider,
-		sessionRepo,
-	)
+	userRepo,
+	keycloakIdentity,
+)
 	userService := services.NewUserService(userRepo)
 	StudentRegistrationService := services.NewStudentRegistrationService(
 		userRepo,
 		studentPreRegRepo,
 		emailAdapter.NewSMTPEmailService(cfg.SMTP), // TODO: replace with real email service
-		hasher,
+		auth.NewBcryptHasher(), // keep for prereg until signup migration
 		universityRepo,
 	)
 

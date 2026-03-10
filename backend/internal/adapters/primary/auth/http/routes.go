@@ -40,10 +40,9 @@ func (rt *Routes) RegisterProtected(router chi.Router) {
 	})
 }
 
-
 // LoginHandler handles user authentication
 // @Summary Login
-// @Description Authenticate user and return access & refresh tokens
+// @Description Authenticate user via Keycloak and return access & refresh tokens
 // @Tags Auth
 // @Accept json
 // @Produce json
@@ -53,22 +52,28 @@ func (rt *Routes) RegisterProtected(router chi.Router) {
 // @Failure 401 {object} middleware.ErrorFrame
 // @Router /api/v1/auth/login [post]
 func (rt *Routes) LoginHandler(w http.ResponseWriter, req *http.Request) {
-    var body dto.LoginRequest
-    if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
-        middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)
-        return
-    }
+	var body dto.LoginRequest
+	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)
+		return
+	}
 
-    result, err := rt.handler.Login(req.Context(), body.Email, body.Password)
-    if err != nil {
-        middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
-        return
-    }
+	result, err := rt.handler.Login(req.Context(), body.Email, body.Password)
+	if err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		return
+	}
 
-    middleware.WriteJSONResponse(w, http.StatusOK, dto.LoginResponse{
-        AccessToken:  result.AccessToken,
-        RefreshToken: result.RefreshToken,
-    })
+	middleware.WriteJSONResponse(w, http.StatusOK, dto.LoginResponse{
+		AccessToken:  result.AccessToken,
+		RefreshToken: result.RefreshToken,
+		ExpiresIn:    result.ExpiresIn,
+		User: dto.LoginUser{
+			ID:    result.User.ID,
+			Email: result.User.Email,
+			Role:  result.User.Role,
+		},
+	})
 }
 
 // RefreshHandler handles token refresh

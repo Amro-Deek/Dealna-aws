@@ -19,7 +19,7 @@ const docTemplate = `{
     "paths": {
         "/api/v1/auth/login": {
             "post": {
-                "description": "Authenticate user and return access \u0026 refresh tokens",
+                "description": "Authenticate user via Keycloak and return access \u0026 refresh tokens",
                 "consumes": [
                     "application/json"
                 ],
@@ -338,10 +338,30 @@ const docTemplate = `{
         "dto.LoginResponse": {
             "type": "object",
             "properties": {
-                "accessToken": {
+                "access_token": {
                     "type": "string"
                 },
-                "refreshToken": {
+                "expires_in": {
+                    "type": "integer"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/dto.LoginUser"
+                }
+            }
+        },
+        "dto.LoginUser": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "role": {
                     "type": "string"
                 }
             }

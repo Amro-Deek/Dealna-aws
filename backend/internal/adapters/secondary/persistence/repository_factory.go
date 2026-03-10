@@ -19,9 +19,7 @@ func (f *RepositoryFactory) User() ports.IUserRepository {
 	return postgres.NewUserRepository(f.pool)
 }
 
-func (f *RepositoryFactory) Session() ports.ISessionRepository {
-	return postgres.NewSessionRepository(f.pool)
-}
+
 func (f *RepositoryFactory) StudentPreRegistration() ports.IStudentPreRegistrationRepository {
 	return postgres.NewStudentPreRegistrationRepository(f.pool)
 }

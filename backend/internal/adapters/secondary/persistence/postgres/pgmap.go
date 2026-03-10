@@ -64,4 +64,11 @@ func toNullableInt32(v *int) pgtype.Int4 {
 	return pgtype.Int4{Int32: int32(*v), Valid: true}
 }
 
+func uuidToString(id pgtype.UUID) string {
+	if !id.Valid {
+		return ""
+	}
+	return id.String()
+}
+
 

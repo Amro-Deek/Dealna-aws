@@ -9,15 +9,16 @@ import (
 type IUserRepository interface {
 	GetByID(ctx context.Context, userID string) (*domain.User, error)
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)
-	CreateStudent(
-	ctx context.Context,
-	displayName string,
-	email string,
-	passwordHash string,
-	major *string,
-	year *int,
-	universityID string,
-	studentID string,
-) (*domain.User, error)
+	GetByKeycloakSub(ctx context.Context, sub string) (*domain.User, error)
 
+	CreateStudent(
+		ctx context.Context,
+		displayName string,
+		email string,
+		passwordHash string,
+		major *string,
+		year *int,
+		universityID string,
+		studentID string,
+	) (*domain.User, error)
 }

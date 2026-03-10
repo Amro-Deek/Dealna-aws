@@ -35,6 +35,9 @@ build-linux:
 # =========================
 MIGRATIONS_DIR := ../database/migrations
 
+include .env
+export
+
 .PHONY: migrate-up migrate-down-1 migrate-down migrate-status migrate-create
 
 migrate-up:

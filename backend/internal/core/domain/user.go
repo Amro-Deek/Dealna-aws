@@ -1,8 +1,8 @@
 package domain
 
 type User struct {
-	ID           string
-	Email        string
-	PasswordHash string
-	Role         string
+	ID          string
+	Email       string
+	Role        string
+	KeycloakSub string
 }

@@ -21,9 +21,22 @@ definitions:
     type: object
   dto.LoginResponse:
     properties:
-      accessToken:
+      access_token:
         type: string
-      refreshToken:
+      expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/dto.LoginUser'
+    type: object
+  dto.LoginUser:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      role:
         type: string
     type: object
   dto.MeResponse:
@@ -138,7 +151,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Authenticate user and return access & refresh tokens
+      description: Authenticate user via Keycloak and return access & refresh tokens
       parameters:
       - description: Login payload
         in: body

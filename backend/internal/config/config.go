@@ -23,6 +23,10 @@ type Config struct {
 	DBSSLMode  string
 
 	SMTP SMTPConfig
+
+	KeycloakBaseURL string
+	KeycloakRealm   string
+	KeycloakClientID string
 }
 type SMTPConfig struct {
 	Host     string
@@ -44,6 +48,9 @@ func Load() *Config {
 		DBPassword: mustEnv("DB_PASSWORD"),
 		DBName:     mustEnv("DB_NAME"),
 		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
+		KeycloakBaseURL: getEnv("KEYCLOAK_BASE_URL", ""),
+KeycloakRealm: getEnv("KEYCLOAK_REALM", ""),
+KeycloakClientID: getEnv("KEYCLOAK_CLIENT_ID", ""),
 		SMTP: SMTPConfig{
 			Host:     getEnv("SMTP_HOST", ""),
 			Port:     getEnv("SMTP_PORT", ""),
