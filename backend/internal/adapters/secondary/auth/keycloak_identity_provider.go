@@ -143,7 +143,9 @@ func extractSubFromJWT(token string) (string, error) {
 func (k *KeycloakIdentityProvider) RegisterUser(
 	ctx context.Context,
 	email,
-	password string,
+	password,
+	firstName,
+	lastName string,
 ) (string, error) {
 	adminToken, err := k.getAdminToken(ctx)
 	if err != nil {
@@ -153,6 +155,8 @@ func (k *KeycloakIdentityProvider) RegisterUser(
 	userPayload := map[string]interface{}{
 		"username":      email,
 		"email":         email,
+		"firstName":     firstName,
+		"lastName":      lastName,
 		"enabled":       true,
 		"emailVerified": true,
 		"credentials": []map[string]interface{}{

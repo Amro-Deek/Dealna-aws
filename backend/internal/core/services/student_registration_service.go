@@ -161,8 +161,19 @@ func (s *StudentRegistrationService) CompleteStudentRegistration(
 		return middleware.NewValidationError("email", "only birzeit student emails allowed")
 	}
 
+	// Split displayName into firstName and lastName to satisfy Keycloak profile requirements
+	nameParts := strings.SplitN(strings.TrimSpace(displayName), " ", 2)
+	firstName := nameParts[0]
+	lastName := ""
+	if len(nameParts) > 1 {
+		lastName = nameParts[1]
+	} else {
+		// Keycloak might still require lastName if the realm demands it
+		lastName = firstName
+	}
+
 	// ✅ 1. Register in Keycloak
-	keycloakSub, err := s.identity.RegisterUser(ctx, email, password)
+	keycloakSub, err := s.identity.RegisterUser(ctx, email, password, firstName, lastName)
 	if err != nil {
 		return err
 	}
