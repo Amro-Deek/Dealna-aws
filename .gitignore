@@ -6,3 +6,11 @@
 Thumbs.db
 /backend/dealna
 /infra/keycloak/.env
+
+
+# Local tools / AI context
+/conductor/
+
+# Local docs (not for repo)
+36_Dealna A Secure University - Verified Marketplace.pdf
+backend architicture.txt
