@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -16,7 +17,7 @@ type StudentRegistrationService struct {
 	users      ports.IUserRepository
 	preRegs    ports.IStudentPreRegistrationRepository
 	email      ports.IEmailService
-	hasher     ports.IPasswordHasher
+	identity   ports.IIdentityProvider
 	university ports.IUniversityRepository
 }
 
@@ -24,14 +25,14 @@ func NewStudentRegistrationService(
 	users ports.IUserRepository,
 	preRegs ports.IStudentPreRegistrationRepository,
 	email ports.IEmailService,
-	hasher ports.IPasswordHasher,
+	identity ports.IIdentityProvider,
 	university ports.IUniversityRepository,
 ) *StudentRegistrationService {
 	return &StudentRegistrationService{
 		users:      users,
 		preRegs:    preRegs,
 		email:      email,
-		hasher:     hasher,
+		identity:   identity,
 		university: university,
 	}
 }
@@ -71,6 +72,14 @@ func (s *StudentRegistrationService) RequestStudentActivation(
 
 	// check already user
 	if _, err := s.users.GetByEmail(ctx, email); err == nil {
+		return middleware.NewEmailAlreadyUsedError(email)
+	}
+
+	// check if already in pre-registration
+	if existingPre, err := s.preRegs.GetByEmail(ctx, email); err == nil && existingPre != nil {
+		if existingPre.UsedAt == nil {
+			return middleware.NewValidationError("email", "Activation already requested. Please check your email or use the resend endpoint.")
+		}
 		return middleware.NewEmailAlreadyUsedError(email)
 	}
 
@@ -142,11 +151,6 @@ func (s *StudentRegistrationService) CompleteStudentRegistration(
 		return middleware.NewUnauthorizedError("activation expired")
 	}
 
-	hash, err := s.hasher.Hash(password)
-	if err != nil {
-		return middleware.NewInternalError(err)
-	}
-
 	// ✅ domain check
 	parts := strings.Split(email, "@")
 	if len(parts) != 2 {
@@ -157,29 +161,43 @@ func (s *StudentRegistrationService) CompleteStudentRegistration(
 		return middleware.NewValidationError("email", "only birzeit student emails allowed")
 	}
 
+	// ✅ 1. Register in Keycloak
+	keycloakSub, err := s.identity.RegisterUser(ctx, email, password)
+	if err != nil {
+		return err
+	}
+
 	// ✅ university
 	uni, err := s.university.GetByDomain(ctx, "birzeit.edu")
 	if err != nil {
+		_ = s.identity.DeleteUser(ctx, keycloakSub)
 		return middleware.NewDatabaseError("get university", err)
 	}
 
 	// ✅ student id
 	studentID := extractStudentID(email)
 
+	// ✅ 2. Create local user
 	_, err = s.users.CreateStudent(
 		ctx,
 		displayName,
 		email,
-		hash,
+		keycloakSub,
 		major,
 		year,
 		uni.ID,
 		studentID,
 	)
 	if err != nil {
+		// Compensation: Delete Keycloak user if DB creation fails
+		delErr := s.identity.DeleteUser(ctx, keycloakSub)
+		if delErr != nil {
+			return middleware.NewInternalError(errors.New("failed to create local account and rollback failed. please contact support"))
+		}
 		return middleware.NewDatabaseError("create user", err)
 	}
 
+	// ✅ 3. Success - mark token as used
 	now := time.Now()
 	pre.UsedAt = &now
 

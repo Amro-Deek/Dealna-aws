@@ -27,6 +27,8 @@ type Config struct {
 	KeycloakBaseURL string
 	KeycloakRealm   string
 	KeycloakClientID string
+	KeycloakAdminClientID string
+	KeycloakAdminClientSecret string
 }
 type SMTPConfig struct {
 	Host     string
@@ -49,8 +51,10 @@ func Load() *Config {
 		DBName:     mustEnv("DB_NAME"),
 		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
 		KeycloakBaseURL: getEnv("KEYCLOAK_BASE_URL", ""),
-KeycloakRealm: getEnv("KEYCLOAK_REALM", ""),
-KeycloakClientID: getEnv("KEYCLOAK_CLIENT_ID", ""),
+		KeycloakRealm:   getEnv("KEYCLOAK_REALM", ""),
+		KeycloakClientID: getEnv("KEYCLOAK_CLIENT_ID", ""),
+		KeycloakAdminClientID: getEnv("KEYCLOAK_ADMIN_CLIENT_ID", ""),
+		KeycloakAdminClientSecret: getEnv("KEYCLOAK_ADMIN_CLIENT_SECRET", ""),
 		SMTP: SMTPConfig{
 			Host:     getEnv("SMTP_HOST", ""),
 			Port:     getEnv("SMTP_PORT", ""),

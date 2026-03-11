@@ -80,6 +80,8 @@ keycloakIdentity := auth.NewKeycloakIdentityProvider(
 	cfg.KeycloakBaseURL,
 	cfg.KeycloakRealm,
 	cfg.KeycloakClientID,
+	cfg.KeycloakAdminClientID,
+	cfg.KeycloakAdminClientSecret,
 	&http.Client{},
 )
 
@@ -100,7 +102,7 @@ keycloakIdentity := auth.NewKeycloakIdentityProvider(
 		userRepo,
 		studentPreRegRepo,
 		emailAdapter.NewSMTPEmailService(cfg.SMTP), // TODO: replace with real email service
-		auth.NewBcryptHasher(), // keep for prereg until signup migration
+		keycloakIdentity,
 		universityRepo,
 	)
 

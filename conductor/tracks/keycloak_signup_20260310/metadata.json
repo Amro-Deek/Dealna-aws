@@ -1,8 +1,8 @@
 {
   "track_id": "keycloak_signup_20260310",
   "type": "feature",
-  "status": "new",
-  "created_at": "2026-03-10T22:00:00Z",
+  "status": "completed",
+  "updated_at": "2026-03-10T23:30:00Z",
   "updated_at": "2026-03-10T22:00:00Z",
   "description": "Implement Keycloak Signup Flow"
 }

@@ -15,7 +15,7 @@ type IUserRepository interface {
 		ctx context.Context,
 		displayName string,
 		email string,
-		passwordHash string,
+		keycloakSub string,
 		major *string,
 		year *int,
 		universityID string,

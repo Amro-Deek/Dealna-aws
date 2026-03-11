@@ -11,11 +11,11 @@ import (
 	coreDomain "github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/database/generated"
-	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
 )
 
 type UserRepository struct {
-    q *generated.Queries
+    q    *generated.Queries
+    pool *pgxpool.Pool
 }
 
 // Compile-time interface check ✅
@@ -23,7 +23,8 @@ var _ ports.IUserRepository = (*UserRepository)(nil)
 
 func NewUserRepository(pool *pgxpool.Pool) *UserRepository {
     return &UserRepository{
-        q: generated.New(pool),
+        q:    generated.New(pool),
+        pool: pool,
     }
 }
 func (r *UserRepository) GetByID(
@@ -138,6 +139,14 @@ func (r *UserRepository) CreateStudent(
 		return nil, err
 	}
 
+	err = r.q.CreateProfile(ctx, generated.CreateProfileParams{
+		UserID:      userRow.UserID,
+		DisplayName: toNullableText(&displayName),
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return &coreDomain.User{
 	ID:           userRow.UserID.String(),
 	Email:        userRow.Email,
@@ -149,18 +158,62 @@ func (r *UserRepository) CreateStudent(
 */
 
 
-// Dummy for now until signup flow is migrated to Keycloak
 func (r *UserRepository) CreateStudent(
 	ctx context.Context,
 	displayName string,
 	email string,
-	passwordHash string,
+	keycloakSub string,
 	major *string,
 	year *int,
 	universityID string,
 	studentID string,
 ) (*coreDomain.User, error) {
-	return nil, middleware.NewUnauthorizedError("student creation is not migrated yet")
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := r.q.WithTx(tx)
+
+	userRow, err := qtx.CreateStudentUser(ctx, generated.CreateStudentUserParams{
+		Email:        email,
+		UniversityID: toUUID(universityID),
+		KeycloakSub:  toUUID(keycloakSub),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = qtx.CreateStudent(ctx, generated.CreateStudentParams{
+		UserID:       userRow.UserID,
+		StudentID:    studentID,
+		Major:        toNullableText(major),
+		AcademicYear: toNullableInt32(year),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = qtx.CreateProfile(ctx, generated.CreateProfileParams{
+		UserID:      userRow.UserID,
+		DisplayName: toNullableText(&displayName),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	return &coreDomain.User{
+		ID:          uuidToString(userRow.UserID),
+		Email:       userRow.Email,
+		Role:        userRow.Role,
+		KeycloakSub: uuidToString(userRow.KeycloakSub),
+	}, nil
 }
 func extractStudentID(email string) string {
 	parts := strings.Split(email, "@")
