@@ -291,3 +291,71 @@ func (k *KeycloakIdentityProvider) lookupUserIDByEmail(ctx context.Context, toke
 
 	return users[0].ID, nil
 }
+
+func (k *KeycloakIdentityProvider) Refresh(ctx context.Context, refreshToken string) (*ports.IdentityLoginResult, error) {
+	form := url.Values{}
+	form.Set("client_id", k.clientID)
+	form.Set("grant_type", "refresh_token")
+	form.Set("refresh_token", refreshToken)
+
+	endpoint := k.baseURL + "/realms/" + k.realm + "/protocol/openid-connect/token"
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, middleware.NewInternalError(err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := k.httpClient.Do(req)
+	if err != nil {
+		return nil, middleware.NewInternalError(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, middleware.NewUnauthorizedError("invalid or expired refresh token")
+	}
+
+	var tr keycloakTokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tr); err != nil {
+		return nil, middleware.NewInternalError(err)
+	}
+
+	sub, err := extractSubFromJWT(tr.AccessToken)
+	if err != nil {
+		return nil, middleware.NewInternalError(err)
+	}
+
+	return &ports.IdentityLoginResult{
+		AccessToken:  tr.AccessToken,
+		RefreshToken: tr.RefreshToken,
+		Subject:      sub,
+		ExpiresIn:    tr.ExpiresIn,
+	}, nil
+}
+
+func (k *KeycloakIdentityProvider) Logout(ctx context.Context, refreshToken string) error {
+	form := url.Values{}
+	form.Set("client_id", k.clientID)
+	form.Set("refresh_token", refreshToken)
+
+	endpoint := k.baseURL + "/realms/" + k.realm + "/protocol/openid-connect/logout"
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(form.Encode()))
+	if err != nil {
+		return middleware.NewInternalError(err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := k.httpClient.Do(req)
+	if err != nil {
+		return middleware.NewInternalError(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
+		return middleware.NewUnauthorizedError("failed to logout")
+	}
+
+	return nil
+}

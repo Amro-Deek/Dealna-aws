@@ -72,7 +72,11 @@ func main() {
 	// Secondary adapters
 	// =========================
 	//hasher := auth.NewBcryptHasher()
-	jwtProvider := auth.NewJWTProvider(cfg.JWTSecret, nil)
+	jwksURL := cfg.KeycloakBaseURL + "/realms/" + cfg.KeycloakRealm + "/protocol/openid-connect/certs"
+	jwtProvider, err := auth.NewKeycloakJWTProvider(jwksURL, userRepo)
+	if err != nil {
+		log.Fatalf("failed to initialize Keycloak JWT provider: %v", err)
+	}
 	// =========================
 // Secondary adapters
 // =========================

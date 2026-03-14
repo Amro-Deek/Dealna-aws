@@ -15,4 +15,9 @@ type IIdentityProvider interface {
 	RegisterUser(ctx context.Context, email, password, firstName, lastName string) (keycloakSub string, err error)
 	// DeleteUser removes a user from Keycloak by their Subject (ID).
 	DeleteUser(ctx context.Context, keycloakSub string) error
+
+	// Refresh exchanges a refresh token for a new access token
+	Refresh(ctx context.Context, refreshToken string) (*IdentityLoginResult, error)
+	// Logout invalidates a session using the refresh token
+	Logout(ctx context.Context, refreshToken string) error
 }

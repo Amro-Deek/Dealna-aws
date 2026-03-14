@@ -45,9 +45,9 @@ func (h *Handler) Refresh(
 // =========================
 func (h *Handler) Logout(
 	ctx context.Context,
-	jti string,
+	refreshToken string,
 ) error {
-	return h.authService.Logout(ctx, jti)
+	return h.authService.Logout(ctx, refreshToken)
 }
 
 func (h *Handler) RequestStudentActivation(

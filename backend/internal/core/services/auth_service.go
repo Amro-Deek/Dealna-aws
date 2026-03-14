@@ -58,9 +58,24 @@ func (s *AuthService) Refresh(
 	ctx context.Context,
 	refreshToken string,
 ) (*AuthResult, error) {
-	return nil, middleware.NewUnauthorizedError("refresh endpoint not migrated yet")
+	loginRes, err := s.identity.Refresh(ctx, refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := s.users.GetByKeycloakSub(ctx, loginRes.Subject)
+	if err != nil {
+		return nil, middleware.NewUnauthorizedError("authenticated keycloak user is not linked to an internal account")
+	}
+
+	return &AuthResult{
+		AccessToken:  loginRes.AccessToken,
+		RefreshToken: loginRes.RefreshToken,
+		ExpiresIn:    loginRes.ExpiresIn,
+		User:         user,
+	}, nil
 }
 
-func (s *AuthService) Logout(ctx context.Context, jti string) error {
-	return middleware.NewUnauthorizedError("logout endpoint not migrated yet")
+func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
+	return s.identity.Logout(ctx, refreshToken)
 }

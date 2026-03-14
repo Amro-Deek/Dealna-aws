@@ -114,13 +114,13 @@ func (rt *Routes) RefreshHandler(w http.ResponseWriter, req *http.Request) {
 // @Failure 401 {object} middleware.ErrorFrame
 // @Router /api/v1/auth/logout [post]
 func (rt *Routes) LogoutHandler(w http.ResponseWriter, req *http.Request) {
-    jti := middleware.JTIFromContext(req.Context())
-    if jti == "" {
-        middleware.WriteErrorResponse(w, req.Context(), middleware.NewUnauthorizedError("unauthorized"), rt.logger)
+    var body dto.RefreshRequest
+    if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+        middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)
         return
     }
 
-    if err := rt.handler.Logout(req.Context(), jti); err != nil {
+    if err := rt.handler.Logout(req.Context(), body.RefreshToken); err != nil {
         middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
         return
     }
