@@ -63,10 +63,27 @@
                     }
                 ],
                 "description": "Revoke current session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Auth"
                 ],
                 "summary": "Logout",
+                "parameters": [
+                    {
+                        "description": "Refresh payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RefreshRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "204": {
                         "description": "No Content"

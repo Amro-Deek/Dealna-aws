@@ -179,7 +179,18 @@ paths:
       - Auth
   /api/v1/auth/logout:
     post:
+      consumes:
+      - application/json
       description: Revoke current session
+      parameters:
+      - description: Refresh payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshRequest'
+      produces:
+      - application/json
       responses:
         "204":
           description: No Content

@@ -110,6 +110,9 @@ func (rt *Routes) RefreshHandler(w http.ResponseWriter, req *http.Request) {
 // @Description Revoke current session
 // @Tags Auth
 // @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param payload body dto.RefreshRequest true "Refresh payload"
 // @Success 204
 // @Failure 401 {object} middleware.ErrorFrame
 // @Router /api/v1/auth/logout [post]
