@@ -233,6 +233,10 @@ func (s *StudentRegistrationService) ResendActivation(
 		return middleware.NewUnauthorizedError("no pending activation")
 	}
 
+	if pre.UsedAt != nil {
+		return middleware.NewUnauthorizedError("registration already completed")
+	}
+
 	// check resend limit
 	if pre.ResendCount >= 3 &&
 		pre.ResendWindowStart != nil &&

@@ -45,11 +45,14 @@ func (r *StudentPreRegistrationRepository) GetByToken(
 	}
 
 	return &domain.StudentPreRegistration{
-		ID:        fromUUID(row.ID),
-		Email:     row.Email,
-		Token:     fromUUID(row.Token),
-		ExpiresAt: fromTimestamp(row.ExpiresAt),
-		UsedAt:    fromNullableTimestamp(row.UsedAt),
+		ID:                fromUUID(row.ID),
+		Email:             row.Email,
+		Token:             fromUUID(row.Token),
+		ExpiresAt:         fromTimestamp(row.ExpiresAt),
+		UsedAt:            fromNullableTimestamp(row.UsedAt),
+		ResendCount:       int(row.ResendCount),
+		ResendWindowStart: fromNullableTimestamp(row.ResendWindowStart),
+		VerifiedAt:        fromNullableTimestamp(row.VerifiedAt),
 	}, nil
 }
 func (r *StudentPreRegistrationRepository) Update(
@@ -80,12 +83,14 @@ func (r *StudentPreRegistrationRepository) GetByEmail(
 	}
 
 	return &domain.StudentPreRegistration{
-		ID:        fromUUID(row.ID),
-		Email:     row.Email,
-		Token:     fromUUID(row.Token),
-		ExpiresAt: fromTimestamp(row.ExpiresAt),
-		UsedAt:    fromNullableTimestamp(row.UsedAt),
-		VerifiedAt: fromNullableTimestamp(row.VerifiedAt),
+		ID:                fromUUID(row.ID),
+		Email:             row.Email,
+		Token:             fromUUID(row.Token),
+		ExpiresAt:         fromTimestamp(row.ExpiresAt),
+		UsedAt:            fromNullableTimestamp(row.UsedAt),
+		ResendCount:       int(row.ResendCount),
+		ResendWindowStart: fromNullableTimestamp(row.ResendWindowStart),
+		VerifiedAt:        fromNullableTimestamp(row.VerifiedAt),
 	}, nil
 }
 
