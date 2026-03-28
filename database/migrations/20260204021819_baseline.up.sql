@@ -145,7 +145,7 @@ CREATE TABLE public.health_test (
 );
 
 
-ALTER TABLE public.health_test OWNER TO postgres;
+
 
 --
 -- TOC entry 216 (class 1259 OID 16390)
@@ -161,7 +161,7 @@ CREATE SEQUENCE public.health_test_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.health_test_id_seq OWNER TO postgres;
+
 
 --
 -- TOC entry 3712 (class 0 OID 0)
