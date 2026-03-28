@@ -158,6 +158,11 @@ jobs:
           cd tests
           export API_BASE_URL="http://localhost:8000/api/v1"
           export DATABASE_URL="postgresql://dealna:password@localhost:5432/dealna_db?sslmode=disable"
+          export KEYCLOAK_BASE_URL="http://localhost:8080"
+          export KEYCLOAK_REALM="Dealna"
+          export KEYCLOAK_CLIENT_ID="frontend-client"
+          export KEYCLOAK_ADMIN_CLIENT_ID="admin-cli-confidential"
+          export KEYCLOAK_ADMIN_CLIENT_SECRET="admin-secret"
           npx @playwright/test test
 
       # 7. Upload Results (if tests fail)
