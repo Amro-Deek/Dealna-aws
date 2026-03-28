@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { DatabaseHelper } from '../utils/db';
 import { KeycloakHelper } from '../utils/keycloak';
+import * as crypto from 'crypto';
 
 const dbHelper = new DatabaseHelper();
 const kcHelper = new KeycloakHelper();
@@ -9,6 +10,14 @@ test.describe('Isolated Registration API Tests', () => {
   
   // Use parallel execution for these isolated tests
   test.describe.configure({ mode: 'parallel' });
+
+  test.beforeAll(async () => {
+    await dbHelper.ensureUniversityExists('Birzeit University', 'birzeit.edu');
+  });
+
+  test.afterAll(async () => {
+    await dbHelper.close();
+  });
 
   test('POST /request-activation - Failure (Invalid Domain)', async ({ request }) => {
     const response = await request.post('/api/v1/auth/student/request-activation', {
@@ -33,7 +42,7 @@ test.describe('Isolated Registration API Tests', () => {
   test('POST /request-activation - Failure (Already Requested)', async ({ request }) => {
     const email = `req_fail_${Date.now()}@student.birzeit.edu`;
     // Seed database state directly
-    await dbHelper.seedPendingPreRegistration(email, '123e4567-e89b-12d3-a456-426614174000');
+    await dbHelper.seedPendingPreRegistration(email, crypto.randomUUID());
 
     const response = await request.post('/api/v1/auth/student/request-activation', {
       data: { email }
@@ -49,7 +58,7 @@ test.describe('Isolated Registration API Tests', () => {
 
   test('GET /activate - Success', async ({ request }) => {
     const email = `activate_success_${Date.now()}@student.birzeit.edu`;
-    const token = '22222222-2222-2222-2222-222222222222';
+    const token = crypto.randomUUID();
     // Seed pending pre-registration
     await dbHelper.seedPendingPreRegistration(email, token);
 
@@ -105,7 +114,7 @@ test.describe('Isolated Registration API Tests', () => {
   test('POST /complete - Failure (Not Verified Yet)', async ({ request }) => {
     const email = `complete_fail_unverified_${Date.now()}@student.birzeit.edu`;
     // Seed pending (NOT verified)
-    await dbHelper.seedPendingPreRegistration(email, '123e4567-e89b-12d3-a456-426614174000');
+    await dbHelper.seedPendingPreRegistration(email, crypto.randomUUID());
 
     const response = await request.post('/api/v1/auth/student/complete', {
       data: {

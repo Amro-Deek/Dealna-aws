@@ -88,4 +88,25 @@ export class DatabaseHelper {
       console.error(`❌ Failed to clean up DB for ${email}:`, e);
     }
   }
+
+  /**
+   * Ensure that the test university exists in the database.
+   */
+  async ensureUniversityExists(name: string, domain: string): Promise<void> {
+    const res = await this.pool.query('SELECT university_id FROM university WHERE domain = $1', [domain]);
+    if (res.rows.length === 0) {
+      await this.pool.query(
+        'INSERT INTO university (name, domain, status) VALUES ($1, $2, $3)',
+        [name, domain, 'ACTIVE']
+      );
+      console.log(`🏢 Seeded university: ${name} (${domain})`);
+    }
+  }
+
+  /**
+   * Close the database connection pool.
+   */
+  async close(): Promise<void> {
+    await this.pool.end();
+  }
 }

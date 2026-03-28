@@ -6,6 +6,10 @@ test.describe.serial('Student Registration API Flow', () => {
   const dbHelper = new DatabaseHelper();
   const kcHelper = new KeycloakHelper();
   
+  test.beforeAll(async () => {
+    await dbHelper.ensureUniversityExists('Birzeit University', 'birzeit.edu');
+  });
+
   // Use a unique timestamp to generate dynamic test data and avoid collisions
   const timestamp = Date.now();
   const testEmail = `${timestamp}@student.birzeit.edu`;
@@ -72,7 +76,7 @@ test.describe.serial('Student Registration API Flow', () => {
   });
 
   test('GET /activate - Failure (Invalid Token)', async ({ request }) => {
-    const fakeToken = '00000000-0000-0000-0000-000000000000';
+    const fakeToken = crypto.randomUUID();
     const response = await request.get(`/api/v1/auth/student/activate?token=${fakeToken}`);
     
     expect(response.status()).toBe(401);
@@ -168,6 +172,7 @@ test.describe.serial('Student Registration API Flow', () => {
     console.log(`\n--- Starting Teardown ---`);
     await kcHelper.deleteUserByEmail(testEmail);
     await dbHelper.cleanupTestUser(testEmail);
+    await dbHelper.close();
     console.log(`--- Teardown Complete ---\n`);
   });
 });
