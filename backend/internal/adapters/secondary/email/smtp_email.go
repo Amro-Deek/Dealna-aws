@@ -31,6 +31,11 @@ func NewSMTPEmailService(cfg config.SMTPConfig) *SMTPEmailService {
 
 
 func (s *SMTPEmailService) SendActivationLink(email, token string) error {
+	if s.host == "mock" || s.host == "" {
+		fmt.Printf("📧 [MOCK EMAIL] To: %s, Token: %s\n", email, token)
+		return nil
+	}
+
 	auth := smtp.PlainAuth("", s.username, s.password, s.host)
 	addr := fmt.Sprintf("%s:%s", s.host, s.port)
 
