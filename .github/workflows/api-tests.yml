@@ -134,6 +134,13 @@ jobs:
           export KEYCLOAK_ADMIN_CLIENT_ID="admin-cli-confidential"
           export KEYCLOAK_ADMIN_CLIENT_SECRET="admin-secret"
           
+          # SMTP Environment Variables (Dummy for tests)
+          export SMTP_HOST="localhost"
+          export SMTP_PORT="1025"
+          export SMTP_USERNAME="test"
+          export SMTP_PASSWORD="test"
+          export SMTP_FROM="noreply@dealna.com"
+          
           go run cmd/server/main.go &
           
           # Wait for backend
