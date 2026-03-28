@@ -746,13 +746,7 @@ ALTER TABLE ONLY public.report
     ADD CONSTRAINT report_pkey PRIMARY KEY (report_id);
 
 
---
--- TOC entry 3515 (class 2606 OID 16869)
--- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
---
 
-ALTER TABLE ONLY public.schema_migrations
-    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
 
 
 --
