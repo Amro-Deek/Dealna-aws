@@ -110,7 +110,7 @@ jobs:
           VIEW_USERS_ROLE=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients/$REALM_MGMT_ID/roles -r dealna | jq -r '.[] | select(.name=="view-users") | .id, .name')
           
           # Add roles to service account
-          docker exec keycloak /opt/keycloak/bin/kcadm.sh add-roles --uId $SERVICE_ACCOUNT_USER -r dealna --cclientid realm-management --rolename manage-users --rolename view-users
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh add-roles --uusername service-account-admin-cli-confidential -r dealna --cclientid realm-management --rolename manage-users --rolename view-users
           
           # Create Frontend Client (Public)
           docker exec keycloak /opt/keycloak/bin/kcadm.sh create clients -r dealna \
