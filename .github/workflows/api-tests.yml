@@ -1,0 +1,131 @@
+name: API Tests (Playwright)
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16.2
+        env:
+          POSTGRES_USER: dealna
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: dealna_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 1. Setup Backend Environment (Go)
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install DB Migration Tool
+        run: |
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      # 2. Run Database Migrations
+      - name: Run Migrations
+        run: |
+          migrate -path database/migrations -database "postgresql://dealna:password@localhost:5432/dealna_db?sslmode=disable" up
+
+      # 3. Start Keycloak (in background)
+      - name: Start Keycloak via Docker Compose
+        run: |
+          cd infra/keycloak
+          # Pass mock credentials for testing environment
+          export POSTGRES_DB=dealna_db
+          export POSTGRES_USER=dealna
+          export POSTGRES_PASSWORD=password
+          export KC_BOOTSTRAP_ADMIN_USERNAME=admin
+          export KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+          export KC_DB_URL=jdbc:postgresql://postgres:5432/dealna_db
+          export KC_DB_USERNAME=dealna
+          export KC_DB_PASSWORD=password
+          docker-compose up -d keycloak
+          
+          # Wait for Keycloak to become healthy
+          echo "Waiting for Keycloak to start..."
+          timeout 120 bash -c 'until curl -s http://localhost:8080/health/ready; do sleep 5; done' || (docker logs keycloak && exit 1)
+
+      # 4. Start Go Backend (in background)
+      - name: Start Go Backend
+        run: |
+          cd backend
+          # Environment variables required by config.go
+          export PORT=8000
+          export JWT_SECRET="super-secret-test-key"
+          export DB_HOST=localhost
+          export DB_PORT=5432
+          export DB_USER=dealna
+          export DB_PASSWORD=password
+          export DB_NAME=dealna_db
+          export DB_SSLMODE=disable
+          
+          # Keycloak Environment Variables (Mocked for tests)
+          export KEYCLOAK_BASE_URL="http://localhost:8080"
+          export KEYCLOAK_REALM="dealna"
+          export KEYCLOAK_CLIENT_ID="frontend-client"
+          export KEYCLOAK_ADMIN_CLIENT_ID="admin-cli"
+          export KEYCLOAK_ADMIN_CLIENT_SECRET="admin"
+          
+          go run cmd/server/main.go &
+          
+          # Wait for backend
+          echo "Waiting for Go backend..."
+          timeout 30 bash -c 'until curl -s http://localhost:8000/api/health; do sleep 2; done'
+
+      # 5. Setup Playwright and Node
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Playwright Dependencies
+        run: |
+          cd tests
+          npm install
+          npx playwright install --with-deps
+
+      # 6. Run the Tests!
+      - name: Run Playwright API Tests
+        run: |
+          cd tests
+          export API_BASE_URL="http://localhost:8000/api/v1"
+          export DATABASE_URL="postgresql://dealna:password@localhost:5432/dealna_db?sslmode=disable"
+          npx playwright test
+
+      # 7. Upload Results (if tests fail)
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: tests/playwright-report/
+          retention-days: 30

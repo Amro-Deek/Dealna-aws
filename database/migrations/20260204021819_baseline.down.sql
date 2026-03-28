@@ -1,1 +1,2 @@
--- No rollback for baseline
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;

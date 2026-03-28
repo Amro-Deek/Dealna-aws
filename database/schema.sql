@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.11 (Ubuntu 16.11-0ubuntu0.24.04.1)
+-- Dumped from database version 16.13 (Ubuntu 16.13-0ubuntu0.24.04.1)
 -- Dumped by pg_dump version 17.5
 
--- Started on 2026-02-04 03:31:11
+-- Started on 2026-03-26 14:52:04
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -28,9 +28,9 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 
 
 --
--- TOC entry 3714 (class 0 OID 0)
+-- TOC entry 3710 (class 0 OID 0)
 -- Dependencies: 2
--- Name: EXTENSION pgcrypto; Type: COMMENT; Schema: -; Owner: -
+-- Name: EXTENSION pgcrypto; Type: COMMENT; Schema: -; Owner: 
 --
 
 COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
@@ -42,28 +42,28 @@ SET default_table_access_method = heap;
 
 --
 -- TOC entry 218 (class 1259 OID 16450)
--- Name: User; Type: TABLE; Schema: public; Owner: -
+-- Name: User; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public."User" (
     user_id uuid DEFAULT gen_random_uuid() NOT NULL,
     email character varying(255) NOT NULL,
-    password_hash character varying(255),
     role character varying(20) NOT NULL,
-    account_status character varying(20) DEFAULT 'PENDING'::character varying NOT NULL,
-    email_verified boolean DEFAULT false NOT NULL,
+    account_status character varying(20) DEFAULT 'ACTIVE'::character varying NOT NULL,
+    email_verified boolean DEFAULT true NOT NULL,
     posting_limit integer DEFAULT 10 NOT NULL,
-    failed_login_attempts integer DEFAULT 0 NOT NULL,
-    last_login_at timestamp without time zone,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     deleted_at timestamp without time zone,
-    university_id uuid NOT NULL
+    university_id uuid NOT NULL,
+    keycloak_sub uuid
 );
 
 
+ALTER TABLE public."User" OWNER TO dealna_user;
+
 --
 -- TOC entry 219 (class 1259 OID 16465)
--- Name: admin; Type: TABLE; Schema: public; Owner: -
+-- Name: admin; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.admin (
@@ -72,9 +72,11 @@ CREATE TABLE public.admin (
 );
 
 
+ALTER TABLE public.admin OWNER TO dealna_user;
+
 --
 -- TOC entry 220 (class 1259 OID 16470)
--- Name: attachment; Type: TABLE; Schema: public; Owner: -
+-- Name: attachment; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.attachment (
@@ -85,9 +87,11 @@ CREATE TABLE public.attachment (
 );
 
 
+ALTER TABLE public.attachment OWNER TO dealna_user;
+
 --
 -- TOC entry 221 (class 1259 OID 16479)
--- Name: category; Type: TABLE; Schema: public; Owner: -
+-- Name: category; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.category (
@@ -98,9 +102,11 @@ CREATE TABLE public.category (
 );
 
 
+ALTER TABLE public.category OWNER TO dealna_user;
+
 --
 -- TOC entry 222 (class 1259 OID 16490)
--- Name: chat; Type: TABLE; Schema: public; Owner: -
+-- Name: chat; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.chat (
@@ -112,9 +118,11 @@ CREATE TABLE public.chat (
 );
 
 
+ALTER TABLE public.chat OWNER TO dealna_user;
+
 --
 -- TOC entry 223 (class 1259 OID 16499)
--- Name: follow; Type: TABLE; Schema: public; Owner: -
+-- Name: follow; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.follow (
@@ -124,9 +132,11 @@ CREATE TABLE public.follow (
 );
 
 
+ALTER TABLE public.follow OWNER TO dealna_user;
+
 --
 -- TOC entry 217 (class 1259 OID 16391)
--- Name: health_test; Type: TABLE; Schema: public; Owner: -
+-- Name: health_test; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.health_test (
@@ -136,9 +146,11 @@ CREATE TABLE public.health_test (
 );
 
 
+ALTER TABLE public.health_test OWNER TO postgres;
+
 --
 -- TOC entry 216 (class 1259 OID 16390)
--- Name: health_test_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: health_test_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.health_test_id_seq
@@ -150,10 +162,12 @@ CREATE SEQUENCE public.health_test_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.health_test_id_seq OWNER TO postgres;
+
 --
--- TOC entry 3715 (class 0 OID 0)
+-- TOC entry 3712 (class 0 OID 0)
 -- Dependencies: 216
--- Name: health_test_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: health_test_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.health_test_id_seq OWNED BY public.health_test.id;
@@ -161,7 +175,7 @@ ALTER SEQUENCE public.health_test_id_seq OWNED BY public.health_test.id;
 
 --
 -- TOC entry 224 (class 1259 OID 16505)
--- Name: item; Type: TABLE; Schema: public; Owner: -
+-- Name: item; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.item (
@@ -179,9 +193,11 @@ CREATE TABLE public.item (
 );
 
 
+ALTER TABLE public.item OWNER TO dealna_user;
+
 --
 -- TOC entry 225 (class 1259 OID 16516)
--- Name: message; Type: TABLE; Schema: public; Owner: -
+-- Name: message; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.message (
@@ -196,9 +212,11 @@ CREATE TABLE public.message (
 );
 
 
+ALTER TABLE public.message OWNER TO dealna_user;
+
 --
 -- TOC entry 226 (class 1259 OID 16525)
--- Name: notification; Type: TABLE; Schema: public; Owner: -
+-- Name: notification; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.notification (
@@ -211,9 +229,11 @@ CREATE TABLE public.notification (
 );
 
 
+ALTER TABLE public.notification OWNER TO dealna_user;
+
 --
 -- TOC entry 227 (class 1259 OID 16535)
--- Name: profile; Type: TABLE; Schema: public; Owner: -
+-- Name: profile; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.profile (
@@ -233,9 +253,11 @@ CREATE TABLE public.profile (
 );
 
 
+ALTER TABLE public.profile OWNER TO dealna_user;
+
 --
 -- TOC entry 228 (class 1259 OID 16553)
--- Name: provider; Type: TABLE; Schema: public; Owner: -
+-- Name: provider; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.provider (
@@ -248,9 +270,11 @@ CREATE TABLE public.provider (
 );
 
 
+ALTER TABLE public.provider OWNER TO dealna_user;
+
 --
 -- TOC entry 229 (class 1259 OID 16560)
--- Name: providerapplicant; Type: TABLE; Schema: public; Owner: -
+-- Name: providerapplicant; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.providerapplicant (
@@ -263,9 +287,11 @@ CREATE TABLE public.providerapplicant (
 );
 
 
+ALTER TABLE public.providerapplicant OWNER TO dealna_user;
+
 --
 -- TOC entry 230 (class 1259 OID 16573)
--- Name: providerapplication; Type: TABLE; Schema: public; Owner: -
+-- Name: providerapplication; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.providerapplication (
@@ -284,9 +310,11 @@ CREATE TABLE public.providerapplication (
 );
 
 
+ALTER TABLE public.providerapplication OWNER TO dealna_user;
+
 --
 -- TOC entry 231 (class 1259 OID 16583)
--- Name: providerapplicationdocument; Type: TABLE; Schema: public; Owner: -
+-- Name: providerapplicationdocument; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.providerapplicationdocument (
@@ -297,9 +325,11 @@ CREATE TABLE public.providerapplicationdocument (
 );
 
 
+ALTER TABLE public.providerapplicationdocument OWNER TO dealna_user;
+
 --
 -- TOC entry 232 (class 1259 OID 16592)
--- Name: providerreview; Type: TABLE; Schema: public; Owner: -
+-- Name: providerreview; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.providerreview (
@@ -312,9 +342,11 @@ CREATE TABLE public.providerreview (
 );
 
 
+ALTER TABLE public.providerreview OWNER TO dealna_user;
+
 --
 -- TOC entry 233 (class 1259 OID 16601)
--- Name: queue; Type: TABLE; Schema: public; Owner: -
+-- Name: queue; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.queue (
@@ -324,9 +356,11 @@ CREATE TABLE public.queue (
 );
 
 
+ALTER TABLE public.queue OWNER TO dealna_user;
+
 --
 -- TOC entry 234 (class 1259 OID 16610)
--- Name: queueentry; Type: TABLE; Schema: public; Owner: -
+-- Name: queueentry; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.queueentry (
@@ -340,9 +374,11 @@ CREATE TABLE public.queueentry (
 );
 
 
+ALTER TABLE public.queueentry OWNER TO dealna_user;
+
 --
 -- TOC entry 235 (class 1259 OID 16619)
--- Name: rating; Type: TABLE; Schema: public; Owner: -
+-- Name: rating; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.rating (
@@ -357,9 +393,11 @@ CREATE TABLE public.rating (
 );
 
 
+ALTER TABLE public.rating OWNER TO dealna_user;
+
 --
 -- TOC entry 236 (class 1259 OID 16631)
--- Name: report; Type: TABLE; Schema: public; Owner: -
+-- Name: report; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.report (
@@ -375,23 +413,47 @@ CREATE TABLE public.report (
 );
 
 
+ALTER TABLE public.report OWNER TO dealna_user;
+
+
 --
 -- TOC entry 237 (class 1259 OID 16641)
--- Name: student; Type: TABLE; Schema: public; Owner: -
+-- Name: student; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.student (
     user_id uuid NOT NULL,
     student_id character varying(50) NOT NULL,
     major character varying(100),
-    academic_year integer,
-    verification_status boolean DEFAULT false NOT NULL
+    academic_year integer
 );
 
 
+ALTER TABLE public.student OWNER TO dealna_user;
+
+--
+-- TOC entry 241 (class 1259 OID 16974)
+-- Name: student_pre_registration; Type: TABLE; Schema: public; Owner: dealna_user
+--
+
+CREATE TABLE public.student_pre_registration (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    email character varying(255) NOT NULL,
+    token uuid NOT NULL,
+    expires_at timestamp without time zone NOT NULL,
+    used_at timestamp without time zone,
+    resend_count integer DEFAULT 0 NOT NULL,
+    resend_window_start timestamp without time zone,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    verified_at timestamp without time zone
+);
+
+
+ALTER TABLE public.student_pre_registration OWNER TO dealna_user;
+
 --
 -- TOC entry 238 (class 1259 OID 16647)
--- Name: transaction; Type: TABLE; Schema: public; Owner: -
+-- Name: transaction; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.transaction (
@@ -407,9 +469,11 @@ CREATE TABLE public.transaction (
 );
 
 
+ALTER TABLE public.transaction OWNER TO dealna_user;
+
 --
 -- TOC entry 239 (class 1259 OID 16656)
--- Name: university; Type: TABLE; Schema: public; Owner: -
+-- Name: university; Type: TABLE; Schema: public; Owner: dealna_user
 --
 
 CREATE TABLE public.university (
@@ -421,17 +485,19 @@ CREATE TABLE public.university (
 );
 
 
+ALTER TABLE public.university OWNER TO dealna_user;
+
 --
--- TOC entry 3376 (class 2604 OID 16394)
--- Name: health_test id; Type: DEFAULT; Schema: public; Owner: -
+-- TOC entry 3384 (class 2604 OID 16394)
+-- Name: health_test id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.health_test ALTER COLUMN id SET DEFAULT nextval('public.health_test_id_seq'::regclass);
 
 
 --
--- TOC entry 3439 (class 2606 OID 16464)
--- Name: User User_email_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3448 (class 2606 OID 16464)
+-- Name: User User_email_key; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public."User"
@@ -439,8 +505,17 @@ ALTER TABLE ONLY public."User"
 
 
 --
--- TOC entry 3441 (class 2606 OID 16462)
--- Name: User User_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3450 (class 2606 OID 17001)
+-- Name: User User_keycloak_sub_key; Type: CONSTRAINT; Schema: public; Owner: dealna_user
+--
+
+ALTER TABLE ONLY public."User"
+    ADD CONSTRAINT "User_keycloak_sub_key" UNIQUE (keycloak_sub);
+
+
+--
+-- TOC entry 3452 (class 2606 OID 16462)
+-- Name: User User_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public."User"
@@ -448,8 +523,8 @@ ALTER TABLE ONLY public."User"
 
 
 --
--- TOC entry 3443 (class 2606 OID 16469)
--- Name: admin admin_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3454 (class 2606 OID 16469)
+-- Name: admin admin_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.admin
@@ -457,8 +532,8 @@ ALTER TABLE ONLY public.admin
 
 
 --
--- TOC entry 3445 (class 2606 OID 16478)
--- Name: attachment attachment_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3456 (class 2606 OID 16478)
+-- Name: attachment attachment_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.attachment
@@ -466,8 +541,8 @@ ALTER TABLE ONLY public.attachment
 
 
 --
--- TOC entry 3447 (class 2606 OID 16489)
--- Name: category category_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3458 (class 2606 OID 16489)
+-- Name: category category_name_key; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.category
@@ -475,8 +550,8 @@ ALTER TABLE ONLY public.category
 
 
 --
--- TOC entry 3449 (class 2606 OID 16487)
--- Name: category category_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3460 (class 2606 OID 16487)
+-- Name: category category_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.category
@@ -484,8 +559,8 @@ ALTER TABLE ONLY public.category
 
 
 --
--- TOC entry 3451 (class 2606 OID 16496)
--- Name: chat chat_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3462 (class 2606 OID 16496)
+-- Name: chat chat_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.chat
@@ -493,8 +568,8 @@ ALTER TABLE ONLY public.chat
 
 
 --
--- TOC entry 3455 (class 2606 OID 16504)
--- Name: follow follow_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3466 (class 2606 OID 16504)
+-- Name: follow follow_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.follow
@@ -502,8 +577,8 @@ ALTER TABLE ONLY public.follow
 
 
 --
--- TOC entry 3437 (class 2606 OID 16399)
--- Name: health_test health_test_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3446 (class 2606 OID 16399)
+-- Name: health_test health_test_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.health_test
@@ -511,8 +586,8 @@ ALTER TABLE ONLY public.health_test
 
 
 --
--- TOC entry 3457 (class 2606 OID 16515)
--- Name: item item_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3468 (class 2606 OID 16515)
+-- Name: item item_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.item
@@ -520,8 +595,8 @@ ALTER TABLE ONLY public.item
 
 
 --
--- TOC entry 3459 (class 2606 OID 16524)
--- Name: message message_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3470 (class 2606 OID 16524)
+-- Name: message message_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.message
@@ -529,8 +604,8 @@ ALTER TABLE ONLY public.message
 
 
 --
--- TOC entry 3461 (class 2606 OID 16534)
--- Name: notification notification_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3472 (class 2606 OID 16534)
+-- Name: notification notification_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.notification
@@ -538,8 +613,8 @@ ALTER TABLE ONLY public.notification
 
 
 --
--- TOC entry 3463 (class 2606 OID 16550)
--- Name: profile profile_display_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3474 (class 2606 OID 16550)
+-- Name: profile profile_display_name_key; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.profile
@@ -547,8 +622,8 @@ ALTER TABLE ONLY public.profile
 
 
 --
--- TOC entry 3465 (class 2606 OID 16548)
--- Name: profile profile_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3476 (class 2606 OID 16548)
+-- Name: profile profile_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.profile
@@ -556,8 +631,8 @@ ALTER TABLE ONLY public.profile
 
 
 --
--- TOC entry 3467 (class 2606 OID 16552)
--- Name: profile profile_user_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3478 (class 2606 OID 16552)
+-- Name: profile profile_user_id_key; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.profile
@@ -565,8 +640,8 @@ ALTER TABLE ONLY public.profile
 
 
 --
--- TOC entry 3469 (class 2606 OID 16559)
--- Name: provider provider_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3480 (class 2606 OID 16559)
+-- Name: provider provider_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.provider
@@ -574,8 +649,8 @@ ALTER TABLE ONLY public.provider
 
 
 --
--- TOC entry 3471 (class 2606 OID 16572)
--- Name: providerapplicant providerapplicant_email_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3482 (class 2606 OID 16572)
+-- Name: providerapplicant providerapplicant_email_key; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerapplicant
@@ -583,8 +658,8 @@ ALTER TABLE ONLY public.providerapplicant
 
 
 --
--- TOC entry 3473 (class 2606 OID 16570)
--- Name: providerapplicant providerapplicant_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3484 (class 2606 OID 16570)
+-- Name: providerapplicant providerapplicant_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerapplicant
@@ -592,8 +667,8 @@ ALTER TABLE ONLY public.providerapplicant
 
 
 --
--- TOC entry 3475 (class 2606 OID 16582)
--- Name: providerapplication providerapplication_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3486 (class 2606 OID 16582)
+-- Name: providerapplication providerapplication_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerapplication
@@ -601,8 +676,8 @@ ALTER TABLE ONLY public.providerapplication
 
 
 --
--- TOC entry 3477 (class 2606 OID 16591)
--- Name: providerapplicationdocument providerapplicationdocument_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3488 (class 2606 OID 16591)
+-- Name: providerapplicationdocument providerapplicationdocument_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerapplicationdocument
@@ -610,8 +685,8 @@ ALTER TABLE ONLY public.providerapplicationdocument
 
 
 --
--- TOC entry 3479 (class 2606 OID 16600)
--- Name: providerreview providerreview_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3490 (class 2606 OID 16600)
+-- Name: providerreview providerreview_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerreview
@@ -619,8 +694,8 @@ ALTER TABLE ONLY public.providerreview
 
 
 --
--- TOC entry 3481 (class 2606 OID 16609)
--- Name: queue queue_item_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3492 (class 2606 OID 16609)
+-- Name: queue queue_item_id_key; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.queue
@@ -628,8 +703,8 @@ ALTER TABLE ONLY public.queue
 
 
 --
--- TOC entry 3483 (class 2606 OID 16607)
--- Name: queue queue_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3494 (class 2606 OID 16607)
+-- Name: queue queue_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.queue
@@ -637,8 +712,8 @@ ALTER TABLE ONLY public.queue
 
 
 --
--- TOC entry 3485 (class 2606 OID 16616)
--- Name: queueentry queueentry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3496 (class 2606 OID 16616)
+-- Name: queueentry queueentry_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.queueentry
@@ -646,8 +721,8 @@ ALTER TABLE ONLY public.queueentry
 
 
 --
--- TOC entry 3489 (class 2606 OID 16628)
--- Name: rating rating_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3500 (class 2606 OID 16628)
+-- Name: rating rating_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.rating
@@ -655,8 +730,8 @@ ALTER TABLE ONLY public.rating
 
 
 --
--- TOC entry 3491 (class 2606 OID 16630)
--- Name: rating rating_transaction_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3502 (class 2606 OID 16630)
+-- Name: rating rating_transaction_id_key; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.rating
@@ -664,8 +739,8 @@ ALTER TABLE ONLY public.rating
 
 
 --
--- TOC entry 3493 (class 2606 OID 16640)
--- Name: report report_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3504 (class 2606 OID 16640)
+-- Name: report report_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.report
@@ -673,8 +748,17 @@ ALTER TABLE ONLY public.report
 
 
 --
--- TOC entry 3495 (class 2606 OID 16646)
--- Name: student student_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3515 (class 2606 OID 16869)
+-- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
+--
+
+ALTER TABLE ONLY public.schema_migrations
+    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- TOC entry 3506 (class 2606 OID 16646)
+-- Name: student student_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.student
@@ -682,8 +766,35 @@ ALTER TABLE ONLY public.student
 
 
 --
--- TOC entry 3498 (class 2606 OID 16655)
--- Name: transaction transaction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3517 (class 2606 OID 16983)
+-- Name: student_pre_registration student_pre_registration_email_key; Type: CONSTRAINT; Schema: public; Owner: dealna_user
+--
+
+ALTER TABLE ONLY public.student_pre_registration
+    ADD CONSTRAINT student_pre_registration_email_key UNIQUE (email);
+
+
+--
+-- TOC entry 3519 (class 2606 OID 16981)
+-- Name: student_pre_registration student_pre_registration_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
+--
+
+ALTER TABLE ONLY public.student_pre_registration
+    ADD CONSTRAINT student_pre_registration_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3521 (class 2606 OID 16985)
+-- Name: student_pre_registration student_pre_registration_token_key; Type: CONSTRAINT; Schema: public; Owner: dealna_user
+--
+
+ALTER TABLE ONLY public.student_pre_registration
+    ADD CONSTRAINT student_pre_registration_token_key UNIQUE (token);
+
+
+--
+-- TOC entry 3509 (class 2606 OID 16655)
+-- Name: transaction transaction_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.transaction
@@ -691,8 +802,8 @@ ALTER TABLE ONLY public.transaction
 
 
 --
--- TOC entry 3500 (class 2606 OID 16667)
--- Name: university university_domain_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3511 (class 2606 OID 16667)
+-- Name: university university_domain_key; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.university
@@ -700,8 +811,8 @@ ALTER TABLE ONLY public.university
 
 
 --
--- TOC entry 3502 (class 2606 OID 16665)
--- Name: university university_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3513 (class 2606 OID 16665)
+-- Name: university university_pkey; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.university
@@ -709,8 +820,8 @@ ALTER TABLE ONLY public.university
 
 
 --
--- TOC entry 3453 (class 2606 OID 16498)
--- Name: chat uq_chat_users; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3464 (class 2606 OID 16498)
+-- Name: chat uq_chat_users; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.chat
@@ -718,8 +829,8 @@ ALTER TABLE ONLY public.chat
 
 
 --
--- TOC entry 3487 (class 2606 OID 16618)
--- Name: queueentry uq_queueentry; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3498 (class 2606 OID 16618)
+-- Name: queueentry uq_queueentry; Type: CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.queueentry
@@ -727,16 +838,16 @@ ALTER TABLE ONLY public.queueentry
 
 
 --
--- TOC entry 3496 (class 1259 OID 16828)
--- Name: idx_transaction_item_active; Type: INDEX; Schema: public; Owner: -
+-- TOC entry 3507 (class 1259 OID 16828)
+-- Name: idx_transaction_item_active; Type: INDEX; Schema: public; Owner: dealna_user
 --
 
 CREATE INDEX idx_transaction_item_active ON public.transaction USING btree (item_id);
 
 
 --
--- TOC entry 3504 (class 2606 OID 16673)
--- Name: admin fk_admin_user; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3523 (class 2606 OID 16673)
+-- Name: admin fk_admin_user; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.admin
@@ -744,8 +855,8 @@ ALTER TABLE ONLY public.admin
 
 
 --
--- TOC entry 3505 (class 2606 OID 16678)
--- Name: attachment fk_attachment_item; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3524 (class 2606 OID 16678)
+-- Name: attachment fk_attachment_item; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.attachment
@@ -753,8 +864,8 @@ ALTER TABLE ONLY public.attachment
 
 
 --
--- TOC entry 3506 (class 2606 OID 16683)
--- Name: chat fk_chat_user1; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3525 (class 2606 OID 16683)
+-- Name: chat fk_chat_user1; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.chat
@@ -762,8 +873,8 @@ ALTER TABLE ONLY public.chat
 
 
 --
--- TOC entry 3507 (class 2606 OID 16688)
--- Name: chat fk_chat_user2; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3526 (class 2606 OID 16688)
+-- Name: chat fk_chat_user2; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.chat
@@ -771,8 +882,8 @@ ALTER TABLE ONLY public.chat
 
 
 --
--- TOC entry 3508 (class 2606 OID 16693)
--- Name: follow fk_follow_follower; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3527 (class 2606 OID 16693)
+-- Name: follow fk_follow_follower; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.follow
@@ -780,8 +891,8 @@ ALTER TABLE ONLY public.follow
 
 
 --
--- TOC entry 3509 (class 2606 OID 16698)
--- Name: follow fk_follow_following; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3528 (class 2606 OID 16698)
+-- Name: follow fk_follow_following; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.follow
@@ -789,8 +900,8 @@ ALTER TABLE ONLY public.follow
 
 
 --
--- TOC entry 3510 (class 2606 OID 16703)
--- Name: item fk_item_category; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3529 (class 2606 OID 16703)
+-- Name: item fk_item_category; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.item
@@ -798,8 +909,8 @@ ALTER TABLE ONLY public.item
 
 
 --
--- TOC entry 3511 (class 2606 OID 16708)
--- Name: item fk_item_owner; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3530 (class 2606 OID 16708)
+-- Name: item fk_item_owner; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.item
@@ -807,8 +918,8 @@ ALTER TABLE ONLY public.item
 
 
 --
--- TOC entry 3512 (class 2606 OID 16713)
--- Name: message fk_message_chat; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3531 (class 2606 OID 16713)
+-- Name: message fk_message_chat; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.message
@@ -816,8 +927,8 @@ ALTER TABLE ONLY public.message
 
 
 --
--- TOC entry 3513 (class 2606 OID 16718)
--- Name: message fk_message_sender; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3532 (class 2606 OID 16718)
+-- Name: message fk_message_sender; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.message
@@ -825,8 +936,8 @@ ALTER TABLE ONLY public.message
 
 
 --
--- TOC entry 3514 (class 2606 OID 16723)
--- Name: notification fk_notification_user; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3533 (class 2606 OID 16723)
+-- Name: notification fk_notification_user; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.notification
@@ -834,8 +945,8 @@ ALTER TABLE ONLY public.notification
 
 
 --
--- TOC entry 3515 (class 2606 OID 16728)
--- Name: profile fk_profile_user; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3534 (class 2606 OID 16728)
+-- Name: profile fk_profile_user; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.profile
@@ -843,8 +954,8 @@ ALTER TABLE ONLY public.profile
 
 
 --
--- TOC entry 3517 (class 2606 OID 16738)
--- Name: providerapplication fk_provapp_admin; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3536 (class 2606 OID 16738)
+-- Name: providerapplication fk_provapp_admin; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerapplication
@@ -852,8 +963,8 @@ ALTER TABLE ONLY public.providerapplication
 
 
 --
--- TOC entry 3518 (class 2606 OID 16743)
--- Name: providerapplication fk_provapp_applicant; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3537 (class 2606 OID 16743)
+-- Name: providerapplication fk_provapp_applicant; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerapplication
@@ -861,8 +972,8 @@ ALTER TABLE ONLY public.providerapplication
 
 
 --
--- TOC entry 3519 (class 2606 OID 16748)
--- Name: providerapplication fk_provapp_university; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3538 (class 2606 OID 16748)
+-- Name: providerapplication fk_provapp_university; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerapplication
@@ -870,8 +981,8 @@ ALTER TABLE ONLY public.providerapplication
 
 
 --
--- TOC entry 3523 (class 2606 OID 16753)
--- Name: providerapplicationdocument fk_provappdoc_application; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3542 (class 2606 OID 16753)
+-- Name: providerapplicationdocument fk_provappdoc_application; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerapplicationdocument
@@ -879,8 +990,8 @@ ALTER TABLE ONLY public.providerapplicationdocument
 
 
 --
--- TOC entry 3516 (class 2606 OID 16733)
--- Name: provider fk_provider_user; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3535 (class 2606 OID 16733)
+-- Name: provider fk_provider_user; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.provider
@@ -888,8 +999,8 @@ ALTER TABLE ONLY public.provider
 
 
 --
--- TOC entry 3520 (class 2606 OID 16845)
--- Name: providerapplication fk_providerapplication_admin; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3539 (class 2606 OID 16845)
+-- Name: providerapplication fk_providerapplication_admin; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerapplication
@@ -897,8 +1008,8 @@ ALTER TABLE ONLY public.providerapplication
 
 
 --
--- TOC entry 3521 (class 2606 OID 16835)
--- Name: providerapplication fk_providerapplication_applicant; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3540 (class 2606 OID 16835)
+-- Name: providerapplication fk_providerapplication_applicant; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerapplication
@@ -906,8 +1017,8 @@ ALTER TABLE ONLY public.providerapplication
 
 
 --
--- TOC entry 3522 (class 2606 OID 16840)
--- Name: providerapplication fk_providerapplication_university; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3541 (class 2606 OID 16840)
+-- Name: providerapplication fk_providerapplication_university; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerapplication
@@ -915,8 +1026,8 @@ ALTER TABLE ONLY public.providerapplication
 
 
 --
--- TOC entry 3524 (class 2606 OID 16850)
--- Name: providerapplicationdocument fk_providerapplicationdocument_application; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3543 (class 2606 OID 16850)
+-- Name: providerapplicationdocument fk_providerapplicationdocument_application; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerapplicationdocument
@@ -924,8 +1035,8 @@ ALTER TABLE ONLY public.providerapplicationdocument
 
 
 --
--- TOC entry 3525 (class 2606 OID 16855)
--- Name: providerreview fk_providerreview_admin; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3544 (class 2606 OID 16855)
+-- Name: providerreview fk_providerreview_admin; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerreview
@@ -933,8 +1044,8 @@ ALTER TABLE ONLY public.providerreview
 
 
 --
--- TOC entry 3526 (class 2606 OID 16860)
--- Name: providerreview fk_providerreview_application; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3545 (class 2606 OID 16860)
+-- Name: providerreview fk_providerreview_application; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerreview
@@ -942,8 +1053,8 @@ ALTER TABLE ONLY public.providerreview
 
 
 --
--- TOC entry 3527 (class 2606 OID 16758)
--- Name: providerreview fk_provreview_admin; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3546 (class 2606 OID 16758)
+-- Name: providerreview fk_provreview_admin; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerreview
@@ -951,8 +1062,8 @@ ALTER TABLE ONLY public.providerreview
 
 
 --
--- TOC entry 3528 (class 2606 OID 16763)
--- Name: providerreview fk_provreview_application; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3547 (class 2606 OID 16763)
+-- Name: providerreview fk_provreview_application; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.providerreview
@@ -960,8 +1071,8 @@ ALTER TABLE ONLY public.providerreview
 
 
 --
--- TOC entry 3529 (class 2606 OID 16768)
--- Name: queue fk_queue_item; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3548 (class 2606 OID 16768)
+-- Name: queue fk_queue_item; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.queue
@@ -969,8 +1080,8 @@ ALTER TABLE ONLY public.queue
 
 
 --
--- TOC entry 3530 (class 2606 OID 16773)
--- Name: queueentry fk_queueentry_buyer; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3549 (class 2606 OID 16773)
+-- Name: queueentry fk_queueentry_buyer; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.queueentry
@@ -978,8 +1089,8 @@ ALTER TABLE ONLY public.queueentry
 
 
 --
--- TOC entry 3531 (class 2606 OID 16778)
--- Name: queueentry fk_queueentry_queue; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3550 (class 2606 OID 16778)
+-- Name: queueentry fk_queueentry_queue; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.queueentry
@@ -987,8 +1098,8 @@ ALTER TABLE ONLY public.queueentry
 
 
 --
--- TOC entry 3532 (class 2606 OID 16783)
--- Name: rating fk_rating_rated_user; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3551 (class 2606 OID 16783)
+-- Name: rating fk_rating_rated_user; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.rating
@@ -996,8 +1107,8 @@ ALTER TABLE ONLY public.rating
 
 
 --
--- TOC entry 3533 (class 2606 OID 16788)
--- Name: rating fk_rating_rater; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3552 (class 2606 OID 16788)
+-- Name: rating fk_rating_rater; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.rating
@@ -1005,8 +1116,8 @@ ALTER TABLE ONLY public.rating
 
 
 --
--- TOC entry 3534 (class 2606 OID 16793)
--- Name: rating fk_rating_transaction; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3553 (class 2606 OID 16793)
+-- Name: rating fk_rating_transaction; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.rating
@@ -1014,8 +1125,8 @@ ALTER TABLE ONLY public.rating
 
 
 --
--- TOC entry 3535 (class 2606 OID 16798)
--- Name: report fk_report_reported_item; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3554 (class 2606 OID 16798)
+-- Name: report fk_report_reported_item; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.report
@@ -1023,8 +1134,8 @@ ALTER TABLE ONLY public.report
 
 
 --
--- TOC entry 3536 (class 2606 OID 16803)
--- Name: report fk_report_reported_user; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3555 (class 2606 OID 16803)
+-- Name: report fk_report_reported_user; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.report
@@ -1032,8 +1143,8 @@ ALTER TABLE ONLY public.report
 
 
 --
--- TOC entry 3537 (class 2606 OID 16808)
--- Name: report fk_report_reporter; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3556 (class 2606 OID 16808)
+-- Name: report fk_report_reporter; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.report
@@ -1041,8 +1152,8 @@ ALTER TABLE ONLY public.report
 
 
 --
--- TOC entry 3538 (class 2606 OID 16813)
--- Name: student fk_student_user; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3557 (class 2606 OID 16813)
+-- Name: student fk_student_user; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.student
@@ -1050,8 +1161,8 @@ ALTER TABLE ONLY public.student
 
 
 --
--- TOC entry 3539 (class 2606 OID 16818)
--- Name: transaction fk_transaction_buyer; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3558 (class 2606 OID 16818)
+-- Name: transaction fk_transaction_buyer; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.transaction
@@ -1059,8 +1170,8 @@ ALTER TABLE ONLY public.transaction
 
 
 --
--- TOC entry 3540 (class 2606 OID 16823)
--- Name: transaction fk_transaction_item; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3559 (class 2606 OID 16823)
+-- Name: transaction fk_transaction_item; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.transaction
@@ -1068,8 +1179,8 @@ ALTER TABLE ONLY public.transaction
 
 
 --
--- TOC entry 3541 (class 2606 OID 16829)
--- Name: transaction fk_transaction_seller; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3560 (class 2606 OID 16829)
+-- Name: transaction fk_transaction_seller; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public.transaction
@@ -1077,15 +1188,58 @@ ALTER TABLE ONLY public.transaction
 
 
 --
--- TOC entry 3503 (class 2606 OID 16668)
--- Name: User fk_user_university; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3522 (class 2606 OID 16668)
+-- Name: User fk_user_university; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
 ALTER TABLE ONLY public."User"
     ADD CONSTRAINT fk_user_university FOREIGN KEY (university_id) REFERENCES public.university(university_id);
 
 
--- Completed on 2026-02-04 03:31:24
+--
+-- TOC entry 3709 (class 0 OID 0)
+-- Dependencies: 6
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: pg_database_owner
+--
+
+GRANT ALL ON SCHEMA public TO dealna_user;
+
+
+--
+-- TOC entry 3711 (class 0 OID 0)
+-- Dependencies: 217
+-- Name: TABLE health_test; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.health_test TO dealna_user;
+
+
+--
+-- TOC entry 3713 (class 0 OID 0)
+-- Dependencies: 216
+-- Name: SEQUENCE health_test_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public.health_test_id_seq TO dealna_user;
+
+
+--
+-- TOC entry 2172 (class 826 OID 16440)
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO dealna_user;
+
+
+--
+-- TOC entry 2171 (class 826 OID 16439)
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLES TO dealna_user;
+
+
+-- Completed on 2026-03-26 14:52:17
 
 --
 -- PostgreSQL database dump complete

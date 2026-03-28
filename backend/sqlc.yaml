@@ -4,7 +4,6 @@ sql:
   - engine: "postgresql"
     schema:
       - "../database/schema.sql"
-      - "../database/migrations"
     queries: "../database/query"
     gen:
       go:

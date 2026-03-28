@@ -1,5 +1,0 @@
-ALTER TABLE "User"
-ALTER COLUMN account_status SET DEFAULT 'ACTIVE';
-
-ALTER TABLE "User"
-ALTER COLUMN email_verified SET DEFAULT true;

@@ -7,7 +7,6 @@ Thumbs.db
 /backend/dealna
 /infra/keycloak/.env
 
-
 # Local tools / AI context
 /conductor/
 
