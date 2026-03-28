@@ -58,7 +58,7 @@ CREATE TABLE public."User" (
 );
 
 
-ALTER TABLE public."User" OWNER TO dealna_user;
+
 
 --
 -- TOC entry 219 (class 1259 OID 16465)
@@ -71,7 +71,7 @@ CREATE TABLE public.admin (
 );
 
 
-ALTER TABLE public.admin OWNER TO dealna_user;
+
 
 --
 -- TOC entry 220 (class 1259 OID 16470)
@@ -86,7 +86,7 @@ CREATE TABLE public.attachment (
 );
 
 
-ALTER TABLE public.attachment OWNER TO dealna_user;
+
 
 --
 -- TOC entry 221 (class 1259 OID 16479)
@@ -101,7 +101,7 @@ CREATE TABLE public.category (
 );
 
 
-ALTER TABLE public.category OWNER TO dealna_user;
+
 
 --
 -- TOC entry 222 (class 1259 OID 16490)
@@ -117,7 +117,7 @@ CREATE TABLE public.chat (
 );
 
 
-ALTER TABLE public.chat OWNER TO dealna_user;
+
 
 --
 -- TOC entry 223 (class 1259 OID 16499)
@@ -131,7 +131,7 @@ CREATE TABLE public.follow (
 );
 
 
-ALTER TABLE public.follow OWNER TO dealna_user;
+
 
 --
 -- TOC entry 217 (class 1259 OID 16391)
@@ -192,7 +192,7 @@ CREATE TABLE public.item (
 );
 
 
-ALTER TABLE public.item OWNER TO dealna_user;
+
 
 --
 -- TOC entry 225 (class 1259 OID 16516)
@@ -211,7 +211,7 @@ CREATE TABLE public.message (
 );
 
 
-ALTER TABLE public.message OWNER TO dealna_user;
+
 
 --
 -- TOC entry 226 (class 1259 OID 16525)
@@ -228,7 +228,7 @@ CREATE TABLE public.notification (
 );
 
 
-ALTER TABLE public.notification OWNER TO dealna_user;
+
 
 --
 -- TOC entry 227 (class 1259 OID 16535)
@@ -252,7 +252,7 @@ CREATE TABLE public.profile (
 );
 
 
-ALTER TABLE public.profile OWNER TO dealna_user;
+
 
 --
 -- TOC entry 228 (class 1259 OID 16553)
@@ -269,7 +269,7 @@ CREATE TABLE public.provider (
 );
 
 
-ALTER TABLE public.provider OWNER TO dealna_user;
+
 
 --
 -- TOC entry 229 (class 1259 OID 16560)
@@ -286,7 +286,7 @@ CREATE TABLE public.providerapplicant (
 );
 
 
-ALTER TABLE public.providerapplicant OWNER TO dealna_user;
+
 
 --
 -- TOC entry 230 (class 1259 OID 16573)
@@ -309,7 +309,7 @@ CREATE TABLE public.providerapplication (
 );
 
 
-ALTER TABLE public.providerapplication OWNER TO dealna_user;
+
 
 --
 -- TOC entry 231 (class 1259 OID 16583)
@@ -324,7 +324,7 @@ CREATE TABLE public.providerapplicationdocument (
 );
 
 
-ALTER TABLE public.providerapplicationdocument OWNER TO dealna_user;
+
 
 --
 -- TOC entry 232 (class 1259 OID 16592)
@@ -341,7 +341,7 @@ CREATE TABLE public.providerreview (
 );
 
 
-ALTER TABLE public.providerreview OWNER TO dealna_user;
+
 
 --
 -- TOC entry 233 (class 1259 OID 16601)
@@ -355,7 +355,7 @@ CREATE TABLE public.queue (
 );
 
 
-ALTER TABLE public.queue OWNER TO dealna_user;
+
 
 --
 -- TOC entry 234 (class 1259 OID 16610)
@@ -373,7 +373,7 @@ CREATE TABLE public.queueentry (
 );
 
 
-ALTER TABLE public.queueentry OWNER TO dealna_user;
+
 
 --
 -- TOC entry 235 (class 1259 OID 16619)
@@ -392,7 +392,7 @@ CREATE TABLE public.rating (
 );
 
 
-ALTER TABLE public.rating OWNER TO dealna_user;
+
 
 --
 -- TOC entry 236 (class 1259 OID 16631)
@@ -412,7 +412,7 @@ CREATE TABLE public.report (
 );
 
 
-ALTER TABLE public.report OWNER TO dealna_user;
+
 
 
 --
@@ -428,7 +428,7 @@ CREATE TABLE public.student (
 );
 
 
-ALTER TABLE public.student OWNER TO dealna_user;
+
 
 --
 -- TOC entry 241 (class 1259 OID 16974)
@@ -448,7 +448,7 @@ CREATE TABLE public.student_pre_registration (
 );
 
 
-ALTER TABLE public.student_pre_registration OWNER TO dealna_user;
+
 
 --
 -- TOC entry 238 (class 1259 OID 16647)
@@ -468,7 +468,7 @@ CREATE TABLE public.transaction (
 );
 
 
-ALTER TABLE public.transaction OWNER TO dealna_user;
+
 
 --
 -- TOC entry 239 (class 1259 OID 16656)
@@ -484,7 +484,7 @@ CREATE TABLE public.university (
 );
 
 
-ALTER TABLE public.university OWNER TO dealna_user;
+
 
 --
 -- TOC entry 3384 (class 2604 OID 16394)
@@ -1201,7 +1201,7 @@ ALTER TABLE ONLY public."User"
 -- Name: SCHEMA public; Type: ACL; Schema: -; Owner: pg_database_owner
 --
 
-GRANT ALL ON SCHEMA public TO dealna_user;
+
 
 
 --
@@ -1210,7 +1210,7 @@ GRANT ALL ON SCHEMA public TO dealna_user;
 -- Name: TABLE health_test; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.health_test TO dealna_user;
+
 
 
 --
@@ -1219,7 +1219,7 @@ GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.he
 -- Name: SEQUENCE health_test_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON SEQUENCE public.health_test_id_seq TO dealna_user;
+
 
 
 --
@@ -1227,7 +1227,7 @@ GRANT ALL ON SEQUENCE public.health_test_id_seq TO dealna_user;
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: postgres
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO dealna_user;
+
 
 
 --
@@ -1235,7 +1235,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENC
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: postgres
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLES TO dealna_user;
+
 
 
 -- Completed on 2026-03-26 14:52:17
