@@ -89,10 +89,10 @@ jobs:
           docker exec keycloak /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin
           
           # Create Realm
-          docker exec keycloak /opt/keycloak/bin/kcadm.sh create realms -s realm=dealna -s enabled=true
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh create realms -s realm=Dealna -s enabled=true
           
           # Create Admin Client (Confidential)
-          docker exec keycloak /opt/keycloak/bin/kcadm.sh create clients -r dealna \
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh create clients -r Dealna \
             -s clientId=admin-cli-confidential \
             -s secret=admin-secret \
             -s serviceAccountsEnabled=true \
@@ -101,19 +101,13 @@ jobs:
             -s directAccessGrantsEnabled=true
           
           # Assign realm-management roles to the service account
-          CLIENT_ID=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients -r dealna --fields id,clientId | jq -r '.[] | select(.clientId=="admin-cli-confidential") | .id')
-          SERVICE_ACCOUNT_USER=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients/$CLIENT_ID/service-account-user -r dealna | jq -r '.id')
-          REALM_MGMT_ID=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients -r dealna --fields id,clientId | jq -r '.[] | select(.clientId=="realm-management") | .id')
-          
-          # Get roles
-          MANAGE_USERS_ROLE=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients/$REALM_MGMT_ID/roles -r dealna | jq -r '.[] | select(.name=="manage-users") | .id, .name')
-          VIEW_USERS_ROLE=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients/$REALM_MGMT_ID/roles -r dealna | jq -r '.[] | select(.name=="view-users") | .id, .name')
+          CLIENT_ID=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients -r Dealna --fields id,clientId | jq -r '.[] | select(.clientId=="admin-cli-confidential") | .id')
           
           # Add roles to service account
-          docker exec keycloak /opt/keycloak/bin/kcadm.sh add-roles --uusername service-account-admin-cli-confidential -r dealna --cclientid realm-management --rolename manage-users --rolename view-users
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh add-roles --uusername service-account-admin-cli-confidential -r Dealna --cclientid realm-management --rolename manage-users --rolename view-users
           
           # Create Frontend Client (Public)
-          docker exec keycloak /opt/keycloak/bin/kcadm.sh create clients -r dealna \
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh create clients -r Dealna \
             -s clientId=frontend-client \
             -s publicClient=true \
             -s redirectUris='["http://localhost:8000/*"]' \
@@ -135,7 +129,7 @@ jobs:
           
           # Keycloak Environment Variables (Updated to match setup above)
           export KEYCLOAK_BASE_URL="http://localhost:8080"
-          export KEYCLOAK_REALM="dealna"
+          export KEYCLOAK_REALM="Dealna"
           export KEYCLOAK_CLIENT_ID="frontend-client"
           export KEYCLOAK_ADMIN_CLIENT_ID="admin-cli-confidential"
           export KEYCLOAK_ADMIN_CLIENT_SECRET="admin-secret"
