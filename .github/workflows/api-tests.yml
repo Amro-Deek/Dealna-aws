@@ -77,6 +77,7 @@ jobs:
           export KC_DB_URL=jdbc:postgresql://postgres:5432/dealna_db
           export KC_DB_USERNAME=dealna
           export KC_DB_PASSWORD=password
+          export KC_HEALTH_ENABLED=true
           docker compose up -d keycloak
           
           # Wait for Keycloak to become healthy
@@ -115,12 +116,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
+          cache-dependency-path: tests/package-lock.json
 
-      - name: Install Playwright Dependencies
-        run: |
-          cd tests
-          npm install
-          npx @playwright/test install --with-deps
+      - name: Install Node Dependencies
+        working-directory: tests
+        run: npm ci
 
       # 6. Run the Tests!
       - name: Run Playwright API Tests
