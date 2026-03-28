@@ -84,6 +84,41 @@ jobs:
           echo "Waiting for Keycloak to start..."
           timeout 120 bash -c 'until curl -s http://localhost:8080/health/ready; do sleep 5; done' || (docker logs keycloak && exit 1)
 
+      - name: Setup Keycloak Realm and Clients
+        run: |
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin
+          
+          # Create Realm
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh create realms -s realm=dealna -s enabled=true
+          
+          # Create Admin Client (Confidential)
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh create clients -r dealna \
+            -s clientId=admin-cli-confidential \
+            -s secret=admin-secret \
+            -s serviceAccountsEnabled=true \
+            -s authorizationServicesEnabled=true \
+            -s redirectUris='["http://localhost:8000/*"]' \
+            -s directAccessGrantsEnabled=true
+          
+          # Assign realm-management roles to the service account
+          CLIENT_ID=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients -r dealna --fields id,clientId | jq -r '.[] | select(.clientId=="admin-cli-confidential") | .id')
+          SERVICE_ACCOUNT_USER=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients/$CLIENT_ID/service-account-user -r dealna | jq -r '.id')
+          REALM_MGMT_ID=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients -r dealna --fields id,clientId | jq -r '.[] | select(.clientId=="realm-management") | .id')
+          
+          # Get roles
+          MANAGE_USERS_ROLE=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients/$REALM_MGMT_ID/roles -r dealna | jq -r '.[] | select(.name=="manage-users") | .id, .name')
+          VIEW_USERS_ROLE=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients/$REALM_MGMT_ID/roles -r dealna | jq -r '.[] | select(.name=="view-users") | .id, .name')
+          
+          # Add roles to service account
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh add-roles --uId $SERVICE_ACCOUNT_USER -r dealna --cclientid realm-management --rolename manage-users --rolename view-users
+          
+          # Create Frontend Client (Public)
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh create clients -r dealna \
+            -s clientId=frontend-client \
+            -s publicClient=true \
+            -s redirectUris='["http://localhost:8000/*"]' \
+            -s webOrigins='["*"]'
+
       # 4. Start Go Backend (in background)
       - name: Start Go Backend
         run: |
@@ -98,12 +133,12 @@ jobs:
           export DB_NAME=dealna_db
           export DB_SSLMODE=disable
           
-          # Keycloak Environment Variables (Mocked for tests)
+          # Keycloak Environment Variables (Updated to match setup above)
           export KEYCLOAK_BASE_URL="http://localhost:8080"
           export KEYCLOAK_REALM="dealna"
           export KEYCLOAK_CLIENT_ID="frontend-client"
-          export KEYCLOAK_ADMIN_CLIENT_ID="admin-cli"
-          export KEYCLOAK_ADMIN_CLIENT_SECRET="admin"
+          export KEYCLOAK_ADMIN_CLIENT_ID="admin-cli-confidential"
+          export KEYCLOAK_ADMIN_CLIENT_SECRET="admin-secret"
           
           go run cmd/server/main.go &
           
