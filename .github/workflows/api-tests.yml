@@ -120,7 +120,7 @@ jobs:
         run: |
           cd tests
           npm install
-          npx playwright install --with-deps
+          npx @playwright/test install --with-deps
 
       # 6. Run the Tests!
       - name: Run Playwright API Tests
@@ -128,7 +128,7 @@ jobs:
           cd tests
           export API_BASE_URL="http://localhost:8000/api/v1"
           export DATABASE_URL="postgresql://dealna:password@localhost:5432/dealna_db?sslmode=disable"
-          npx playwright test
+          npx @playwright/test test
 
       # 7. Upload Results (if tests fail)
       - name: Upload Playwright Report
