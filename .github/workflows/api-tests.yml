@@ -50,10 +50,19 @@ jobs:
           go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
           echo "$HOME/go/bin" >> $GITHUB_PATH
 
+      - name: Install sqlc
+        run: |
+          go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
       # 2. Run Database Migrations
       - name: Run Migrations
         run: |
           migrate -path database/migrations -database "postgresql://dealna:password@localhost:5432/dealna_db?sslmode=disable" up
+
+      - name: Generate SQLC models
+        working-directory: backend
+        run: sqlc generate
 
       # 3. Start Keycloak (in background)
       - name: Start Keycloak via Docker Compose
