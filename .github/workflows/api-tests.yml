@@ -68,7 +68,7 @@ jobs:
           export KC_DB_URL=jdbc:postgresql://postgres:5432/dealna_db
           export KC_DB_USERNAME=dealna
           export KC_DB_PASSWORD=password
-          docker-compose up -d keycloak
+          docker compose up -d keycloak
           
           # Wait for Keycloak to become healthy
           echo "Waiting for Keycloak to start..."
