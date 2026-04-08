@@ -2,6 +2,7 @@ package ports
 
 import (
 	"context"
+	"time"
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 )
@@ -21,4 +22,8 @@ type IUserRepository interface {
 		universityID string,
 		studentID string,
 	) (*domain.User, error)
+
+	GetProfile(ctx context.Context, userID string) (*domain.Profile, *domain.Student, error)
+	UpdateProfile(ctx context.Context, userID string, displayName, bio, profilePictureURL *string, displayNameLastChangedAt *time.Time) error
+	UpdateStudent(ctx context.Context, userID string, major *string, year *int) error
 }

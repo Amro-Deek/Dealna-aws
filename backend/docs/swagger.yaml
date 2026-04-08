@@ -140,6 +140,63 @@ definitions:
       version:
         type: string
     type: object
+  profile.GenerateUploadURLReq:
+    properties:
+      content_type:
+        type: string
+      filename:
+        type: string
+    type: object
+  profile.UpdateProfileReq:
+    properties:
+      bio:
+        type: string
+      display_name:
+        type: string
+      profile_picture_url:
+        type: string
+    type: object
+  profile.UpdateStudentReq:
+    properties:
+      academic_year:
+        type: integer
+      major:
+        type: string
+    type: object
+  services.ProfileDTO:
+    properties:
+      academic_year:
+        type: integer
+      bio:
+        type: string
+      display_name:
+        type: string
+      display_name_last_changed_at:
+        type: string
+      email:
+        type: string
+      follower_count:
+        type: integer
+      following_count:
+        type: integer
+      major:
+        description: Student specific
+        type: string
+      profile_picture_url:
+        type: string
+      rating_count:
+        type: integer
+      role:
+        type: string
+      sold_items_count:
+        type: integer
+      student_id:
+        type: string
+      total_reviews_count:
+        type: integer
+      user_id:
+        type: string
+    type: object
 info:
   contact:
     name: Amro Deek
@@ -322,6 +379,153 @@ paths:
       summary: Resend activation link
       tags:
       - Auth
+  /api/v1/profile:
+    get:
+      description: Fetch and aggregate User, Profile, and Student data into a unified
+        DTO
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.ProfileDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Get My Profile
+      tags:
+      - Profile
+    put:
+      consumes:
+      - application/json
+      description: Updates display name, bio, and profile picture URL with business
+        constraints
+      parameters:
+      - description: Profile Update Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/profile.UpdateProfileReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Update Profile
+      tags:
+      - Profile
+  /api/v1/profile/picture/upload-url:
+    post:
+      consumes:
+      - application/json
+      description: "\U0001F4F1 **FLUTTER INTEGRATION WORKFLOW (3 STEPS):**\\n\\n**Step
+        1:** Call this endpoint with `{\"filename\": \"pic.png\", \"content_type\":
+        \"image/png\"}` to secure a ticket. It returns an `upload_url` and an `object_key`.\\n\\n**Step
+        2 (The Heavy Lift):** Bypass this backend entirely and upload your binary
+        image file directly to AWS S3. Perform an HTTP `PUT` request targeting the
+        `upload_url` you received. You MUST attach the exact same `Content-Type` header
+        (e.g. `image/png`) to the PUT request. Do not send FormData, send raw binary.\\n\\n**Step
+        3 (Wrap Up):** Once AWS gives you a `200 OK`, call `PUT /api/v1/profile` and
+        set `\"profile_picture_url\"` to the `object_key` that was returned in Step
+        1."
+      parameters:
+      - description: File Info
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/profile.GenerateUploadURLReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Generate S3 Upload URL
+      tags:
+      - Profile
+  /api/v1/profile/student:
+    put:
+      consumes:
+      - application/json
+      description: Updates major and academic year of a student
+      parameters:
+      - description: Student Update Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/profile.UpdateStudentReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Update Student Details
+      tags:
+      - Profile
   /api/v1/users/me:
     get:
       description: Returns authenticated user profile -test

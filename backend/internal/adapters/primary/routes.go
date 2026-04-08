@@ -11,6 +11,7 @@ import (
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
 
 	authHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/http"
+	profileHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile/http"
 	userHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/http"
 
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -20,6 +21,7 @@ func NewRouter(
 	cfg *config.Config,
 	authRoutes *authHTTP.Routes,
 	userRoutes *userHTTP.Routes,
+	profileRoutes *profileHTTP.Routes,
 	authProvider ports.IAuthContextProvider,
 	logger middleware.StructuredLoggerInterface,
 ) http.Handler {
@@ -76,6 +78,7 @@ func NewRouter(
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.AuthMiddleware(authProvider, logger))
 			userRoutes.Register(r)
+			profileRoutes.Register(r)
 		})
 	})
 

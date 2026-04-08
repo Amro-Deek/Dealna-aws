@@ -12,20 +12,25 @@ import (
 	httpadapter "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary"
 	authHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth"
 	authHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/http"
+	profileHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile"
+	profileHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile/http"
 	userHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users"
 	userHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/http"
 
 	// Secondary adapters
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/auth"
+	emailAdapter "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/email"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/persistence"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/storage"
+
+	// AWS
+	context "context"
 
 	// Core services
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/services"
 
 	// Swagger docs (USED via routes.go)
 	_ "github.com/Amro-Deek/Dealna-aws/backend/docs"
-
-	emailAdapter "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/email"
 )
 
 // @title           Dealna API
@@ -78,16 +83,21 @@ func main() {
 		log.Fatalf("failed to initialize Keycloak JWT provider: %v", err)
 	}
 	// =========================
-// Secondary adapters
-// =========================
-keycloakIdentity := auth.NewKeycloakIdentityProvider(
-	cfg.KeycloakBaseURL,
-	cfg.KeycloakRealm,
-	cfg.KeycloakClientID,
-	cfg.KeycloakAdminClientID,
-	cfg.KeycloakAdminClientSecret,
-	&http.Client{},
-)
+	// Secondary adapters
+	// =========================
+	keycloakIdentity := auth.NewKeycloakIdentityProvider(
+		cfg.KeycloakBaseURL,
+		cfg.KeycloakRealm,
+		cfg.KeycloakClientID,
+		cfg.KeycloakAdminClientID,
+		cfg.KeycloakAdminClientSecret,
+		&http.Client{},
+	)
+
+	s3Provider, err := storage.NewS3Provider(context.TODO(), "us-east-1", "dealna-bzu-storage")
+	if err != nil {
+		log.Fatalf("failed to initialize S3 provider: %v", err)
+	}
 
 	// =========================
 	// Logger
@@ -98,9 +108,9 @@ keycloakIdentity := auth.NewKeycloakIdentityProvider(
 	// Core services
 	// =========================
 	authService := services.NewAuthService(
-	userRepo,
-	keycloakIdentity,
-)
+		userRepo,
+		keycloakIdentity,
+	)
 	userService := services.NewUserService(userRepo)
 	StudentRegistrationService := services.NewStudentRegistrationService(
 		userRepo,
@@ -109,18 +119,22 @@ keycloakIdentity := auth.NewKeycloakIdentityProvider(
 		keycloakIdentity,
 		universityRepo,
 	)
+	profileService := services.NewProfileService(userRepo)
+	storageService := services.NewStorageService(s3Provider)
 
 	// =========================
 	// Handlers
 	// =========================
 	authH := authHandler.NewHandler(authService, StudentRegistrationService, userService)
 	userH := userHandler.NewHandler(userService)
+	profileH := profileHandler.NewProfileHandler(profileService, storageService)
 
 	// =========================
 	// Routes
 	// =========================
 	authRoutes := authHTTP.NewRoutes(authH, appLogger)
 	userRoutes := userHTTP.NewRoutes(userH)
+	profileRoutes := profileHTTP.NewRoutes(profileH)
 
 	// =========================
 	// HTTP Router Adapter
@@ -129,6 +143,7 @@ keycloakIdentity := auth.NewKeycloakIdentityProvider(
 		cfg,
 		authRoutes,
 		userRoutes,
+		profileRoutes,
 		jwtProvider,
 		appLogger,
 	)

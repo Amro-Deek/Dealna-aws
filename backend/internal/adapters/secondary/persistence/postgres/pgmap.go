@@ -71,4 +71,44 @@ func uuidToString(id pgtype.UUID) string {
 	return id.String()
 }
 
+func fromNullableText(t pgtype.Text) string {
+	if !t.Valid {
+		return ""
+	}
+	return t.String
+}
 
+func fromNullableTime(t pgtype.Timestamp) time.Time {
+	if !t.Valid {
+		return time.Time{}
+	}
+	return t.Time
+}
+
+func fromNullableInt32(v pgtype.Int4) int32 {
+	if !v.Valid {
+		return 0
+	}
+	return v.Int32
+}
+
+func fromNullableBool(v pgtype.Bool) bool {
+	if !v.Valid {
+		return false
+	}
+	return v.Bool
+}
+
+func toNullableTimePtr(t *time.Time) pgtype.Timestamp {
+	if t == nil {
+		return pgtype.Timestamp{Valid: false}
+	}
+	return pgtype.Timestamp{Time: *t, Valid: true}
+}
+
+func toNullableInt32Ptr(v *int) pgtype.Int4 {
+	if v == nil {
+		return pgtype.Int4{Valid: false}
+	}
+	return pgtype.Int4{Int32: int32(*v), Valid: true}
+}

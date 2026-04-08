@@ -4,6 +4,7 @@ import (
 	"context"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -221,6 +222,59 @@ func extractStudentID(email string) string {
 
 	re := regexp.MustCompile(`\d+`)
 	return re.FindString(local)
+}
+
+func (r *UserRepository) GetProfile(ctx context.Context, userID string) (*coreDomain.Profile, *coreDomain.Student, error) {
+	uid := toUUID(userID)
+
+	profileRow, err := r.q.GetProfileByUserID(ctx, uid)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	profile := &coreDomain.Profile{
+		UserID:                   uuidToString(profileRow.UserID),
+		DisplayName:              fromNullableText(profileRow.DisplayName),
+		Bio:                      fromNullableText(profileRow.Bio),
+		ProfilePictureURL:        fromNullableText(profileRow.ProfilePictureUrl),
+		DisplayNameLastChangedAt: fromNullableTime(profileRow.DisplayNameLastChangedAt),
+		RatingCount:              int(profileRow.RatingCount),
+		TotalReviewsCount:        int(profileRow.TotalReviewsCount),
+		SoldItemsCount:           int(profileRow.SoldItemsCount),
+		FollowerCount:            int(profileRow.FollowerCount),
+		FollowingCount:           int(profileRow.FollowingCount),
+	}
+
+	var student *coreDomain.Student
+	studentRow, err := r.q.GetStudentByUserID(ctx, uid)
+	if err == nil {
+		student = &coreDomain.Student{
+			UserID:             uuidToString(studentRow.UserID),
+			StudentID:          studentRow.StudentID,
+			Major:              fromNullableText(studentRow.Major),
+			AcademicYear:       int(fromNullableInt32(studentRow.AcademicYear)),
+		}
+	}
+
+	return profile, student, nil
+}
+
+func (r *UserRepository) UpdateProfile(ctx context.Context, userID string, displayName, bio, profilePictureURL *string, displayNameLastChangedAt *time.Time) error {
+	return r.q.UpdateProfile(ctx, generated.UpdateProfileParams{
+		UserID:                   toUUID(userID),
+		DisplayName:              toNullableText(displayName),
+		Bio:                      toNullableText(bio),
+		ProfilePictureUrl:        toNullableText(profilePictureURL),
+		DisplayNameLastChangedAt: toNullableTimePtr(displayNameLastChangedAt),
+	})
+}
+
+func (r *UserRepository) UpdateStudent(ctx context.Context, userID string, major *string, year *int) error {
+	return r.q.UpdateStudent(ctx, generated.UpdateStudentParams{
+		UserID:       toUUID(userID),
+		Major:        toNullableText(major),
+		AcademicYear: toNullableInt32Ptr(year),
+	})
 }
 
 
