@@ -77,10 +77,16 @@ export class DatabaseHelper {
    */
   async cleanupTestUser(email: string): Promise<void> {
     try {
-      // 1. Delete from student_pre_registration
+      // 1. Delete items created by this user (attachments cascade via FK)
+      await this.pool.query(
+        `DELETE FROM public.item WHERE owner_id = (SELECT user_id FROM public."User" WHERE email = $1 LIMIT 1)`,
+        [email]
+      );
+
+      // 2. Delete from student_pre_registration
       await this.pool.query('DELETE FROM student_pre_registration WHERE email = $1', [email]);
       
-      // 2. Delete from User table (which cascades down due to FKs)
+      // 3. Delete from User table (which cascades down due to FKs)
       await this.pool.query('DELETE FROM "User" WHERE email = $1', [email]);
       
       console.log(`🧹 Cleaned up DB for user: ${email}`);

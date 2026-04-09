@@ -1,4 +1,141 @@
 definitions:
+  domain.Attachment:
+    properties:
+      file_path:
+        type: string
+      id:
+        type: string
+      item_id:
+        type: string
+      uploaded_at:
+        type: string
+    type: object
+  domain.Category:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  domain.CreateItemCommand:
+    properties:
+      category_id:
+        type: string
+      description:
+        type: string
+      object_keys:
+        description: S3 keys pointing to uploaded images
+        items:
+          type: string
+        type: array
+      owner_id:
+        type: string
+      pickup_location:
+        type: string
+      price:
+        type: number
+      title:
+        type: string
+    type: object
+  domain.FeedItem:
+    properties:
+      category_id:
+        type: string
+      category_name:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      owner_display_name:
+        type: string
+      owner_id:
+        type: string
+      owner_profile_pic_url:
+        type: string
+      pickup_location:
+        type: string
+      price:
+        type: number
+      status:
+        $ref: '#/definitions/domain.ItemStatus'
+      thumbnail_url:
+        type: string
+      title:
+        type: string
+    type: object
+  domain.Item:
+    properties:
+      category_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      owner_id:
+        type: string
+      pickup_location:
+        type: string
+      price:
+        type: number
+      status:
+        $ref: '#/definitions/domain.ItemStatus'
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  domain.ItemDetail:
+    properties:
+      attachments:
+        items:
+          $ref: '#/definitions/domain.Attachment'
+        type: array
+      category_id:
+        type: string
+      category_name:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      owner_display_name:
+        type: string
+      owner_id:
+        type: string
+      owner_profile_pic_url:
+        type: string
+      pickup_location:
+        type: string
+      price:
+        type: number
+      status:
+        $ref: '#/definitions/domain.ItemStatus'
+      thumbnail_url:
+        type: string
+      title:
+        type: string
+    type: object
+  domain.ItemStatus:
+    enum:
+    - AVAILABLE
+    - RESERVED
+    - SOLD
+    type: string
+    x-enum-varnames:
+    - ItemStatusAvailable
+    - ItemStatusReserved
+    - ItemStatusSold
   dto.CompleteStudentRegistrationRequest:
     properties:
       academicYear:
@@ -379,6 +516,263 @@ paths:
       summary: Resend activation link
       tags:
       - Auth
+  /api/v1/categories:
+    get:
+      description: Returns all marketplace categories for dropdown selection. Public
+        endpoint, no auth required.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Category'
+            type: array
+      summary: List Categories
+      tags:
+      - Metadata
+  /api/v1/items:
+    post:
+      consumes:
+      - application/json
+      description: Mints a new item for sale. Enforces 5 listings per day limit (NFR-1).
+      parameters:
+      - description: Listing Details
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateItemCommand'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Item'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Create Item Listing
+      tags:
+      - Items
+  /api/v1/items/{id}:
+    delete:
+      description: Soft-deletes a listing. Only the owner can delete. Preserves transaction
+        history.
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Delete Item
+      tags:
+      - Items
+    get:
+      description: Returns the full listing including attachments.
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.ItemDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Get Item Detail
+      tags:
+      - Items
+  /api/v1/items/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Transitions an item status (AVAILABLE → RESERVED → SOLD). Only
+        the owner can update.
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New status payload
+        in: body
+        name: status
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Update Item Status
+      tags:
+      - Items
+  /api/v1/items/feed:
+    get:
+      description: Returns available items scoped automatically to the authenticated
+        user's university. Newest first.
+      parameters:
+      - description: Items per page (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: Full-text search on title
+        in: query
+        name: search
+        type: string
+      - description: Filter by category UUID
+        in: query
+        name: category_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.FeedItem'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Get Marketplace Feed
+      tags:
+      - Items
+  /api/v1/items/my:
+    get:
+      description: Returns all items owned by the currently authenticated user.
+      parameters:
+      - description: Items per page (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.FeedItem'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Get My Listings
+      tags:
+      - Items
+  /api/v1/items/picture/upload-url:
+    post:
+      description: Creates a pre-signed S3 URL for uploading item images.
+      parameters:
+      - description: MIME type (e.g. image/jpeg)
+        in: query
+        name: content_type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Generate Item Image Upload URL
+      tags:
+      - Items
   /api/v1/profile:
     get:
       description: Fetch and aggregate User, Profile, and Student data into a unified

@@ -11,6 +11,7 @@ import (
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
 
 	authHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/http"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/items"
 	profileHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile/http"
 	userHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/http"
 
@@ -22,6 +23,7 @@ func NewRouter(
 	authRoutes *authHTTP.Routes,
 	userRoutes *userHTTP.Routes,
 	profileRoutes *profileHTTP.Routes,
+	itemRoutes *items.Routes,
 	authProvider ports.IAuthContextProvider,
 	logger middleware.StructuredLoggerInterface,
 ) http.Handler {
@@ -73,12 +75,18 @@ func NewRouter(
 		})
 
 		// =====================
+		// Public item routes (no auth)
+		// =====================
+		itemRoutes.RegisterPublic(r)
+
+		// =====================
 		// Protected user routes
 		// =====================
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.AuthMiddleware(authProvider, logger))
 			userRoutes.Register(r)
 			profileRoutes.Register(r)
+			itemRoutes.RegisterProtected(r)
 		})
 	})
 

@@ -12,8 +12,8 @@ import (
 )
 
 type KeycloakJWTProvider struct {
-	jwks   keyfunc.Keyfunc
-	users  ports.IUserRepository
+	jwks  keyfunc.Keyfunc
+	users ports.IUserRepository
 }
 
 func NewKeycloakJWTProvider(jwksURL string, users ports.IUserRepository) (*KeycloakJWTProvider, error) {

@@ -16,6 +16,8 @@ import (
 	profileHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile/http"
 	userHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users"
 	userHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/http"
+	
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/items"
 
 	// Secondary adapters
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/auth"
@@ -72,6 +74,7 @@ func main() {
 	userRepo := repoFactory.User()
 	studentPreRegRepo := repoFactory.StudentPreRegistration()
 	universityRepo := repoFactory.University()
+	itemRepo := repoFactory.Item()
 
 	// =========================
 	// Secondary adapters
@@ -121,6 +124,7 @@ func main() {
 	)
 	profileService := services.NewProfileService(userRepo)
 	storageService := services.NewStorageService(s3Provider)
+	itemService := services.NewItemService(itemRepo, s3Provider)
 
 	// =========================
 	// Handlers
@@ -128,6 +132,7 @@ func main() {
 	authH := authHandler.NewHandler(authService, StudentRegistrationService, userService)
 	userH := userHandler.NewHandler(userService)
 	profileH := profileHandler.NewProfileHandler(profileService, storageService)
+	itemH := items.NewItemHandler(itemService, appLogger)
 
 	// =========================
 	// Routes
@@ -135,6 +140,7 @@ func main() {
 	authRoutes := authHTTP.NewRoutes(authH, appLogger)
 	userRoutes := userHTTP.NewRoutes(userH)
 	profileRoutes := profileHTTP.NewRoutes(profileH)
+	itemRoutes := items.NewRoutes(itemH)
 
 	// =========================
 	// HTTP Router Adapter
@@ -144,6 +150,7 @@ func main() {
 		authRoutes,
 		userRoutes,
 		profileRoutes,
+		itemRoutes,
 		jwtProvider,
 		appLogger,
 	)

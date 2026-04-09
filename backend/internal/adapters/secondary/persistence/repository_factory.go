@@ -28,3 +28,7 @@ func (f *RepositoryFactory) University() ports.IUniversityRepository {
 	return postgres.NewUniversityRepository(f.pool)
 }
 
+func (f *RepositoryFactory) Item() ports.ItemRepository {
+	return postgres.NewItemRepository(f.pool)
+}
+

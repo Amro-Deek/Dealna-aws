@@ -42,3 +42,10 @@ INSERT INTO "User" (
 ) VALUES (
     $1, 'VERIFIED_STUDENT', $2, $3, 'ACTIVE', true
 ) RETURNING user_id, email, role, keycloak_sub;
+
+-- name: GetUserUniversityID :one
+SELECT university_id
+FROM public."User"
+WHERE user_id = $1
+  AND deleted_at IS NULL
+LIMIT 1;
