@@ -100,10 +100,10 @@ export class DatabaseHelper {
 
       // 2. Delete from student_pre_registration
       await pool.query('DELETE FROM student_pre_registration WHERE email = $1', [email]);
-      
+
       // 3. Delete from User table (which cascades down due to FKs)
       await pool.query('DELETE FROM "User" WHERE email = $1', [email]);
-      
+
       console.log(`🧹 Cleaned up DB for user: ${email}`);
     } catch (e) {
       console.error(`❌ Failed to clean up DB for ${email}:`, e);
