@@ -14,10 +14,14 @@ const TEST_IMAGE_PATH = 'C:\\Users\\fd\\Desktop\\Designs\\design.jpg';
 async function getStudentToken(email: string, password: string): Promise<string> {
   const base = (process.env.KEYCLOAK_BASE_URL ?? '').replace(/\/$/, '');
   const realm = process.env.KEYCLOAK_REALM ?? 'Dealna';
-  const clientId = process.env.KEYCLOAK_CLIENT_ID ?? 'dealna-mobile';
+  // Use the confidential backend client for password grants in tests.
+  // The public mobile client may not have Direct Access Grants enabled.
+  const clientId = process.env.KEYCLOAK_ADMIN_CLIENT_ID ?? 'dealna-backend';
+  const clientSecret = process.env.KEYCLOAK_ADMIN_CLIENT_SECRET ?? '';
 
   const params = new URLSearchParams({
     client_id: clientId,
+    client_secret: clientSecret,
     grant_type: 'password',
     username: email,
     password,
