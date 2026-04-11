@@ -12,6 +12,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.test') });
  */
 export class DatabaseHelper {
   private pool: Pool;
+  private closed = false;
 
   constructor() {
     this.pool = new Pool({
@@ -20,10 +21,23 @@ export class DatabaseHelper {
   }
 
   /**
+   * Safely get the pool, reconnecting if it was previously closed.
+   */
+  private getPool(): Pool {
+    if (this.closed) {
+      this.pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+      });
+      this.closed = false;
+    }
+    return this.pool;
+  }
+
+  /**
    * Fetch the activation token generated during the student registration request.
    */
   async getStudentActivationToken(email: string): Promise<string | null> {
-    const res = await this.pool.query(
+    const res = await this.getPool().query(
       'SELECT token FROM student_pre_registration WHERE email = $1 LIMIT 1',
       [email]
     );
@@ -38,7 +52,7 @@ export class DatabaseHelper {
    */
   async seedPendingPreRegistration(email: string, token: string): Promise<void> {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // Expires tomorrow
-    await this.pool.query(
+    await this.getPool().query(
       `INSERT INTO student_pre_registration (email, token, expires_at) VALUES ($1, $2, $3)`,
       [email, token, expiresAt]
     );
@@ -51,7 +65,7 @@ export class DatabaseHelper {
     const token = crypto.randomUUID(); // Use dynamic UUID to avoid unique constraint violations
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const verifiedAt = new Date();
-    await this.pool.query(
+    await this.getPool().query(
       `INSERT INTO student_pre_registration (email, token, expires_at, verified_at) VALUES ($1, $2, $3, $4)`,
       [email, token, expiresAt, verifiedAt]
     );
@@ -65,7 +79,7 @@ export class DatabaseHelper {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const verifiedAt = new Date();
     const usedAt = new Date();
-    await this.pool.query(
+    await this.getPool().query(
       `INSERT INTO student_pre_registration (email, token, expires_at, verified_at, used_at) VALUES ($1, $2, $3, $4, $5)`,
       [email, token, expiresAt, verifiedAt, usedAt]
     );
@@ -77,17 +91,18 @@ export class DatabaseHelper {
    */
   async cleanupTestUser(email: string): Promise<void> {
     try {
+      const pool = this.getPool();
       // 1. Delete items created by this user (attachments cascade via FK)
-      await this.pool.query(
+      await pool.query(
         `DELETE FROM public.item WHERE owner_id = (SELECT user_id FROM public."User" WHERE email = $1 LIMIT 1)`,
         [email]
       );
 
       // 2. Delete from student_pre_registration
-      await this.pool.query('DELETE FROM student_pre_registration WHERE email = $1', [email]);
+      await pool.query('DELETE FROM student_pre_registration WHERE email = $1', [email]);
       
       // 3. Delete from User table (which cascades down due to FKs)
-      await this.pool.query('DELETE FROM "User" WHERE email = $1', [email]);
+      await pool.query('DELETE FROM "User" WHERE email = $1', [email]);
       
       console.log(`🧹 Cleaned up DB for user: ${email}`);
     } catch (e) {
@@ -99,9 +114,10 @@ export class DatabaseHelper {
    * Ensure that the test university exists in the database.
    */
   async ensureUniversityExists(name: string, domain: string): Promise<void> {
-    const res = await this.pool.query('SELECT university_id FROM university WHERE domain = $1', [domain]);
+    const pool = this.getPool();
+    const res = await pool.query('SELECT university_id FROM university WHERE domain = $1', [domain]);
     if (res.rows.length === 0) {
-      await this.pool.query(
+      await pool.query(
         'INSERT INTO university (name, domain, status) VALUES ($1, $2, $3)',
         [name, domain, 'ACTIVE']
       );
@@ -113,6 +129,9 @@ export class DatabaseHelper {
    * Close the database connection pool.
    */
   async close(): Promise<void> {
-    await this.pool.end();
+    if (!this.closed) {
+      this.closed = true;
+      await this.pool.end();
+    }
   }
 }
