@@ -12,12 +12,18 @@ import (
 type ProfileHandler struct {
 	profileService *services.ProfileService
 	storageService *services.StorageService
+	logger         middleware.StructuredLoggerInterface
 }
 
-func NewProfileHandler(profileService *services.ProfileService, storageService *services.StorageService) *ProfileHandler {
+func NewProfileHandler(
+	profileService *services.ProfileService,
+	storageService *services.StorageService,
+	logger middleware.StructuredLoggerInterface,
+) *ProfileHandler {
 	return &ProfileHandler{
 		profileService: profileService,
 		storageService: storageService,
+		logger:         logger,
 	}
 }
 
@@ -41,7 +47,7 @@ func (h *ProfileHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 
 	profile, err := h.profileService.GetMyProfile(r.Context(), userID)
 	if err != nil {
-		middleware.WriteErrorResponse(w, r.Context(), err, nil)
+		middleware.WriteErrorResponse(w, r.Context(), err, h.logger)
 		return
 	}
 
@@ -82,7 +88,7 @@ func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 	err := h.profileService.UpdateProfile(r.Context(), userID, req.DisplayName, req.Bio, req.ProfilePictureURL)
 	if err != nil {
-		middleware.WriteErrorResponse(w, r.Context(), err, nil)
+		middleware.WriteErrorResponse(w, r.Context(), err, h.logger)
 		return
 	}
 
@@ -122,7 +128,7 @@ func (h *ProfileHandler) UpdateStudent(w http.ResponseWriter, r *http.Request) {
 
 	err := h.profileService.UpdateStudentDetails(r.Context(), userID, req.Major, req.AcademicYear)
 	if err != nil {
-		middleware.WriteErrorResponse(w, r.Context(), err, nil)
+		middleware.WriteErrorResponse(w, r.Context(), err, h.logger)
 		return
 	}
 
@@ -167,7 +173,7 @@ func (h *ProfileHandler) GenerateUploadURL(w http.ResponseWriter, r *http.Reques
 
 	url, objectKey, err := h.storageService.GenerateProfilePictureUploadURL(r.Context(), userID, req.Filename, req.ContentType)
 	if err != nil {
-		middleware.WriteErrorResponse(w, r.Context(), err, nil)
+		middleware.WriteErrorResponse(w, r.Context(), err, h.logger)
 		return
 	}
 

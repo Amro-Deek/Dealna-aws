@@ -131,7 +131,7 @@ func main() {
 	// =========================
 	authH := authHandler.NewHandler(authService, StudentRegistrationService, userService)
 	userH := userHandler.NewHandler(userService)
-	profileH := profileHandler.NewProfileHandler(profileService, storageService)
+	profileH := profileHandler.NewProfileHandler(profileService, storageService, appLogger)
 	itemH := items.NewItemHandler(itemService, appLogger)
 
 	// =========================
