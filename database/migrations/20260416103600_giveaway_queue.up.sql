@@ -1,3 +1,5 @@
+SET search_path TO public;
+
 CREATE TABLE IF NOT EXISTS queue_entry (
     entry_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     item_id uuid NOT NULL REFERENCES item(item_id) ON DELETE CASCADE,

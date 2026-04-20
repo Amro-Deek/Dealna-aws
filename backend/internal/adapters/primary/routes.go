@@ -14,6 +14,7 @@ import (
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/giveaway"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/items"
 	profileHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile/http"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/social"
 	userHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/http"
 
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -26,6 +27,7 @@ func NewRouter(
 	profileRoutes *profileHTTP.Routes,
 	itemRoutes *items.Routes,
 	giveawayRoutes *giveaway.Routes,
+	socialRoutes *social.Routes,
 	authProvider ports.IAuthContextProvider,
 	logger middleware.StructuredLoggerInterface,
 ) http.Handler {
@@ -90,6 +92,7 @@ func NewRouter(
 			profileRoutes.Register(r)
 			itemRoutes.RegisterProtected(r)
 			giveawayRoutes.Register(r)
+			socialRoutes.Register(r)
 		})
 	})
 

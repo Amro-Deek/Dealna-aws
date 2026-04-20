@@ -169,7 +169,7 @@ jobs:
         run: |
           cd tests
           export API_BASE_URL="http://localhost:8000/api/v1"
-          export DATABASE_URL="postgresql://dealna:password@localhost:5432/dealna_db?sslmode=disable"
+          export DATABASE_URL="postgresql://dealna:password@localhost:5432/dealna_db?sslmode=disable&options=--search_path%3Dpublic"
           export KEYCLOAK_BASE_URL="http://localhost:8080"
           export KEYCLOAK_REALM="Dealna"
           export KEYCLOAK_CLIENT_ID="frontend-client"
