@@ -2,8 +2,6 @@ import { test, expect } from '@playwright/test';
 import { DatabaseHelper } from '../utils/db';
 import { KeycloakHelper } from '../utils/keycloak';
 
-const BASE_URL = process.env.API_URL ?? 'http://localhost:8080/api/v1';
-
 async function getStudentToken(email: string, password: string): Promise<string> {
   const base = (process.env.KEYCLOAK_BASE_URL ?? '').replace(/\/$/, '');
   const realm = process.env.KEYCLOAK_REALM ?? 'Dealna';
@@ -46,7 +44,7 @@ test.describe.serial('Giveaway Queue API', () => {
     await dbHelper.ensureUniversityExists('Birzeit University', 'birzeit.edu');
 
     // 1. Request activation
-    const r1 = await request.post(`${BASE_URL}/auth/student/request-activation`, {
+    const r1 = await request.post('/auth/student/request-activation', {
       data: { email: testEmail },
     });
     if (r1.status() !== 204) console.error('req-activation:', await r1.text());
@@ -59,12 +57,12 @@ test.describe.serial('Giveaway Queue API', () => {
     expect(activationToken).not.toBeNull();
 
     // 3. Activate
-    const r2 = await request.get(`${BASE_URL}/auth/student/activate?token=${activationToken}`);
+    const r2 = await request.get(`/auth/student/activate?token=${activationToken}`);
     if (r2.status() !== 204) console.error('activate:', await r2.text());
     expect(r2.status()).toBe(204);
 
     // 4. Complete registration
-    const r3 = await request.post(`${BASE_URL}/auth/student/complete`, {
+    const r3 = await request.post('/auth/student/complete', {
       data: {
         email: testEmail,
         displayName: testDisplay,
@@ -101,7 +99,7 @@ test.describe.serial('Giveaway Queue API', () => {
   });
 
   test('POST /giveaway/queue/:myItemId/join should join queue', async ({ request }) => {
-    const res = await request.post(`${BASE_URL}/giveaway/queue/${itemID}/join`, {
+    const res = await request.post(`/giveaway/queue/${itemID}/join`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(res.status(), `Join failed: ${await res.text()}`).toBe(200);
@@ -112,7 +110,7 @@ test.describe.serial('Giveaway Queue API', () => {
 
   test('GET /giveaway/queue/:myItemId/position/:entryId should return position', async ({ request }) => {
     test.skip(!createdEntryId, 'Entry not created');
-    const res = await request.get(`${BASE_URL}/giveaway/queue/${itemID}/position/${createdEntryId}`, {
+    const res = await request.get(`/giveaway/queue/${itemID}/position/${createdEntryId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(res.status(), `Position failed: ${await res.text()}`).toBe(200);
@@ -121,7 +119,7 @@ test.describe.serial('Giveaway Queue API', () => {
   });
 
   test('POST /giveaway/queue/:myItemId/leave should leave queue', async ({ request }) => {
-    const res = await request.post(`${BASE_URL}/giveaway/queue/${itemID}/leave`, {
+    const res = await request.post(`/giveaway/queue/${itemID}/leave`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(res.status(), `Leave failed: ${await res.text()}`).toBe(200);

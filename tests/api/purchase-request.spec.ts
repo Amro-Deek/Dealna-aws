@@ -2,8 +2,6 @@ import { test, expect } from '@playwright/test';
 import { DatabaseHelper } from '../utils/db';
 import { KeycloakHelper } from '../utils/keycloak';
 
-const BASE_URL = process.env.API_URL ?? 'http://localhost:8080/api/v1';
-
 async function getStudentToken(email: string, password: string): Promise<string> {
   const base = (process.env.KEYCLOAK_BASE_URL ?? '').replace(/\/$/, '');
   const realm = process.env.KEYCLOAK_REALM ?? 'Dealna';
@@ -44,7 +42,7 @@ test.describe.serial('Purchase Requests API', () => {
   test.beforeAll(async ({ request }) => {
     await dbHelper.ensureUniversityExists('Birzeit University', 'birzeit.edu');
 
-    const r1 = await request.post(`${BASE_URL}/auth/student/request-activation`, {
+    const r1 = await request.post('/auth/student/request-activation', {
       data: { email: testEmail },
     });
     if (r1.status() !== 204) console.error('req-activation:', await r1.text());
@@ -55,11 +53,11 @@ test.describe.serial('Purchase Requests API', () => {
     const activationToken = await dbHelper.getStudentActivationToken(testEmail);
     expect(activationToken).not.toBeNull();
 
-    const r2 = await request.get(`${BASE_URL}/auth/student/activate?token=${activationToken}`);
+    const r2 = await request.get(`/auth/student/activate?token=${activationToken}`);
     if (r2.status() !== 204) console.error('activate:', await r2.text());
     expect(r2.status()).toBe(204);
 
-    const r3 = await request.post(`${BASE_URL}/auth/student/complete`, {
+    const r3 = await request.post('/auth/student/complete', {
       data: {
         email: testEmail,
         displayName: testDisplay,
@@ -91,14 +89,14 @@ test.describe.serial('Purchase Requests API', () => {
   });
 
   test('POST /giveaway/purchase/:myItemId/request should create a purchase request', async ({ request }) => {
-    const res = await request.post(`${BASE_URL}/giveaway/purchase/${itemID}/request`, {
+    const res = await request.post(`/giveaway/purchase/${itemID}/request`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(res.status(), `Purchase request failed: ${await res.text()}`).toBe(200);
   });
 
   test('GET /giveaway/purchase/:myItemId/requests should return all requests', async ({ request }) => {
-    const res = await request.get(`${BASE_URL}/giveaway/purchase/${itemID}/requests`, {
+    const res = await request.get(`/giveaway/purchase/${itemID}/requests`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(res.status(), `List requests failed: ${await res.text()}`).toBe(200);
