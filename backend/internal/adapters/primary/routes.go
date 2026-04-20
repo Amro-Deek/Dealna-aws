@@ -11,6 +11,7 @@ import (
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
 
 	authHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/http"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/giveaway"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/items"
 	profileHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile/http"
 	userHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/http"
@@ -24,6 +25,7 @@ func NewRouter(
 	userRoutes *userHTTP.Routes,
 	profileRoutes *profileHTTP.Routes,
 	itemRoutes *items.Routes,
+	giveawayRoutes *giveaway.Routes,
 	authProvider ports.IAuthContextProvider,
 	logger middleware.StructuredLoggerInterface,
 ) http.Handler {
@@ -87,6 +89,7 @@ func NewRouter(
 			userRoutes.Register(r)
 			profileRoutes.Register(r)
 			itemRoutes.RegisterProtected(r)
+			giveawayRoutes.Register(r)
 		})
 	})
 

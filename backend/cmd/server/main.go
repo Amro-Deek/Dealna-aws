@@ -12,17 +12,18 @@ import (
 	httpadapter "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary"
 	authHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth"
 	authHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/http"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/giveaway"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/items"
 	profileHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile"
 	profileHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile/http"
 	userHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users"
 	userHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/http"
-	
-	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/items"
 
 	// Secondary adapters
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/auth"
 	emailAdapter "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/email"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/persistence"
+	postgres "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/persistence/postgres"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/storage"
 
 	// AWS
@@ -143,6 +144,27 @@ func main() {
 	itemRoutes := items.NewRoutes(itemH)
 
 	// =========================
+	// Giveaway Setup
+	// =========================
+	queueRepo := postgres.NewQueueRepository(db)
+	purchaseRepo := postgres.NewPurchaseRequestRepository(db)
+	transactionRepo := postgres.NewTransactionRepository(db)
+	notificationRepo := postgres.NewNotificationRepository(db)
+
+	notificationSvc := services.NewNotificationService(notificationRepo)
+	queueSvc := services.NewQueueService(queueRepo, notificationSvc)
+	queueSvc.StartWorkers(context.Background())
+	purchaseSvc := services.NewPurchaseService(purchaseRepo, notificationSvc)
+	transactionSvc := services.NewTransactionService(transactionRepo, notificationSvc)
+
+	queueH := giveaway.NewQueueHandler(queueSvc)
+	purchaseH := giveaway.NewPurchaseHandler(purchaseSvc)
+	transactionH := giveaway.NewTransactionHandler(transactionSvc)
+	notificationH := giveaway.NewNotificationHandler(notificationSvc)
+
+	giveawayRoutes := giveaway.NewRoutes(queueH, purchaseH, transactionH, notificationH)
+
+	// =========================
 	// HTTP Router Adapter
 	// =========================
 	router := httpadapter.NewRouter(
@@ -151,6 +173,7 @@ func main() {
 		userRoutes,
 		profileRoutes,
 		itemRoutes,
+		giveawayRoutes,
 		jwtProvider,
 		appLogger,
 	)

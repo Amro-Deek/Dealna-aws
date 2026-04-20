@@ -111,6 +111,44 @@ export class DatabaseHelper {
   }
 
   /**
+   * Seed a test category if it doesn't exist.
+   */
+  async seedTestCategory(name: string): Promise<string> {
+    const pool = this.getPool();
+    const res = await pool.query('SELECT category_id FROM category WHERE name = $1', [name]);
+    if (res.rows.length === 0) {
+      const insertRes = await pool.query(
+        'INSERT INTO category (name, description) VALUES ($1, $2) RETURNING category_id',
+        [name, `Test category for ${name}`]
+      );
+      return insertRes.rows[0].category_id.toString();
+    }
+    return res.rows[0].category_id;
+  }
+
+  /**
+   * Seed a test item for a given owner and category.
+   */
+  async seedTestItem(ownerId: string, categoryId: string, title: string, price: number): Promise<string> {
+    const pool = this.getPool();
+    const insertRes = await pool.query(
+      `INSERT INTO item (owner_id, category_id, title, description, price, item_status) 
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING item_id`,
+      [ownerId, categoryId, title, 'Test item description', price, 'AVAILABLE']
+    );
+    return insertRes.rows[0].item_id.toString();
+  }
+
+  /**
+   * Get user_id by email.
+   */
+  async getUserIdByEmail(email: string): Promise<string | null> {
+    const res = await this.getPool().query('SELECT user_id FROM "User" WHERE email = $1', [email]);
+    if (res.rows.length > 0) return res.rows[0].user_id;
+    return null;
+  }
+
+  /**
    * Ensure that the test university exists in the database.
    */
   async ensureUniversityExists(name: string, domain: string): Promise<void> {
