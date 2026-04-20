@@ -42,7 +42,7 @@ test.describe.serial('Notifications API', () => {
   test.beforeAll(async ({ request }) => {
     await dbHelper.ensureUniversityExists('Birzeit University', 'birzeit.edu');
 
-    const r1 = await request.post('/auth/student/request-activation', {
+    const r1 = await request.post('auth/student/request-activation', {
       data: { email: testEmail },
     });
     if (r1.status() !== 204) console.error('req-activation:', await r1.text());
@@ -53,11 +53,11 @@ test.describe.serial('Notifications API', () => {
     const activationToken = await dbHelper.getStudentActivationToken(testEmail);
     expect(activationToken).not.toBeNull();
 
-    const r2 = await request.get(`/auth/student/activate?token=${activationToken}`);
+    const r2 = await request.get(`auth/student/activate?token=${activationToken}`);
     if (r2.status() !== 204) console.error('activate:', await r2.text());
     expect(r2.status()).toBe(204);
 
-    const r3 = await request.post('/auth/student/complete', {
+    const r3 = await request.post('auth/student/complete', {
       data: {
         email: testEmail,
         displayName: testDisplay,
@@ -84,7 +84,7 @@ test.describe.serial('Notifications API', () => {
   });
 
   test('GET /giveaway/notifications should list notifications', async ({ request }) => {
-    const res = await request.get('/giveaway/notifications', {
+    const res = await request.get('giveaway/notifications', {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(res.status(), `List notifications failed: ${await res.text()}`).toBe(200);
@@ -95,7 +95,7 @@ test.describe.serial('Notifications API', () => {
 
   test('POST /giveaway/notifications/:notifId/read should mark notification as read', async ({ request }) => {
     test.skip(!firstNotificationId, 'No notifications found to mark read');
-    const res = await request.post(`/giveaway/notifications/${firstNotificationId}/read`, {
+    const res = await request.post(`giveaway/notifications/${firstNotificationId}/read`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(res.status(), `Mark read failed: ${await res.text()}`).toBe(200);
