@@ -1079,7 +1079,7 @@ paths:
         type: string
       responses:
         "200":
-          description: OK
+          description: 'Returns { \"is_following\": boolean }'
           schema:
             additionalProperties:
               type: boolean

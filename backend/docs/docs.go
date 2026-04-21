@@ -1124,7 +1124,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns { \\\"is_following\\\": boolean }",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {

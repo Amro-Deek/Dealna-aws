@@ -76,7 +76,7 @@ func (h *FollowHandler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
 // @Tags         Social
 // @Security     BearerAuth
 // @Param        profileId  path  string  true  "Target profile ID"
-// @Success      200  {object}  map[string]bool
+// @Success      200  {object}  map[string]bool "Returns { \"is_following\": boolean }"
 // @Failure      401  {string}  string  "unauthorized"
 // @Failure      500  {string}  string  "internal error"
 // @Router       /users/{profileId}/is-following [get]
@@ -93,7 +93,7 @@ func (h *FollowHandler) IsFollowing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]bool{"isFollowing": result})
+	json.NewEncoder(w).Encode(map[string]bool{"is_following": result})
 }
 
 // GetFollowers godoc
