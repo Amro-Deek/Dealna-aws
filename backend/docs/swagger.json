@@ -686,14 +686,14 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Fetch and aggregate User, Profile, and Student data into a unified DTO",
+                "description": "Primary entry point for mobile apps. Returns aggregated user info, student data, and the unique `profile_id` required for all social/follow actions.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Profile"
                 ],
-                "summary": "Get My Profile",
+                "summary": "[Self] Get My Profile",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -721,7 +721,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Updates display name, bio, and profile picture URL with business constraints",
+                "description": "Updates social identity fields like display name, bio, and finishing the S3 profile picture upload sync.",
                 "consumes": [
                     "application/json"
                 ],
@@ -731,7 +731,7 @@
                 "tags": [
                     "Profile"
                 ],
-                "summary": "Update Profile",
+                "summary": "[Self] Update Base Profile",
                 "parameters": [
                     {
                         "description": "Profile Update Payload",
@@ -781,7 +781,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "📱 **FLUTTER INTEGRATION WORKFLOW (3 STEPS):**\\n\\n**Step 1:** Call this endpoint with `{\"filename\": \"pic.png\", \"content_type\": \"image/png\"}` to secure a ticket. It returns an `upload_url` and an `object_key`.\\n\\n**Step 2 (The Heavy Lift):** Bypass this backend entirely and upload your binary image file directly to AWS S3. Perform an HTTP `PUT` request targeting the `upload_url` you received. You MUST attach the exact same `Content-Type` header (e.g. `image/png`) to the PUT request. Do not send FormData, send raw binary.\\n\\n**Step 3 (Wrap Up):** Once AWS gives you a `200 OK`, call `PUT /api/v1/profile` and set `\"profile_picture_url\"` to the `object_key` that was returned in Step 1.",
+                "description": "📱 **FLUTTER INTEGRATION WORKFLOW (3 STEPS):**\\n\\n**Step 1 (The Secure Handshake):** Call this endpoint with `{\"filename\": \"pic.png\", \"content_type\": \"image/png\"}` to secure a ticket. It returns an `upload_url` and an `object_key`. Note: Ensure you store your `profile_id` returned from `GET /api/v1/profile` for all future social interactions.\\n\\n**Step 2 (The Direct Upload):** Bypass this backend entirely and upload your binary image file directly to AWS S3. Perform an HTTP `PUT` request targeting the `upload_url` you received. You MUST attach the exact same `Content-Type` header (e.g. `image/png`) to the `PUT` request. Do not send `FormData`, send raw binary data.\\n\\n**Step 3 (Final Sync):** Once AWS gives you a `200 OK`, call `PUT /api/v1/profile` and set `\"profile_picture_url\"` to the `object_key` that was returned in Step 1. Your updated profile is now ready to be discovered via the public profile lookup.",
                 "consumes": [
                     "application/json"
                 ],
@@ -841,7 +841,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Updates major and academic year of a student",
+                "description": "Specifically for student-only data. Updates the `major` and `academic_year`. This is decoupled from the base profile to separate academic status from social identity.",
                 "consumes": [
                     "application/json"
                 ],
@@ -851,7 +851,7 @@
                 "tags": [
                     "Profile"
                 ],
-                "summary": "Update Student Details",
+                "summary": "[Self] Update Academic Info",
                 "parameters": [
                     {
                         "description": "Student Update Payload",
@@ -920,6 +920,260 @@
                         "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{profileId}/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Fetch public-facing info of any user (display name, bio, counters). Use this to render the profile page of others before a follow action.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Social"
+                ],
+                "summary": "[Public] Discover User",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Profile ID",
+                        "name": "profileId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.ProfileDTO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{profileId}/follow": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Authenticated user follows the profile with the given profileId",
+                "tags": [
+                    "Social"
+                ],
+                "summary": "Follow a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Target profile ID",
+                        "name": "profileId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "cannot follow yourself",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{profileId}/followers": {
+            "get": {
+                "description": "Returns all profiles following the given profileId",
+                "tags": [
+                    "Social"
+                ],
+                "summary": "Get followers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Profile ID",
+                        "name": "profileId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.Follow"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{profileId}/following": {
+            "get": {
+                "description": "Returns all profiles that the given profileId follows",
+                "tags": [
+                    "Social"
+                ],
+                "summary": "Get following",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Profile ID",
+                        "name": "profileId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.Follow"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{profileId}/is-following": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns whether the authenticated user follows the given profile",
+                "tags": [
+                    "Social"
+                ],
+                "summary": "Check follow status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Target profile ID",
+                        "name": "profileId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "boolean"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{profileId}/unfollow": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Authenticated user unfollows the profile with the given profileId",
+                "tags": [
+                    "Social"
+                ],
+                "summary": "Unfollow a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Target profile ID",
+                        "name": "profileId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -1031,6 +1285,26 @@
                     "type": "string"
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.Follow": {
+            "type": "object",
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "followedAt": {
+                    "type": "string"
+                },
+                "followerProfileID": {
+                    "type": "string"
+                },
+                "followingProfileID": {
+                    "type": "string"
+                },
+                "profilePictureURL": {
                     "type": "string"
                 }
             }
@@ -1390,6 +1664,9 @@
                 },
                 "major": {
                     "description": "Student specific",
+                    "type": "string"
+                },
+                "profile_id": {
                     "type": "string"
                 },
                 "profile_picture_url": {

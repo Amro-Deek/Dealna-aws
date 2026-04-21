@@ -12,6 +12,12 @@ FROM profile
 WHERE user_id = $1
 LIMIT 1;
 
+-- name: GetProfileByProfileID :one
+SELECT *
+FROM profile
+WHERE profile_id = $1
+LIMIT 1;
+
 -- name: UpdateProfile :exec
 UPDATE profile
 SET 

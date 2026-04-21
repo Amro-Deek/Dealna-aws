@@ -24,6 +24,7 @@ type IUserRepository interface {
 	) (*domain.User, error)
 
 	GetProfile(ctx context.Context, userID string) (*domain.Profile, *domain.Student, error)
+	GetProfileByProfileID(ctx context.Context, profileID string) (*domain.Profile, error)
 	UpdateProfile(ctx context.Context, userID string, displayName, bio, profilePictureURL *string, displayNameLastChangedAt *time.Time) error
 	UpdateStudent(ctx context.Context, userID string, major *string, year *int) error
 }

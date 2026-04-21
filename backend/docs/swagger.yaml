@@ -70,6 +70,19 @@ definitions:
       title:
         type: string
     type: object
+  domain.Follow:
+    properties:
+      displayName:
+        type: string
+      followedAt:
+        type: string
+      followerProfileID:
+        type: string
+      followingProfileID:
+        type: string
+      profilePictureURL:
+        type: string
+    type: object
   domain.Item:
     properties:
       category_id:
@@ -318,6 +331,8 @@ definitions:
         type: integer
       major:
         description: Student specific
+        type: string
+      profile_id:
         type: string
       profile_picture_url:
         type: string
@@ -775,8 +790,8 @@ paths:
       - Items
   /api/v1/profile:
     get:
-      description: Fetch and aggregate User, Profile, and Student data into a unified
-        DTO
+      description: Primary entry point for mobile apps. Returns aggregated user info,
+        student data, and the unique `profile_id` required for all social/follow actions.
       produces:
       - application/json
       responses:
@@ -794,14 +809,14 @@ paths:
             $ref: '#/definitions/middleware.ErrorFrame'
       security:
       - BearerAuth: []
-      summary: Get My Profile
+      summary: '[Self] Get My Profile'
       tags:
       - Profile
     put:
       consumes:
       - application/json
-      description: Updates display name, bio, and profile picture URL with business
-        constraints
+      description: Updates social identity fields like display name, bio, and finishing
+        the S3 profile picture upload sync.
       parameters:
       - description: Profile Update Payload
         in: body
@@ -832,7 +847,7 @@ paths:
             $ref: '#/definitions/middleware.ErrorFrame'
       security:
       - BearerAuth: []
-      summary: Update Profile
+      summary: '[Self] Update Base Profile'
       tags:
       - Profile
   /api/v1/profile/picture/upload-url:
@@ -840,15 +855,18 @@ paths:
       consumes:
       - application/json
       description: "\U0001F4F1 **FLUTTER INTEGRATION WORKFLOW (3 STEPS):**\\n\\n**Step
-        1:** Call this endpoint with `{\"filename\": \"pic.png\", \"content_type\":
-        \"image/png\"}` to secure a ticket. It returns an `upload_url` and an `object_key`.\\n\\n**Step
-        2 (The Heavy Lift):** Bypass this backend entirely and upload your binary
-        image file directly to AWS S3. Perform an HTTP `PUT` request targeting the
-        `upload_url` you received. You MUST attach the exact same `Content-Type` header
-        (e.g. `image/png`) to the PUT request. Do not send FormData, send raw binary.\\n\\n**Step
-        3 (Wrap Up):** Once AWS gives you a `200 OK`, call `PUT /api/v1/profile` and
-        set `\"profile_picture_url\"` to the `object_key` that was returned in Step
-        1."
+        1 (The Secure Handshake):** Call this endpoint with `{\"filename\": \"pic.png\",
+        \"content_type\": \"image/png\"}` to secure a ticket. It returns an `upload_url`
+        and an `object_key`. Note: Ensure you store your `profile_id` returned from
+        `GET /api/v1/profile` for all future social interactions.\\n\\n**Step 2 (The
+        Direct Upload):** Bypass this backend entirely and upload your binary image
+        file directly to AWS S3. Perform an HTTP `PUT` request targeting the `upload_url`
+        you received. You MUST attach the exact same `Content-Type` header (e.g. `image/png`)
+        to the `PUT` request. Do not send `FormData`, send raw binary data.\\n\\n**Step
+        3 (Final Sync):** Once AWS gives you a `200 OK`, call `PUT /api/v1/profile`
+        and set `\"profile_picture_url\"` to the `object_key` that was returned in
+        Step 1. Your updated profile is now ready to be discovered via the public
+        profile lookup."
       parameters:
       - description: File Info
         in: body
@@ -886,7 +904,9 @@ paths:
     put:
       consumes:
       - application/json
-      description: Updates major and academic year of a student
+      description: Specifically for student-only data. Updates the `major` and `academic_year`.
+        This is decoupled from the base profile to separate academic status from social
+        identity.
       parameters:
       - description: Student Update Payload
         in: body
@@ -917,9 +937,43 @@ paths:
             $ref: '#/definitions/middleware.ErrorFrame'
       security:
       - BearerAuth: []
-      summary: Update Student Details
+      summary: '[Self] Update Academic Info'
       tags:
       - Profile
+  /api/v1/users/{profileId}/profile:
+    get:
+      description: Fetch public-facing info of any user (display name, bio, counters).
+        Use this to render the profile page of others before a follow action.
+      parameters:
+      - description: Profile ID
+        in: path
+        name: profileId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.ProfileDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: '[Public] Discover User'
+      tags:
+      - Social
   /api/v1/users/me:
     get:
       description: Returns authenticated user profile -test
@@ -939,6 +993,135 @@ paths:
       summary: Get current user
       tags:
       - Users
+  /users/{profileId}/follow:
+    post:
+      description: Authenticated user follows the profile with the given profileId
+      parameters:
+      - description: Target profile ID
+        in: path
+        name: profileId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: cannot follow yourself
+          schema:
+            type: string
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Follow a user
+      tags:
+      - Social
+  /users/{profileId}/followers:
+    get:
+      description: Returns all profiles following the given profileId
+      parameters:
+      - description: Profile ID
+        in: path
+        name: profileId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Follow'
+            type: array
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Get followers
+      tags:
+      - Social
+  /users/{profileId}/following:
+    get:
+      description: Returns all profiles that the given profileId follows
+      parameters:
+      - description: Profile ID
+        in: path
+        name: profileId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Follow'
+            type: array
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Get following
+      tags:
+      - Social
+  /users/{profileId}/is-following:
+    get:
+      description: Returns whether the authenticated user follows the given profile
+      parameters:
+      - description: Target profile ID
+        in: path
+        name: profileId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Check follow status
+      tags:
+      - Social
+  /users/{profileId}/unfollow:
+    delete:
+      description: Authenticated user unfollows the profile with the given profileId
+      parameters:
+      - description: Target profile ID
+        in: path
+        name: profileId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Unfollow a user
+      tags:
+      - Social
 securityDefinitions:
   BearerAuth:
     in: header

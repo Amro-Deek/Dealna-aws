@@ -171,7 +171,7 @@ func main() {
 	followRepo := postgres.NewFollowRepository(db)
 	followSvc := services.NewFollowService(followRepo)
 	followH := social.NewFollowHandler(followSvc)
-	socialRoutes := social.NewRoutes(followH)
+	socialRoutes := social.NewRoutes(followH, profileH)
 
 	// =========================
 	// HTTP Router Adapter

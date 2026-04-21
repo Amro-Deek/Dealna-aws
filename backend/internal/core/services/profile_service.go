@@ -9,6 +9,7 @@ import (
 )
 
 type ProfileDTO struct {
+	ProfileID                string    `json:"profile_id"`
 	UserID                   string    `json:"user_id"`
 	Email                    string    `json:"email"`
 	Role                     string    `json:"role"`
@@ -48,6 +49,7 @@ func (s *ProfileService) GetMyProfile(ctx context.Context, userID string) (*Prof
 	}
 
 	dto := &ProfileDTO{
+		ProfileID:                profile.ProfileID,
 		UserID:                   user.ID,
 		Email:                    user.Email,
 		Role:                     user.Role,
@@ -69,6 +71,28 @@ func (s *ProfileService) GetMyProfile(ctx context.Context, userID string) (*Prof
 		dto.Major = &student.Major
 		dto.AcademicYear = &student.AcademicYear
 		dto.StudentID = &student.StudentID
+	}
+
+	return dto, nil
+}
+
+func (s *ProfileService) GetPublicProfile(ctx context.Context, profileID string) (*ProfileDTO, error) {
+	profile, err := s.users.GetProfileByProfileID(ctx, profileID)
+	if err != nil {
+		return nil, err
+	}
+
+	// We only return public info
+	dto := &ProfileDTO{
+		ProfileID:                profile.ProfileID,
+		DisplayName:              profile.DisplayName,
+		Bio:                      profile.Bio,
+		ProfilePictureURL:        profile.ProfilePictureURL,
+		RatingCount:              profile.RatingCount,
+		TotalReviewsCount:        profile.TotalReviewsCount,
+		SoldItemsCount:           profile.SoldItemsCount,
+		FollowerCount:            profile.FollowerCount,
+		FollowingCount:           profile.FollowingCount,
 	}
 
 	return dto, nil

@@ -233,6 +233,7 @@ func (r *UserRepository) GetProfile(ctx context.Context, userID string) (*coreDo
 	}
 
 	profile := &coreDomain.Profile{
+		ProfileID:                uuidToString(profileRow.ProfileID),
 		UserID:                   uuidToString(profileRow.UserID),
 		DisplayName:              fromNullableText(profileRow.DisplayName),
 		Bio:                      fromNullableText(profileRow.Bio),
@@ -257,6 +258,29 @@ func (r *UserRepository) GetProfile(ctx context.Context, userID string) (*coreDo
 	}
 
 	return profile, student, nil
+}
+
+func (r *UserRepository) GetProfileByProfileID(ctx context.Context, profileID string) (*coreDomain.Profile, error) {
+	pid := toUUID(profileID)
+
+	profileRow, err := r.q.GetProfileByProfileID(ctx, pid)
+	if err != nil {
+		return nil, err
+	}
+
+	return &coreDomain.Profile{
+		ProfileID:                uuidToString(profileRow.ProfileID),
+		UserID:                   uuidToString(profileRow.UserID),
+		DisplayName:              fromNullableText(profileRow.DisplayName),
+		Bio:                      fromNullableText(profileRow.Bio),
+		ProfilePictureURL:        fromNullableText(profileRow.ProfilePictureUrl),
+		DisplayNameLastChangedAt: fromNullableTime(profileRow.DisplayNameLastChangedAt),
+		RatingCount:              int(profileRow.RatingCount),
+		TotalReviewsCount:        int(profileRow.TotalReviewsCount),
+		SoldItemsCount:           int(profileRow.SoldItemsCount),
+		FollowerCount:            int(profileRow.FollowerCount),
+		FollowingCount:           int(profileRow.FollowingCount),
+	}, nil
 }
 
 func (r *UserRepository) UpdateProfile(ctx context.Context, userID string, displayName, bio, profilePictureURL *string, displayNameLastChangedAt *time.Time) error {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/services"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
+	"github.com/go-chi/chi/v5"
 )
 
 type ProfileHandler struct {
@@ -29,8 +30,8 @@ func NewProfileHandler(
 
 
 // GetMyProfile retrieves the authenticated user's profile
-// @Summary Get My Profile
-// @Description Fetch and aggregate User, Profile, and Student data into a unified DTO
+// @Summary [Self] Get My Profile
+// @Description Primary entry point for mobile apps. Returns aggregated user info, student data, and the unique `profile_id` required for all social/follow actions.
 // @Tags Profile
 // @Security BearerAuth
 // @Produce json
@@ -61,8 +62,8 @@ type UpdateProfileReq struct {
 }
 
 // UpdateProfile handles profile updates
-// @Summary Update Profile
-// @Description Updates display name, bio, and profile picture URL with business constraints
+// @Summary [Self] Update Base Profile
+// @Description Updates social identity fields like display name, bio, and finishing the S3 profile picture upload sync.
 // @Tags Profile
 // @Security BearerAuth
 // @Accept json
@@ -101,8 +102,8 @@ type UpdateStudentReq struct {
 }
 
 // UpdateStudent handles student academic info updates
-// @Summary Update Student Details
-// @Description Updates major and academic year of a student
+// @Summary [Self] Update Academic Info
+// @Description Specifically for student-only data. Updates the `major` and `academic_year`. This is decoupled from the base profile to separate academic status from social identity.
 // @Tags Profile
 // @Security BearerAuth
 // @Accept json
@@ -142,7 +143,7 @@ type GenerateUploadURLReq struct {
 
 // GenerateUploadURL generates an S3 presigned URL for profile pictures
 // @Summary Generate S3 Upload URL
-// @Description 📱 **FLUTTER INTEGRATION WORKFLOW (3 STEPS):**\n\n**Step 1:** Call this endpoint with `{"filename": "pic.png", "content_type": "image/png"}` to secure a ticket. It returns an `upload_url` and an `object_key`.\n\n**Step 2 (The Heavy Lift):** Bypass this backend entirely and upload your binary image file directly to AWS S3. Perform an HTTP `PUT` request targeting the `upload_url` you received. You MUST attach the exact same `Content-Type` header (e.g. `image/png`) to the PUT request. Do not send FormData, send raw binary.\n\n**Step 3 (Wrap Up):** Once AWS gives you a `200 OK`, call `PUT /api/v1/profile` and set `"profile_picture_url"` to the `object_key` that was returned in Step 1.
+// @Description 📱 **FLUTTER INTEGRATION WORKFLOW (3 STEPS):**\n\n**Step 1 (The Secure Handshake):** Call this endpoint with `{"filename": "pic.png", "content_type": "image/png"}` to secure a ticket. It returns an `upload_url` and an `object_key`. Note: Ensure you store your `profile_id` returned from `GET /api/v1/profile` for all future social interactions.\n\n**Step 2 (The Direct Upload):** Bypass this backend entirely and upload your binary image file directly to AWS S3. Perform an HTTP `PUT` request targeting the `upload_url` you received. You MUST attach the exact same `Content-Type` header (e.g. `image/png`) to the `PUT` request. Do not send `FormData`, send raw binary data.\n\n**Step 3 (Final Sync):** Once AWS gives you a `200 OK`, call `PUT /api/v1/profile` and set `"profile_picture_url"` to the `object_key` that was returned in Step 1. Your updated profile is now ready to be discovered via the public profile lookup.
 // @Tags Profile
 // @Security BearerAuth
 // @Accept json
@@ -182,4 +183,32 @@ func (h *ProfileHandler) GenerateUploadURL(w http.ResponseWriter, r *http.Reques
 		"object_key": objectKey,
 		"expires_in": (15 * time.Minute).String(),
 	})
+}
+
+// GetPublicProfile retrieves a user's public profile info
+// @Summary [Public] Discover User
+// @Description Fetch public-facing info of any user (display name, bio, counters). Use this to render the profile page of others before a follow action.
+// @Tags Social
+// @Security BearerAuth
+// @Produce json
+// @Param profileId path string true "Profile ID"
+// @Success 200 {object} services.ProfileDTO
+// @Failure 401 {object} middleware.ErrorFrame
+// @Failure 404 {object} middleware.ErrorFrame
+// @Failure 500 {object} middleware.ErrorFrame
+// @Router /api/v1/users/{profileId}/profile [get]
+func (h *ProfileHandler) GetPublicProfile(w http.ResponseWriter, r *http.Request) {
+	profileID := chi.URLParam(r, "profileId")
+	if profileID == "" {
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("path", "profileId is required"), nil)
+		return
+	}
+
+	profile, err := h.profileService.GetPublicProfile(r.Context(), profileID)
+	if err != nil {
+		middleware.WriteErrorResponse(w, r.Context(), err, h.logger)
+		return
+	}
+
+	middleware.WriteJSONResponse(w, http.StatusOK, profile)
 }
