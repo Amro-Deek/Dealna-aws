@@ -16,3 +16,10 @@ backend architicture.txt
 dealna_report.pdf
 dealna_report_extracted.txt
 cors-policy.json
+caveman.md
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
