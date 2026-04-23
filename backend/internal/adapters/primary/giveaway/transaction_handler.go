@@ -16,6 +16,16 @@ func NewTransactionHandler(tService *services.TransactionService) *TransactionHa
 	return &TransactionHandler{tService: tService}
 }
 
+// ConfirmTransaction godoc
+// @Summary      Confirm a transaction
+// @Description  Allows the seller to confirm a transaction
+// @Tags         Transactions
+// @Security     BearerAuth
+// @Param        transactionId  path  string  true  "Transaction ID"
+// @Success      200            {object}  map[string]string "Returns { \"message\": \"Confirmed\" }"
+// @Failure      401            {string}  string  "unauthorized"
+// @Failure      500            {string}  string  "internal error"
+// @Router       /transactions/{transactionId}/confirm [post]
 func (h *TransactionHandler) ConfirmSeller(w http.ResponseWriter, r *http.Request) {
 	txID := chi.URLParam(r, "transactionId")
 	err := h.tService.ConfirmSeller(r.Context(), txID)

@@ -149,6 +149,64 @@ definitions:
     - ItemStatusAvailable
     - ItemStatusReserved
     - ItemStatusSold
+  domain.PurchaseRequest:
+    properties:
+      buyerID:
+        type: string
+      createdAt:
+        type: string
+      itemID:
+        type: string
+      requestID:
+        type: string
+      status:
+        $ref: '#/definitions/domain.PurchaseRequestStatus'
+      updatedAt:
+        type: string
+    type: object
+  domain.PurchaseRequestStatus:
+    enum:
+    - PENDING
+    - ACCEPTED
+    - REJECTED
+    - FROZEN
+    - CANCELLED
+    type: string
+    x-enum-varnames:
+    - PurchaseRequestPending
+    - PurchaseRequestAccepted
+    - PurchaseRequestRejected
+    - PurchaseRequestFrozen
+    - PurchaseRequestCancelled
+  domain.QueueEntry:
+    properties:
+      entryID:
+        type: string
+      entryStatus:
+        $ref: '#/definitions/domain.QueueEntryStatus'
+      itemID:
+        type: string
+      joinedAt:
+        type: string
+      turnStartedAt:
+        type: string
+      userID:
+        type: string
+    type: object
+  domain.QueueEntryStatus:
+    enum:
+    - WAITING
+    - RESERVED
+    - EXPIRED
+    - COMPLETED
+    - CANCELLED
+    type: string
+    x-enum-varnames:
+    - QueueStatusWaiting
+    - QueueStatusReserved
+    - QueueStatusExpired
+    - QueueStatusCompleted
+    - QueueStatusCancelled
   dto.CompleteStudentRegistrationRequest:
     properties:
       academicYear:
@@ -993,6 +1051,175 @@ paths:
       summary: Get current user
       tags:
       - Users
+  /purchases/items/{itemId}/request:
+    post:
+      description: Creates a new purchase request from the authenticated user to buy
+        a specific item
+      parameters:
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.PurchaseRequest'
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Send a purchase request
+      tags:
+      - Purchases
+  /purchases/items/{itemId}/requests:
+    get:
+      description: Returns a list of all purchase requests made for a specific item
+      parameters:
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.PurchaseRequest'
+            type: array
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: List purchase requests for an item
+      tags:
+      - Purchases
+  /queue/{itemId}/join:
+    post:
+      description: Adds the authenticated user to the giveaway queue for the specified
+        item
+      parameters:
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.QueueEntry'
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Join an item's giveaway queue
+      tags:
+      - Giveaway Queue
+  /queue/{itemId}/leave:
+    delete:
+      description: Removes the authenticated user from the giveaway queue for the
+        specified item
+      parameters:
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Leave an item's giveaway queue
+      tags:
+      - Giveaway Queue
+  /queue/{itemId}/position/{entryId}:
+    get:
+      description: Retrieves the current numerical position of a specific queue entry
+        for an item
+      parameters:
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: string
+      - description: Queue Entry ID
+        in: path
+        name: entryId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: 'Returns { \"position\": 1 }'
+          schema:
+            additionalProperties:
+              type: integer
+            type: object
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Get user position in queue
+      tags:
+      - Giveaway Queue
+  /transactions/{transactionId}/confirm:
+    post:
+      description: Allows the seller to confirm a transaction
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: transactionId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: 'Returns { \"message\": \"Confirmed\" }'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Confirm a transaction
+      tags:
+      - Transactions
   /users/{profileId}/follow:
     post:
       description: Authenticated user follows the profile with the given profileId

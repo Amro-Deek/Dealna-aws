@@ -985,6 +985,266 @@ const docTemplate = `{
                 }
             }
         },
+        "/purchases/items/{itemId}/request": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new purchase request from the authenticated user to buy a specific item",
+                "tags": [
+                    "Purchases"
+                ],
+                "summary": "Send a purchase request",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.PurchaseRequest"
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/purchases/items/{itemId}/requests": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a list of all purchase requests made for a specific item",
+                "tags": [
+                    "Purchases"
+                ],
+                "summary": "List purchase requests for an item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.PurchaseRequest"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/queue/{itemId}/join": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Adds the authenticated user to the giveaway queue for the specified item",
+                "tags": [
+                    "Giveaway Queue"
+                ],
+                "summary": "Join an item's giveaway queue",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.QueueEntry"
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/queue/{itemId}/leave": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes the authenticated user from the giveaway queue for the specified item",
+                "tags": [
+                    "Giveaway Queue"
+                ],
+                "summary": "Leave an item's giveaway queue",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/queue/{itemId}/position/{entryId}": {
+            "get": {
+                "description": "Retrieves the current numerical position of a specific queue entry for an item",
+                "tags": [
+                    "Giveaway Queue"
+                ],
+                "summary": "Get user position in queue",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Queue Entry ID",
+                        "name": "entryId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns { \\\"position\\\": 1 }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/transactions/{transactionId}/confirm": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows the seller to confirm a transaction",
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Confirm a transaction",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID",
+                        "name": "transactionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns { \\\"message\\\": \\\"Confirmed\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/users/{profileId}/follow": {
             "post": {
                 "security": [
@@ -1413,6 +1673,86 @@ const docTemplate = `{
                 "ItemStatusAvailable",
                 "ItemStatusReserved",
                 "ItemStatusSold"
+            ]
+        },
+        "domain.PurchaseRequest": {
+            "type": "object",
+            "properties": {
+                "buyerID": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "itemID": {
+                    "type": "string"
+                },
+                "requestID": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.PurchaseRequestStatus"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.PurchaseRequestStatus": {
+            "type": "string",
+            "enum": [
+                "PENDING",
+                "ACCEPTED",
+                "REJECTED",
+                "FROZEN",
+                "CANCELLED"
+            ],
+            "x-enum-varnames": [
+                "PurchaseRequestPending",
+                "PurchaseRequestAccepted",
+                "PurchaseRequestRejected",
+                "PurchaseRequestFrozen",
+                "PurchaseRequestCancelled"
+            ]
+        },
+        "domain.QueueEntry": {
+            "type": "object",
+            "properties": {
+                "entryID": {
+                    "type": "string"
+                },
+                "entryStatus": {
+                    "$ref": "#/definitions/domain.QueueEntryStatus"
+                },
+                "itemID": {
+                    "type": "string"
+                },
+                "joinedAt": {
+                    "type": "string"
+                },
+                "turnStartedAt": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.QueueEntryStatus": {
+            "type": "string",
+            "enum": [
+                "WAITING",
+                "RESERVED",
+                "EXPIRED",
+                "COMPLETED",
+                "CANCELLED"
+            ],
+            "x-enum-varnames": [
+                "QueueStatusWaiting",
+                "QueueStatusReserved",
+                "QueueStatusExpired",
+                "QueueStatusCompleted",
+                "QueueStatusCancelled"
             ]
         },
         "dto.CompleteStudentRegistrationRequest": {
