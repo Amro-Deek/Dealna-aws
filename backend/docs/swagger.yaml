@@ -282,6 +282,21 @@ definitions:
       email:
         type: string
     type: object
+  dto.StudentRegistrationStatusResponse:
+    properties:
+      can_complete_registration:
+        type: boolean
+      email:
+        type: string
+      expires_at:
+        type: string
+      is_used:
+        type: boolean
+      is_verified:
+        type: boolean
+      verified_at:
+        type: string
+    type: object
   middleware.ErrCode:
     enum:
     - USER_NOT_FOUND
@@ -587,6 +602,29 @@ paths:
           schema:
             $ref: '#/definitions/middleware.ErrorFrame'
       summary: Resend activation link
+      tags:
+      - Auth
+  /api/v1/auth/student/status:
+    get:
+      description: Check if student email is verified and registration can be completed
+      parameters:
+      - description: Student email
+        in: query
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.StudentRegistrationStatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      summary: Get registration status
       tags:
       - Auth
   /api/v1/categories:

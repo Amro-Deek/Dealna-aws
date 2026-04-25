@@ -68,6 +68,7 @@ func NewRouter(
 			r.Get("/student/activate", authRoutes.VerifyActivationHandler)
 			r.Post("/student/complete", authRoutes.CompleteStudentRegistrationHandler)
 			r.Post("/student/resend", authRoutes.ResendActivationHandler)
+			r.Get("/student/status", authRoutes.GetRegistrationStatusHandler)
 
 			// ---------
 			// Protected

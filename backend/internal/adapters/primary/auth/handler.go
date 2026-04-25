@@ -4,6 +4,7 @@ package auth
 import (
 	"context"
 
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/services"
 )
 
@@ -87,4 +88,11 @@ func (h *Handler) ResendStudentActivation(
 	email string,
 ) error {
 	return h.preRegService.ResendActivation(ctx, email)
+}
+
+func (h *Handler) GetStudentRegistrationStatus(
+	ctx context.Context,
+	email string,
+) (*domain.StudentPreRegistration, error) {
+	return h.preRegService.GetRegistrationStatus(ctx, email)
 }

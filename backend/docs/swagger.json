@@ -280,6 +280,41 @@
                 }
             }
         },
+        "/api/v1/auth/student/status": {
+            "get": {
+                "description": "Check if student email is verified and registration can be completed",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get registration status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student email",
+                        "name": "email",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.StudentRegistrationStatusResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/categories": {
             "get": {
                 "description": "Returns all marketplace categories for dropdown selection. Public endpoint, no auth required.",
@@ -1858,6 +1893,29 @@
             "type": "object",
             "properties": {
                 "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.StudentRegistrationStatusResponse": {
+            "type": "object",
+            "properties": {
+                "can_complete_registration": {
+                    "type": "boolean"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "is_used": {
+                    "type": "boolean"
+                },
+                "is_verified": {
+                    "type": "boolean"
+                },
+                "verified_at": {
                     "type": "string"
                 }
             }

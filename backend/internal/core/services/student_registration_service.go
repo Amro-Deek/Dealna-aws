@@ -266,6 +266,19 @@ func (s *StudentRegistrationService) ResendActivation(
 	return s.email.SendActivationLink(email, newToken)
 }
 
+func (s *StudentRegistrationService) GetRegistrationStatus(
+	ctx context.Context,
+	email string,
+) (*domain.StudentPreRegistration, error) {
+
+	pre, err := s.preRegs.GetByEmail(ctx, email)
+	if err != nil {
+		return nil, middleware.NewUnauthorizedError("no pending activation")
+	}
+
+	return pre, nil
+}
+
 
 func extractStudentID(email string) string {
 	parts := strings.Split(email, "@")

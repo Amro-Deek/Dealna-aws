@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -37,6 +38,17 @@ func (rt *Routes) RegisterPublic(router chi.Router) {
 func (rt *Routes) RegisterProtected(router chi.Router) {
 	router.Route("/auth", func(r chi.Router) {
 		r.Post("/logout", rt.LogoutHandler)
+	})
+}
+
+// Register public student registration routes
+func (rt *Routes) RegisterRegistration(router chi.Router) {
+	router.Route("/auth/student", func(r chi.Router) {
+		r.Post("/request-activation", rt.RequestActivationHandler)
+		r.Get("/activate", rt.VerifyActivationHandler)
+		r.Post("/complete", rt.CompleteStudentRegistrationHandler)
+		r.Post("/resend", rt.ResendActivationHandler)
+		r.Get("/status", rt.GetRegistrationStatusHandler)
 	})
 }
 
@@ -236,4 +248,35 @@ func (rt *Routes) ResendActivationHandler(w http.ResponseWriter, req *http.Reque
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// @Summary Get registration status
+// @Description Check if student email is verified and registration can be completed
+// @Tags Auth
+// @Produce json
+// @Param email query string true "Student email"
+// @Success 200 {object} dto.StudentRegistrationStatusResponse
+// @Failure 401 {object} middleware.ErrorFrame
+// @Router /api/v1/auth/student/status [get]
+func (rt *Routes) GetRegistrationStatusHandler(w http.ResponseWriter, req *http.Request) {
+	email := req.URL.Query().Get("email")
+	if email == "" {
+		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("email", "required"), rt.logger)
+		return
+	}
+
+	pre, err := rt.handler.GetStudentRegistrationStatus(req.Context(), email)
+	if err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		return
+	}
+
+	middleware.WriteJSONResponse(w, http.StatusOK, dto.StudentRegistrationStatusResponse{
+		Email:                   pre.Email,
+		IsVerified:              pre.VerifiedAt != nil,
+		IsUsed:                  pre.UsedAt != nil,
+		ExpiresAt:               pre.ExpiresAt,
+		VerifiedAt:              pre.VerifiedAt,
+		CanCompleteRegistration: pre.VerifiedAt != nil && pre.UsedAt == nil && time.Now().Before(pre.ExpiresAt),
+	})
 }
