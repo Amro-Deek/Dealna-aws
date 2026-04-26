@@ -219,16 +219,16 @@ func (h *ProfileHandler) GetPublicProfile(w http.ResponseWriter, r *http.Request
 // @Tags Social
 // @Security BearerAuth
 // @Produce json
-// @Param userId path string true "User ID (owner_id from the item feed)"
+// @Param profileId path string true "User ID (owner_id from the item feed)"
 // @Success 200 {object} services.ProfileDTO
 // @Failure 401 {object} middleware.ErrorFrame
 // @Failure 404 {object} middleware.ErrorFrame
 // @Failure 500 {object} middleware.ErrorFrame
-// @Router /api/v1/users/{userId}/profile-by-user [get]
+// @Router /api/v1/users/{profileId}/profile-by-user [get]
 func (h *ProfileHandler) GetPublicProfileByUserID(w http.ResponseWriter, r *http.Request) {
-	userID := chi.URLParam(r, "userId")
+	userID := chi.URLParam(r, "profileId")
 	if userID == "" {
-		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("path", "userId is required"), nil)
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("path", "profileId is required"), nil)
 		return
 	}
 

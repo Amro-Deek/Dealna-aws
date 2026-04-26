@@ -1020,7 +1020,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/users/{userId}/profile-by-user": {
+        "/api/v1/users/{profileId}/profile-by-user": {
             "get": {
                 "security": [
                     {
@@ -1039,7 +1039,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "User ID (owner_id from the item feed)",
-                        "name": "userId",
+                        "name": "profileId",
                         "in": "path",
                         "required": true
                     }

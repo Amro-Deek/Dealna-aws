@@ -1070,7 +1070,7 @@ paths:
       summary: '[Public] Discover User'
       tags:
       - Social
-  /api/v1/users/{userId}/profile-by-user:
+  /api/v1/users/{profileId}/profile-by-user:
     get:
       description: Fetch the public profile of an item owner using their user ID (the
         owner_id field returned in the feed). Use this when clicking on an item to
@@ -1078,7 +1078,7 @@ paths:
       parameters:
       - description: User ID (owner_id from the item feed)
         in: path
-        name: userId
+        name: profileId
         required: true
         type: string
       produces:
