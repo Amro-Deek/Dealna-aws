@@ -98,6 +98,25 @@ func (s *ProfileService) GetPublicProfile(ctx context.Context, profileID string)
 	return dto, nil
 }
 
+func (s *ProfileService) GetPublicProfileByUserID(ctx context.Context, userID string) (*ProfileDTO, error) {
+	profile, err := s.users.GetProfileByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ProfileDTO{
+		ProfileID:         profile.ProfileID,
+		DisplayName:       profile.DisplayName,
+		Bio:               profile.Bio,
+		ProfilePictureURL: profile.ProfilePictureURL,
+		RatingCount:       profile.RatingCount,
+		TotalReviewsCount: profile.TotalReviewsCount,
+		SoldItemsCount:    profile.SoldItemsCount,
+		FollowerCount:     profile.FollowerCount,
+		FollowingCount:    profile.FollowingCount,
+	}, nil
+}
+
 func (s *ProfileService) UpdateProfile(ctx context.Context, userID string, displayName, bio, profilePictureURL *string) error {
 	// If displayName is being updated, enforce business rules
 	if displayName != nil {

@@ -212,3 +212,31 @@ func (h *ProfileHandler) GetPublicProfile(w http.ResponseWriter, r *http.Request
 
 	middleware.WriteJSONResponse(w, http.StatusOK, profile)
 }
+
+// GetPublicProfileByUserID retrieves a user's public profile using their user ID (owner_id from feed)
+// @Summary [Public] Get Owner Profile by User ID
+// @Description Fetch the public profile of an item owner using their user ID (the owner_id field returned in the feed). Use this when clicking on an item to show the seller's profile.
+// @Tags Social
+// @Security BearerAuth
+// @Produce json
+// @Param userId path string true "User ID (owner_id from the item feed)"
+// @Success 200 {object} services.ProfileDTO
+// @Failure 401 {object} middleware.ErrorFrame
+// @Failure 404 {object} middleware.ErrorFrame
+// @Failure 500 {object} middleware.ErrorFrame
+// @Router /api/v1/users/{userId}/profile-by-user [get]
+func (h *ProfileHandler) GetPublicProfileByUserID(w http.ResponseWriter, r *http.Request) {
+	userID := chi.URLParam(r, "userId")
+	if userID == "" {
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("path", "userId is required"), nil)
+		return
+	}
+
+	profile, err := h.profileService.GetPublicProfileByUserID(r.Context(), userID)
+	if err != nil {
+		middleware.WriteErrorResponse(w, r.Context(), err, h.logger)
+		return
+	}
+
+	middleware.WriteJSONResponse(w, http.StatusOK, profile)
+}
