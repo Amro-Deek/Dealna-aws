@@ -265,9 +265,9 @@ test.describe.serial('Marketplace Feed & Item Posting API', () => {
     expect(res.status()).toBe(400);
   });
 
-  // ── 8. Feed — university scoped ──
-  test('GET /items/feed — 200 contains newly created item', async ({ request }) => {
-    const res = await request.get('/api/v1/items/feed?limit=20', {
+  // ── 8. Feed — university scoped (Excludes Self) ──
+  test('GET /items/feed — 200 excludes newly created item (own items hidden)', async ({ request }) => {
+    const res = await request.get('/api/v1/items/feed?limit=50', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
@@ -275,10 +275,10 @@ test.describe.serial('Marketplace Feed & Item Posting API', () => {
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
 
+    // Now it SHOULD be missing because we hide our own items
     const found = body.find((i: any) => i.id === createdItemId);
-    expect(found).toBeTruthy();
-    expect(found.status).toBe('AVAILABLE');
-    console.log(`📰 Feed: ${body.length} item(s). Our item visible ✅`);
+    expect(found).toBeFalsy(); 
+    console.log(`📰 Feed: ${body.length} item(s). Our item correctly hidden from self ✅`);
   });
 
   // ── 9. Feed — search ──
