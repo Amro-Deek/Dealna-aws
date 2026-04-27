@@ -88,6 +88,7 @@ type CreateItemCommand struct {
 // ItemFilter defines search parameters for the Marketplace Feed.
 type ItemFilter struct {
 	RequesterUniversityID uuid.UUID // Crucial: Ensures users only browse within their own university (Birzeit MVP).
+	ExcludedOwnerID       uuid.UUID // New: To hide logged-in user's items from their own feed.
 	CategoryID            *uuid.UUID
 	MinPrice              *float64
 	MaxPrice              *float64

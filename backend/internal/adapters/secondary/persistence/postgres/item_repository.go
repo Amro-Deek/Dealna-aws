@@ -140,6 +140,7 @@ func (r *ItemRepository) GetFeedItems(ctx context.Context, filter domain.ItemFil
 		Column5:      searchQuery,
 		Offset:       filter.Offset,
 		Limit:        filter.Limit,
+		OwnerID:      pgtype.UUID{Bytes: filter.ExcludedOwnerID, Valid: true},
 	}
 
 	rows, err := r.queries.GetFeedItems(ctx, params)

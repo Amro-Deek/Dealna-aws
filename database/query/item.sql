@@ -48,6 +48,7 @@ WHERE u.university_id = $1
   AND ($3::numeric IS NULL OR i.price >= $3)
   AND ($4::numeric IS NULL OR i.price <= $4)
   AND ($5::text IS NULL OR i.title ILIKE '%' || $5 || '%')
+  AND i.owner_id != $8
 ORDER BY i.created_at DESC
 LIMIT $7 OFFSET $6;
 

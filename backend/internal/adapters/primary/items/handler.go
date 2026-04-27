@@ -129,6 +129,7 @@ func (h *ItemHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 		Limit:                 20,
 		Offset:                0,
 		RequesterUniversityID: universityID,
+		ExcludedOwnerID:       userID,
 	}
 
 	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
