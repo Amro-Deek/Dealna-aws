@@ -23,3 +23,25 @@ test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
+
+# Go build artifacts
+backend/bin/
+*.exe
+backend/dealna
+backend/test
+backend/test_build
+backend/check_db.go
+backend/check_user.go
+
+# Scratch / debug scripts
+search_worker/check_qdrant.py
+search_worker/list_models.py
+search_worker/test_api.py
+search_worker/function.zip
+
+# One-shot dev tools (contain hardcoded DB URLs / not needed by CI/CD)
+backend/cmd/migrate_trgm/
+backend/cmd/seeder/
+
+
+TODO.md

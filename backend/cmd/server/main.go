@@ -26,6 +26,7 @@ import (
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/persistence"
 	postgres "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/persistence/postgres"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/storage"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/messaging"
 
 	// AWS
 	context "context"
@@ -68,6 +69,26 @@ func main() {
 		log.Fatalf("DB error: %v", err)
 	}
 	defer db.Close()
+
+	// =========================
+	// AWS & External Infrastructure (SQS & Qdrant)
+	// =========================
+	// 1. Qdrant Setup
+	qdrantClient, err := database.NewQdrantClient(cfg.QdrantURL, cfg.QdrantAPIKey)
+	if err != nil {
+		log.Printf("⚠️ Qdrant connection failed: %v", err)
+	} else {
+		// Initialize the collection and indexes only on startup
+		if err := qdrantClient.InitQdrantSchema(context.Background()); err != nil {
+			log.Printf("⚠️ Qdrant Schema Init warning: %v", err)
+		}
+	}
+
+	// 2. Lambda Publisher for Search Sync (direct invoke, no SQS)
+	lambdaPublisher, err := messaging.NewLambdaPublisher(context.TODO(), cfg.LambdaFunctionName, cfg.AWSRegion)
+	if err != nil {
+		log.Fatalf("failed to initialize Lambda Publisher: %v", err)
+	}
 
 	// =========================
 	// Repositories
@@ -126,7 +147,7 @@ func main() {
 	)
 	profileService := services.NewProfileService(userRepo)
 	storageService := services.NewStorageService(s3Provider)
-	itemService := services.NewItemService(itemRepo, s3Provider)
+	itemService := services.NewItemService(itemRepo, s3Provider, lambdaPublisher, qdrantClient)
 
 	// =========================
 	// Handlers

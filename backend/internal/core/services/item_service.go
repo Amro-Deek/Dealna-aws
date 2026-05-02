@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"sort"
 	"strings"
 	"time"
 
@@ -24,12 +26,16 @@ var (
 type ItemService struct {
 	repo            ports.ItemRepository
 	storageProvider ports.IStorageProvider
+	searchSync      ports.ISearchSyncPublisher
+	searchRepo      ports.ISearchRepository
 }
 
-func NewItemService(repo ports.ItemRepository, storage ports.IStorageProvider) *ItemService {
+func NewItemService(repo ports.ItemRepository, storage ports.IStorageProvider, searchSync ports.ISearchSyncPublisher, searchRepo ports.ISearchRepository) *ItemService {
 	return &ItemService{
 		repo:            repo,
 		storageProvider: storage,
+		searchSync:      searchSync,
+		searchRepo:      searchRepo,
 	}
 }
 
@@ -84,6 +90,36 @@ func (s *ItemService) CreateItem(ctx context.Context, cmd domain.CreateItemComma
 		return item, fmt.Errorf("failed to attach images: %w", err)
 	}
 
+	// 6. Push to SQS (Async, after DB commit so we don't have ghost data in Qdrant)
+	univID, _ := s.repo.GetUniversityIDByUserID(ctx, cmd.OwnerID)
+	
+	var categoryStr string
+	if item.CategoryID != nil {
+		categoryStr = item.CategoryID.String()
+	}
+
+	sqsData := domain.SQSItemEventData{
+		ItemID:      item.ID.String(),
+		Title:       item.Title,
+		Description: item.Description,
+		Payload: domain.QdrantItemPayload{
+			UniversityID: univID.String(),
+			Category:     categoryStr,
+			Price:        item.Price,
+			Status:       string(item.Status),
+			Condition:    "used", // Assume used for now until added to DB schema
+			IsGiveaway:   item.Price == 0,
+		},
+	}
+
+	event := domain.SearchSyncEvent{
+		EventID:   uuid.New().String(),
+		Action:    "create",
+		Data:      sqsData,
+		Timestamp: time.Now(),
+	}
+	_ = s.searchSync.PublishSyncEvent(context.Background(), event) // Fire and forget in background context
+
 	return item, nil
 }
 
@@ -135,7 +171,23 @@ func (s *ItemService) GetUserUniversityID(ctx context.Context, userID uuid.UUID)
 func (s *ItemService) UpdateStatus(ctx context.Context, itemID uuid.UUID, newStatus domain.ItemStatus) error {
 	switch newStatus {
 	case domain.ItemStatusAvailable, domain.ItemStatusReserved, domain.ItemStatusSold:
-		return s.repo.UpdateItemStatus(ctx, itemID, newStatus)
+		err := s.repo.UpdateItemStatus(ctx, itemID, newStatus)
+		if err == nil {
+			// Emit status update to SQS
+			event := domain.SearchSyncEvent{
+				EventID: uuid.New().String(),
+				Action:  "update_status",
+				Data: domain.SQSItemEventData{
+					ItemID: itemID.String(),
+					Payload: domain.QdrantItemPayload{
+						Status: string(newStatus),
+					},
+				},
+				Timestamp: time.Now(),
+			}
+			_ = s.searchSync.PublishSyncEvent(context.Background(), event)
+		}
+		return err
 	default:
 		return ErrInvalidStatusTransition
 	}
@@ -143,7 +195,20 @@ func (s *ItemService) UpdateStatus(ctx context.Context, itemID uuid.UUID, newSta
 
 // SoftDeleteItem removes the item from the feed but keeps its data for audits/transactions.
 func (s *ItemService) SoftDeleteItem(ctx context.Context, itemID uuid.UUID) error {
-	return s.repo.SoftDeleteItem(ctx, itemID)
+	err := s.repo.SoftDeleteItem(ctx, itemID)
+	if err == nil {
+		// Emit delete event to SQS so Qdrant drops it from vector search
+		event := domain.SearchSyncEvent{
+			EventID: uuid.New().String(),
+			Action:  "delete",
+			Data: domain.SQSItemEventData{
+				ItemID: itemID.String(),
+			},
+			Timestamp: time.Now(),
+		}
+		_ = s.searchSync.PublishSyncEvent(context.Background(), event)
+	}
+	return err
 }
 
 // GenerateItemImageUploadURL returns a presigned S3 url bound to the items prefix.
@@ -160,3 +225,133 @@ func (s *ItemService) GenerateItemImageUploadURL(ctx context.Context, userID uui
 
 	return url, objectKey, nil
 }
+
+// SearchItems coordinates semantic search by:
+// 1. Vectorizing the query string via Lambda → Qdrant dense search
+// 2. Postgres pg_trgm fuzzy keyword search (concurrent)
+// 3. Merging results with Reciprocal Rank Fusion (RRF)
+func (s *ItemService) SearchItems(ctx context.Context, query string, filter domain.ItemFilter) ([]domain.FeedItem, error) {
+	if filter.ExcludedOwnerID != uuid.Nil {
+		univID, err := s.repo.GetUniversityIDByUserID(ctx, filter.ExcludedOwnerID)
+		if err == nil {
+			filter.RequesterUniversityID = univID
+		}
+	}
+
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return s.GetGlobalFeed(ctx, filter)
+	}
+
+	// --- Fire both searches CONCURRENTLY ---
+	type denseResult struct {
+		ids []uuid.UUID
+		err error
+	}
+	type kwResult struct {
+		ids []uuid.UUID
+		err error
+	}
+
+	denseCh := make(chan denseResult, 1)
+	kwCh := make(chan kwResult, 1)
+
+	// Goroutine 1: Lambda → Qdrant dense vector search
+	go func() {
+		vector, err := s.searchSync.GenerateEmbedding(ctx, query)
+		if err != nil {
+			denseCh <- denseResult{err: fmt.Errorf("embedding failed: %w", err)}
+			return
+		}
+		ids, err := s.searchRepo.SearchItems(ctx, vector, filter)
+		denseCh <- denseResult{ids: ids, err: err}
+	}()
+
+	// Goroutine 2: Postgres pg_trgm keyword search
+	go func() {
+		ids, err := s.repo.KeywordSearchItems(ctx, query, filter)
+		kwCh <- kwResult{ids: ids, err: err}
+	}()
+
+	denseRes := <-denseCh
+	kwRes := <-kwCh
+
+	// Log non-fatal errors but don't abort — partial results are better than none
+	if denseRes.err != nil {
+		log.Printf("[WARN] dense search error (non-fatal): %v", denseRes.err)
+	}
+	if kwRes.err != nil {
+		log.Printf("[WARN] keyword search error (non-fatal): %v", kwRes.err)
+	}
+
+	// If both failed, surface the dense error
+	if denseRes.err != nil && kwRes.err != nil {
+		return nil, denseRes.err
+	}
+
+	// --- Reciprocal Rank Fusion (RRF) merge ---
+	// score(id) = Σ 1/(k + rank_i) where k=60 (standard constant)
+	const rrfK = 60.0
+	scores := make(map[uuid.UUID]float64)
+
+	for rank, id := range denseRes.ids {
+		scores[id] += 1.0 / (rrfK + float64(rank+1))
+	}
+	for rank, id := range kwRes.ids {
+		scores[id] += 1.0 / (rrfK + float64(rank+1))
+	}
+
+	// Collect unique IDs sorted by descending RRF score
+	type scored struct {
+		id    uuid.UUID
+		score float64
+	}
+	ranked := make([]scored, 0, len(scores))
+	for id, sc := range scores {
+		ranked = append(ranked, scored{id, sc})
+	}
+	sort.Slice(ranked, func(i, j int) bool {
+		return ranked[i].score > ranked[j].score
+	})
+
+	limit := int(filter.Limit)
+	if limit <= 0 {
+		limit = 20
+	}
+	mergedIDs := make([]uuid.UUID, 0, min(len(ranked), limit))
+	for i, r := range ranked {
+		if i >= limit {
+			break
+		}
+		mergedIDs = append(mergedIDs, r.id)
+	}
+
+	if len(mergedIDs) == 0 {
+		return []domain.FeedItem{}, nil
+	}
+
+	// Hydrate from Postgres
+	hydratedItems, err := s.repo.GetFeedItemsByIDs(ctx, mergedIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hydrate hybrid search results: %w", err)
+	}
+
+	// Filter out requester's own items (safety net — Qdrant excludes, Postgres already excludes via SQL)
+	items := make([]domain.FeedItem, 0, len(hydratedItems))
+	for _, item := range hydratedItems {
+		if filter.ExcludedOwnerID != uuid.Nil && item.OwnerID == filter.ExcludedOwnerID {
+			continue
+		}
+		items = append(items, item)
+	}
+
+	return items, nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+

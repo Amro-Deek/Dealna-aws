@@ -338,3 +338,88 @@ func (h *ItemHandler) GetCategories(w http.ResponseWriter, r *http.Request) {
 	}
 	middleware.WriteJSONResponse(w, http.StatusOK, cats)
 }
+
+// SearchItems godoc
+// @Summary      Search Marketplace Items
+// @Description  Performs a hybrid semantic search for marketplace items. Requires authentication for tenant isolation.
+// @Tags         Marketplace
+// @Accept       json
+// @Produce      json
+// @Param        q             query     string  false "Search query string"
+// @Param        category_id   query     string  false "Filter by category UUID"
+// @Param        min_price     query     number  false "Minimum price"
+// @Param        max_price     query     number  false "Maximum price"
+// @Param        limit         query     integer false "Number of results to return (default 20, max 100)"
+// @Param        offset        query     integer false "Number of results to skip (default 0)"
+// @Success      200           {array}   domain.FeedItem
+// @Failure      401           {object}  middleware.ErrorFrame
+// @Router       /api/v1/items/search [get]
+// @Security     BearerAuth
+func (h *ItemHandler) SearchItems(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+
+	limit := 20
+	if l := q.Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+			if parsed > 100 {
+				limit = 100
+			} else {
+				limit = parsed
+			}
+		}
+	}
+
+	offset := 0
+	if o := q.Get("offset"); o != "" {
+		if parsed, err := strconv.Atoi(o); err == nil && parsed > 0 {
+			offset = parsed
+		}
+	}
+
+	// Extract optional filters
+	filter := domain.ItemFilter{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	}
+
+	if cat := q.Get("category_id"); cat != "" {
+		if parsedCat, err := uuid.Parse(cat); err == nil {
+			filter.CategoryID = &parsedCat
+		}
+	}
+
+	if minP := q.Get("min_price"); minP != "" {
+		if val, err := strconv.ParseFloat(minP, 64); err == nil {
+			filter.MinPrice = &val
+		}
+	}
+
+	if maxP := q.Get("max_price"); maxP != "" {
+		if val, err := strconv.ParseFloat(maxP, 64); err == nil {
+			filter.MaxPrice = &val
+		}
+	}
+
+	userIDStr := middleware.UserIDFromContext(r.Context())
+	if userIDStr != "" {
+		if userID, err := uuid.Parse(userIDStr); err == nil {
+			filter.ExcludedOwnerID = userID
+			
+			// Try to get university ID directly if possible, else the service will fetch it.
+			// Since UniversityIDFromContext doesn't exist, we will rely on ItemService to fetch it.
+		}
+	} else {
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewUnauthorizedError("missing or invalid auth context"), h.logger)
+		return
+	}
+
+	queryStr := q.Get("q")
+	items, err := h.itemService.SearchItems(r.Context(), queryStr, filter)
+	if err != nil {
+		h.logger.Error(r.Context(), "failed to search items", map[string]any{"error": err.Error()})
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewInternalError(err), h.logger)
+		return
+	}
+
+	middleware.WriteJSONResponse(w, http.StatusOK, items)
+}

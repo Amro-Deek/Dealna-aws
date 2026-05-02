@@ -24,6 +24,9 @@ type ItemRepository interface {
 	// GetFeedItems handles the primary Cold Start Feed, strictly constrained by university.
 	GetFeedItems(ctx context.Context, filter domain.ItemFilter) ([]domain.FeedItem, error)
 
+	// GetFeedItemsByIDs fetches full item details from an array of IDs, maintaining order.
+	GetFeedItemsByIDs(ctx context.Context, ids []uuid.UUID) ([]domain.FeedItem, error)
+
 	// GetUserStorefront fetches all items owned by a specific user.
 	GetUserStorefront(ctx context.Context, ownerID uuid.UUID, limit, offset int32) ([]domain.FeedItem, error)
 
@@ -42,4 +45,8 @@ type ItemRepository interface {
 	// GetUniversityIDByUserID fetches the university a user belongs to.
 	// Used for automatic university scoping on the feed without needing a header.
 	GetUniversityIDByUserID(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
+
+	// KeywordSearchItems performs fuzzy trigram text search inside Postgres.
+	// Returns matching item IDs ranked by similarity, scoped to the user's university.
+	KeywordSearchItems(ctx context.Context, query string, filter domain.ItemFilter) ([]uuid.UUID, error)
 }

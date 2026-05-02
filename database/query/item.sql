@@ -52,6 +52,26 @@ WHERE u.university_id = $1
 ORDER BY i.created_at DESC
 LIMIT $7 OFFSET $6;
 
+-- name: GetFeedItemsByIDs :many
+SELECT 
+    i.item_id, i.owner_id, i.category_id, i.title, i.description, i.price, i.pickup_location, i.item_status, i.created_at,
+    p.display_name AS owner_display_name,
+    p.profile_picture_url AS owner_profile_picture_url,
+    c.name AS category_name,
+    COALESCE((
+        SELECT a.file_path 
+        FROM public.attachment a 
+        WHERE a.item_id = i.item_id 
+        ORDER BY a.uploaded_at ASC 
+        LIMIT 1
+    ), '') AS thumbnail_url
+FROM public.item i
+JOIN public."User" u ON i.owner_id = u.user_id
+JOIN public.profile p ON u.user_id = p.user_id
+LEFT JOIN public.category c ON i.category_id = c.category_id
+WHERE i.item_id = ANY($1::uuid[])
+ORDER BY array_position($1::uuid[], i.item_id);
+
 -- name: GetDailyItemCount :one
 SELECT COUNT(*)
 FROM public.item

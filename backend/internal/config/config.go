@@ -29,6 +29,11 @@ type Config struct {
 	KeycloakClientID string
 	KeycloakAdminClientID string
 	KeycloakAdminClientSecret string
+	SQSQueueURL               string
+	AWSRegion                 string
+	LambdaFunctionName        string
+	QdrantURL                 string
+	QdrantAPIKey              string
 }
 type SMTPConfig struct {
 	Host     string
@@ -62,6 +67,11 @@ func Load() *Config {
 			Password: getEnv("SMTP_PASSWORD", ""),
 			From:     getEnv("SMTP_FROM", ""),
 		},
+		SQSQueueURL:   getEnv("SQS_QUEUE_URL", ""),
+		AWSRegion:     getEnv("AWS_REGION", "us-east-1"),
+		LambdaFunctionName: getEnv("LAMBDA_FUNCTION_NAME", "dealna-search-worker"),
+		QdrantURL:     getEnv("QDRANT_URL", ""),
+		QdrantAPIKey:  getEnv("QDRANT_API_KEY", ""),
 	}
 
 	return cfg

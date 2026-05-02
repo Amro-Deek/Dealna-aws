@@ -22,6 +22,7 @@ func (rt *Routes) RegisterProtected(r chi.Router) {
 	r.Route("/items", func(r chi.Router) {
 		r.Post("/", rt.handler.CreateItem)
 		r.Get("/feed", rt.handler.GetFeed)
+		r.Get("/search", rt.handler.SearchItems)
 		r.Get("/my", rt.handler.GetMyItems)
 		r.Post("/picture/upload-url", rt.handler.GenerateUploadURL)
 

@@ -884,6 +884,55 @@ paths:
       summary: Generate Item Image Upload URL
       tags:
       - Items
+  /api/v1/items/search:
+    get:
+      consumes:
+      - application/json
+      description: Performs a hybrid semantic search for marketplace items. Requires
+        authentication for tenant isolation.
+      parameters:
+      - description: Search query string
+        in: query
+        name: q
+        type: string
+      - description: Filter by category UUID
+        in: query
+        name: category_id
+        type: string
+      - description: Minimum price
+        in: query
+        name: min_price
+        type: number
+      - description: Maximum price
+        in: query
+        name: max_price
+        type: number
+      - description: Number of results to return (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Number of results to skip (default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.FeedItem'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Search Marketplace Items
+      tags:
+      - Marketplace
   /api/v1/profile:
     get:
       description: Primary entry point for mobile apps. Returns aggregated user info,

@@ -177,6 +177,50 @@ func (r *ItemRepository) GetFeedItems(ctx context.Context, filter domain.ItemFil
 	return items, nil
 }
 
+func (r *ItemRepository) GetFeedItemsByIDs(ctx context.Context, ids []uuid.UUID) ([]domain.FeedItem, error) {
+	if len(ids) == 0 {
+		return []domain.FeedItem{}, nil
+	}
+
+	pgIDs := make([]pgtype.UUID, len(ids))
+	for i, id := range ids {
+		pgIDs[i] = pgtype.UUID{Bytes: id, Valid: true}
+	}
+
+	rows, err := r.queries.GetFeedItemsByIDs(ctx, pgIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]domain.FeedItem, 0, len(rows))
+	for _, row := range rows {
+		price, _ := row.Price.Float64Value()
+		
+		var catID *uuid.UUID
+		if row.CategoryID.Valid {
+			id := uuid.UUID(row.CategoryID.Bytes)
+			catID = &id
+		}
+
+		items = append(items, domain.FeedItem{
+			ID:                 row.ItemID.Bytes,
+			OwnerID:            row.OwnerID.Bytes,
+			CategoryID:         catID,
+			CategoryName:       row.CategoryName.String,
+			Title:              row.Title,
+			Description:        row.Description.String,
+			Price:              price.Float64,
+			PickupLocation:     row.PickupLocation.String,
+			Status:             domain.ItemStatus(row.ItemStatus),
+			CreatedAt:          row.CreatedAt.Time,
+			OwnerDisplayName:   row.OwnerDisplayName.String,
+			OwnerProfilePicURL: row.OwnerProfilePictureUrl.String,
+			ThumbnailURL:       row.ThumbnailUrl.(string), // NOTE: We can keep the string cast or handle interface depending on sqlc type
+		})
+	}
+	return items, nil
+}
+
 func (r *ItemRepository) GetItemDetail(ctx context.Context, itemID uuid.UUID) (*domain.ItemDetail, error) {
 	idPg := pgtype.UUID{Bytes: itemID, Valid: true}
 	
@@ -294,4 +338,51 @@ func (r *ItemRepository) GetUniversityIDByUserID(ctx context.Context, userID uui
 	}
 	return uuid.UUID(result.Bytes), nil
 }
+
+// KeywordSearchItems uses Postgres pg_trgm trigram similarity for fuzzy keyword matching.
+// It searches title and description, scoped by university, excluding the requester's own items.
+func (r *ItemRepository) KeywordSearchItems(ctx context.Context, query string, filter domain.ItemFilter) ([]uuid.UUID, error) {
+	sql := `
+		SELECT i.item_id
+		FROM public.item i
+		JOIN public."User" u ON i.owner_id = u.user_id
+		WHERE u.university_id = $1
+		  AND i.item_status = 'AVAILABLE'
+		  AND i.deleted_at IS NULL
+		  AND i.owner_id != $2
+		  AND (
+		    similarity(i.title, $3) > 0.15
+		    OR similarity(i.description, $3) > 0.10
+		    OR i.title ILIKE '%' || $3 || '%'
+		    OR i.description ILIKE '%' || $3 || '%'
+		  )
+		ORDER BY
+		  GREATEST(similarity(i.title, $3), similarity(i.description, $3)) DESC
+		LIMIT $4
+	`
+
+	rows, err := r.db.Query(ctx, sql,
+		filter.RequesterUniversityID,
+		filter.ExcludedOwnerID,
+		query,
+		filter.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []uuid.UUID
+	for rows.Next() {
+		var pgID pgtype.UUID
+		if err := rows.Scan(&pgID); err != nil {
+			return nil, err
+		}
+		if pgID.Valid {
+			ids = append(ids, uuid.UUID(pgID.Bytes))
+		}
+	}
+	return ids, rows.Err()
+}
+
 
