@@ -86,3 +86,111 @@ func (h *QueueHandler) GetQueuePosition(w http.ResponseWriter, r *http.Request) 
 	}
 	json.NewEncoder(w).Encode(map[string]int{"position": pos})
 }
+
+// AcceptTurn godoc
+// @Summary      Owner accepts turn
+// @Description  Owner accepts the current reserved user's turn
+// @Tags         Giveaway Queue
+// @Security     BearerAuth
+// @Param        itemId   path  string  true  "Item ID"
+// @Param        entryId  path  string  true  "Queue Entry ID"
+// @Success      200      "OK"
+// @Failure      401      {string}  string  "unauthorized"
+// @Failure      500      {string}  string  "internal error"
+// @Router       /queue/{itemId}/entries/{entryId}/accept [post]
+func (h *QueueHandler) AcceptTurn(w http.ResponseWriter, r *http.Request) {
+	itemID := chi.URLParam(r, "itemId")
+	entryID := chi.URLParam(r, "entryId")
+	userID := middleware.UserIDFromContext(r.Context())
+	if userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	err := h.qService.AcceptTurn(r.Context(), itemID, entryID, userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// RejectTurn godoc
+// @Summary      Owner rejects turn
+// @Description  Owner rejects the current reserved user's turn and skips to next
+// @Tags         Giveaway Queue
+// @Security     BearerAuth
+// @Param        itemId   path  string  true  "Item ID"
+// @Param        entryId  path  string  true  "Queue Entry ID"
+// @Success      200      "OK"
+// @Failure      401      {string}  string  "unauthorized"
+// @Failure      500      {string}  string  "internal error"
+// @Router       /queue/{itemId}/entries/{entryId}/reject [post]
+func (h *QueueHandler) RejectTurn(w http.ResponseWriter, r *http.Request) {
+	itemID := chi.URLParam(r, "itemId")
+	entryID := chi.URLParam(r, "entryId")
+	userID := middleware.UserIDFromContext(r.Context())
+	if userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	err := h.qService.RejectTurn(r.Context(), itemID, entryID, userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// InitiateHandoff godoc
+// @Summary      Owner initiates handoff
+// @Description  Owner initiates the item handoff to the confirmed user
+// @Tags         Giveaway Queue
+// @Security     BearerAuth
+// @Param        itemId   path  string  true  "Item ID"
+// @Param        entryId  path  string  true  "Queue Entry ID"
+// @Success      200      "OK"
+// @Failure      401      {string}  string  "unauthorized"
+// @Failure      500      {string}  string  "internal error"
+// @Router       /queue/{itemId}/entries/{entryId}/handoff [post]
+func (h *QueueHandler) InitiateHandoff(w http.ResponseWriter, r *http.Request) {
+	itemID := chi.URLParam(r, "itemId")
+	entryID := chi.URLParam(r, "entryId")
+	userID := middleware.UserIDFromContext(r.Context())
+	if userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	err := h.qService.InitiateHandoff(r.Context(), itemID, entryID, userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// ConfirmHandoff godoc
+// @Summary      Receiver confirms handoff
+// @Description  Receiver confirms they received the item
+// @Tags         Giveaway Queue
+// @Security     BearerAuth
+// @Param        itemId   path  string  true  "Item ID"
+// @Param        entryId  path  string  true  "Queue Entry ID"
+// @Success      200      "OK"
+// @Failure      401      {string}  string  "unauthorized"
+// @Failure      500      {string}  string  "internal error"
+// @Router       /queue/{itemId}/entries/{entryId}/complete [post]
+func (h *QueueHandler) ConfirmHandoff(w http.ResponseWriter, r *http.Request) {
+	itemID := chi.URLParam(r, "itemId")
+	entryID := chi.URLParam(r, "entryId")
+	userID := middleware.UserIDFromContext(r.Context())
+	if userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	err := h.qService.ConfirmHandoff(r.Context(), itemID, entryID, userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}

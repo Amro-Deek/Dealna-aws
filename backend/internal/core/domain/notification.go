@@ -9,6 +9,9 @@ type NotificationType string
 
 const (
 	NotifTypeTurnStarted       NotificationType = "TURN_STARTED"
+	NotifTypeTurnAccepted      NotificationType = "TURN_ACCEPTED"
+	NotifTypeHandoffInitiated  NotificationType = "HANDOFF_INITIATED"
+	NotifTypeGiveawayCompleted NotificationType = "GIVEAWAY_COMPLETED"
 	NotifTypeTurnExpired       NotificationType = "TURN_EXPIRED"
 	NotifTypeGiveawayCancelled NotificationType = "GIVEAWAY_CANCELLED"
 	NotifTypePurchaseRequested NotificationType = "PURCHASE_REQUESTED"

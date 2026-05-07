@@ -43,5 +43,12 @@ search_worker/function.zip
 backend/cmd/migrate_trgm/
 backend/cmd/seeder/
 
-
+docs
 TODO.md
+
+# Large folders to save space
+node_modules/
+.venv/
+venv/
+__pycache__/
+.cache/

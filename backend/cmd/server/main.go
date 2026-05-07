@@ -174,7 +174,7 @@ func main() {
 	notificationRepo := postgres.NewNotificationRepository(db)
 
 	notificationSvc := services.NewNotificationService(notificationRepo)
-	queueSvc := services.NewQueueService(queueRepo, notificationSvc)
+	queueSvc := services.NewQueueService(queueRepo, notificationSvc, itemRepo)
 	queueSvc.StartWorkers(context.Background())
 	purchaseSvc := services.NewPurchaseService(purchaseRepo, notificationSvc)
 	transactionSvc := services.NewTransactionService(transactionRepo, notificationSvc)

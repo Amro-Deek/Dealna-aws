@@ -125,3 +125,198 @@ test.describe.serial('Giveaway Queue API', () => {
     expect(res.status(), `Leave failed: ${await res.text()}`).toBe(200);
   });
 });
+
+test.describe.serial('Giveaway Queue State Transitions API', () => {
+  const dbHelper = new DatabaseHelper();
+  const kcHelper = new KeycloakHelper();
+
+  const ts = Date.now();
+  const ownerEmail = `owner_${ts}@student.birzeit.edu`;
+  const receiverEmail = `receiver_${ts}@student.birzeit.edu`;
+  const testPassword = 'StrongPassword123!';
+
+  let ownerToken: string;
+  let receiverToken: string;
+  let itemID: string;
+  let entryID: string;
+
+  test.beforeAll(async ({ request }) => {
+    await dbHelper.ensureUniversityExists('Birzeit University', 'birzeit.edu');
+
+    // Setup Owner
+    await request.post('/api/v1/auth/student/request-activation', { data: { email: ownerEmail } });
+    await new Promise(ok => setTimeout(ok, 800));
+    let t = await dbHelper.getStudentActivationToken(ownerEmail);
+    await request.get(`/api/v1/auth/student/activate?token=${t}`);
+    await request.post('/api/v1/auth/student/complete', {
+      data: { email: ownerEmail, displayName: 'Owner', password: testPassword, major: 'CS', academicYear: 2 },
+    });
+
+    // Setup Receiver
+    await request.post('/api/v1/auth/student/request-activation', { data: { email: receiverEmail } });
+    await new Promise(ok => setTimeout(ok, 800));
+    t = await dbHelper.getStudentActivationToken(receiverEmail);
+    await request.get(`/api/v1/auth/student/activate?token=${t}`);
+    await request.post('/api/v1/auth/student/complete', {
+      data: { email: receiverEmail, displayName: 'Receiver', password: testPassword, major: 'CS', academicYear: 2 },
+    });
+
+    await new Promise(ok => setTimeout(ok, 800));
+
+    ownerToken = await getStudentToken(ownerEmail, testPassword);
+    receiverToken = await getStudentToken(receiverEmail, testPassword);
+
+    const ownerId = await dbHelper.getUserIdByEmail(ownerEmail);
+    if (!ownerId) throw new Error('Owner ID not found after registration');
+    const categoryId = await dbHelper.seedTestCategory('Test Category');
+    itemID = await dbHelper.seedTestItem(ownerId, categoryId, 'Transition Test Item', 0);
+
+    await new Promise(ok => setTimeout(ok, 3000));
+  });
+
+  test.afterAll(async () => {
+    await dbHelper.cleanupTestUser(ownerEmail);
+    await dbHelper.cleanupTestUser(receiverEmail);
+    try { await kcHelper.deleteUserByEmail(ownerEmail); } catch {}
+    try { await kcHelper.deleteUserByEmail(receiverEmail); } catch {}
+    await dbHelper.close();
+  });
+
+  test('Receiver joins queue', async ({ request }) => {
+    const res = await request.post(`/api/v1/giveaway/queue/${itemID}/join`, {
+      headers: { Authorization: `Bearer ${receiverToken}` },
+    });
+    expect(res.status(), `Join failed: ${await res.text()}`).toBe(200);
+    const body = await res.json();
+    entryID = body.EntryID;
+    
+    // First in queue is immediately promoted
+    expect(body.EntryStatus).toBe('RESERVED');
+  });
+
+  test('Owner accepts turn', async ({ request }) => {
+    const res = await request.post(`/api/v1/giveaway/queue/${itemID}/entries/${entryID}/accept`, {
+      headers: { Authorization: `Bearer ${ownerToken}` },
+    });
+    expect(res.status(), `Owner accept failed: ${await res.text()}`).toBe(200);
+  });
+
+  test('Owner initiates handoff', async ({ request }) => {
+    const res = await request.post(`/api/v1/giveaway/queue/${itemID}/entries/${entryID}/handoff`, {
+      headers: { Authorization: `Bearer ${ownerToken}` },
+    });
+    expect(res.status(), `Owner handoff failed: ${await res.text()}`).toBe(200);
+  });
+
+  test('Receiver confirms handoff', async ({ request }) => {
+    const res = await request.post(`/api/v1/giveaway/queue/${itemID}/entries/${entryID}/complete`, {
+      headers: { Authorization: `Bearer ${receiverToken}` },
+    });
+    expect(res.status(), `Receiver confirm failed: ${await res.text()}`).toBe(200);
+  });
+});
+
+test.describe.serial('Giveaway Queue Negative and Edge Cases', () => {
+  const dbHelper = new DatabaseHelper();
+  const kcHelper = new KeycloakHelper();
+
+  const ts = Date.now();
+  const ownerEmail = `owner_edge_${ts}@student.birzeit.edu`;
+  const receiver1Email = `receiver1_edge_${ts}@student.birzeit.edu`;
+  const receiver2Email = `receiver2_edge_${ts}@student.birzeit.edu`;
+  const testPassword = 'StrongPassword123!';
+
+  let ownerToken: string;
+  let receiver1Token: string;
+  let receiver2Token: string;
+  let itemID: string;
+  let entry1ID: string;
+  let entry2ID: string;
+
+  test.beforeAll(async ({ request }) => {
+    await dbHelper.ensureUniversityExists('Birzeit University', 'birzeit.edu');
+
+    // Create 3 users
+    for (const email of [ownerEmail, receiver1Email, receiver2Email]) {
+      await request.post('/api/v1/auth/student/request-activation', { data: { email } });
+      await new Promise(ok => setTimeout(ok, 800));
+      const t = await dbHelper.getStudentActivationToken(email);
+      await request.get(`/api/v1/auth/student/activate?token=${t}`);
+      await request.post('/api/v1/auth/student/complete', {
+        data: { email, displayName: email.split('_')[0], password: testPassword, major: 'CS', academicYear: 2 },
+      });
+      await new Promise(ok => setTimeout(ok, 800));
+    }
+
+    ownerToken = await getStudentToken(ownerEmail, testPassword);
+    receiver1Token = await getStudentToken(receiver1Email, testPassword);
+    receiver2Token = await getStudentToken(receiver2Email, testPassword);
+
+    const ownerId = await dbHelper.getUserIdByEmail(ownerEmail);
+    if (!ownerId) throw new Error('Owner ID not found');
+    const categoryId = await dbHelper.seedTestCategory('Test Category');
+    itemID = await dbHelper.seedTestItem(ownerId, categoryId, 'Edge Case Test Item', 0);
+
+    await new Promise(ok => setTimeout(ok, 3000));
+  });
+
+  test.afterAll(async () => {
+    for (const email of [ownerEmail, receiver1Email, receiver2Email]) {
+      await dbHelper.cleanupTestUser(email);
+      try { await kcHelper.deleteUserByEmail(email); } catch {}
+    }
+    await dbHelper.close();
+  });
+
+  test('Receiver 1 and 2 join the queue', async ({ request }) => {
+    // Receiver 1 joins
+    let res = await request.post(`/api/v1/giveaway/queue/${itemID}/join`, {
+      headers: { Authorization: `Bearer ${receiver1Token}` },
+    });
+    expect(res.status(), `Join failed: ${await res.text()}`).toBe(200);
+    let body = await res.json();
+    entry1ID = body.EntryID;
+    expect(body.EntryStatus).toBe('RESERVED');
+
+    // Receiver 2 joins
+    res = await request.post(`/api/v1/giveaway/queue/${itemID}/join`, {
+      headers: { Authorization: `Bearer ${receiver2Token}` },
+    });
+    expect(res.status(), `Join failed: ${await res.text()}`).toBe(200);
+    body = await res.json();
+    entry2ID = body.EntryID;
+    expect(body.EntryStatus).toBe('WAITING');
+  });
+
+  test('Unauthorized access: Receiver tries to accept turn', async ({ request }) => {
+    const res = await request.post(`/api/v1/giveaway/queue/${itemID}/entries/${entry1ID}/accept`, {
+      headers: { Authorization: `Bearer ${receiver1Token}` },
+    });
+    expect(res.status()).toBe(500);
+    expect(await res.text()).toContain('unauthorized');
+  });
+
+  test('State machine violation: Owner tries to handoff before accept', async ({ request }) => {
+    const res = await request.post(`/api/v1/giveaway/queue/${itemID}/entries/${entry1ID}/handoff`, {
+      headers: { Authorization: `Bearer ${ownerToken}` },
+    });
+    expect(res.status()).toBe(500);
+    expect(await res.text()).toContain('entry is not in CONFIRMED state');
+  });
+
+  test('Owner rejects turn of Receiver 1', async ({ request }) => {
+    // Owner rejects Receiver 1
+    const res = await request.post(`/api/v1/giveaway/queue/${itemID}/entries/${entry1ID}/reject`, {
+      headers: { Authorization: `Bearer ${ownerToken}` },
+    });
+    expect(res.status(), `Owner reject failed: ${await res.text()}`).toBe(200);
+  });
+
+  test('Owner can accept Receiver 2 now', async ({ request }) => {
+    const res = await request.post(`/api/v1/giveaway/queue/${itemID}/entries/${entry2ID}/accept`, {
+      headers: { Authorization: `Bearer ${ownerToken}` },
+    });
+    // This will only work if Receiver 2 is successfully promoted to RESERVED
+    expect(res.status(), `Owner accept on Receiver 2 failed: ${await res.text()}`).toBe(200);
+  });
+});

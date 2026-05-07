@@ -1252,8 +1252,11 @@ CREATE TABLE IF NOT EXISTS queue_entry (
     joined_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     entry_status character varying(20) DEFAULT 'WAITING' NOT NULL,
     turn_started_at timestamp without time zone,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     UNIQUE(item_id, user_id)
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_queue_entry_active_unique ON queue_entry (item_id, user_id) WHERE entry_status IN ('WAITING', 'RESERVED', 'CONFIRMED', 'HANDED_OFF');
+CREATE INDEX IF NOT EXISTS idx_queue_entry_expiry ON queue_entry (entry_status, updated_at) WHERE entry_status IN ('RESERVED', 'CONFIRMED', 'HANDED_OFF');
 
 CREATE TABLE IF NOT EXISTS purchase_request (
     request_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -1277,3 +1280,18 @@ CREATE TABLE IF NOT EXISTS transaction (
     UNIQUE(item_id)
 );
 
+
+ C R E A T E   T A B L E   I F   N O T   E X I S T S   q u e u e _ e n t r y   ( 
+         e n t r y _ i d   u u i d   D E F A U L T   g e n _ r a n d o m _ u u i d ( )   P R I M A R Y   K E Y , 
+         i t e m _ i d   u u i d   N O T   N U L L   R E F E R E N C E S   i t e m ( i t e m _ i d )   O N   D E L E T E   C A S C A D E , 
+         u s e r _ i d   u u i d   N O T   N U L L   R E F E R E N C E S   \  
+ U s e r \ ( u s e r _ i d )   O N   D E L E T E   C A S C A D E , 
+         j o i n e d _ a t   t i m e s t a m p   w i t h o u t   t i m e   z o n e   D E F A U L T   C U R R E N T _ T I M E S T A M P   N O T   N U L L , 
+         e n t r y _ s t a t u s   c h a r a c t e r   v a r y i n g ( 2 0 )   D E F A U L T   ' W A I T I N G '   N O T   N U L L , 
+         t u r n _ s t a r t e d _ a t   t i m e s t a m p   w i t h o u t   t i m e   z o n e , 
+         u p d a t e d _ a t   t i m e s t a m p   w i t h o u t   t i m e   z o n e   D E F A U L T   C U R R E N T _ T I M E S T A M P   N O T   N U L L 
+ ) ; 
+ C R E A T E   U N I Q U E   I N D E X   i d x _ q u e u e _ e n t r y _ a c t i v e _ u n i q u e   O N   q u e u e _ e n t r y   ( i t e m _ i d ,   u s e r _ i d )   W H E R E   e n t r y _ s t a t u s   I N   ( ' W A I T I N G ' ,   ' R E S E R V E D ' ,   ' C O N F I R M E D ' ,   ' H A N D E D _ O F F ' ) ; 
+ C R E A T E   I N D E X   i d x _ q u e u e _ e n t r y _ e x p i r y   O N   q u e u e _ e n t r y   ( e n t r y _ s t a t u s ,   u p d a t e d _ a t )   W H E R E   e n t r y _ s t a t u s   I N   ( ' R E S E R V E D ' ,   ' C O N F I R M E D ' ,   ' H A N D E D _ O F F ' ) ; 
+  
+ 

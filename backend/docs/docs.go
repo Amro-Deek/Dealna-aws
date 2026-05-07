@@ -1236,6 +1236,194 @@ const docTemplate = `{
                 }
             }
         },
+        "/queue/{itemId}/entries/{entryId}/accept": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Owner accepts the current reserved user's turn",
+                "tags": [
+                    "Giveaway Queue"
+                ],
+                "summary": "Owner accepts turn",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Queue Entry ID",
+                        "name": "entryId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/queue/{itemId}/entries/{entryId}/complete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Receiver confirms they received the item",
+                "tags": [
+                    "Giveaway Queue"
+                ],
+                "summary": "Receiver confirms handoff",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Queue Entry ID",
+                        "name": "entryId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/queue/{itemId}/entries/{entryId}/handoff": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Owner initiates the item handoff to the confirmed user",
+                "tags": [
+                    "Giveaway Queue"
+                ],
+                "summary": "Owner initiates handoff",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Queue Entry ID",
+                        "name": "entryId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/queue/{itemId}/entries/{entryId}/reject": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Owner rejects the current reserved user's turn and skips to next",
+                "tags": [
+                    "Giveaway Queue"
+                ],
+                "summary": "Owner rejects turn",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Queue Entry ID",
+                        "name": "entryId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/queue/{itemId}/join": {
             "post": {
                 "security": [
@@ -1895,6 +2083,9 @@ const docTemplate = `{
                 "turnStartedAt": {
                     "type": "string"
                 },
+                "updatedAt": {
+                    "type": "string"
+                },
                 "userID": {
                     "type": "string"
                 }
@@ -1905,6 +2096,8 @@ const docTemplate = `{
             "enum": [
                 "WAITING",
                 "RESERVED",
+                "CONFIRMED",
+                "HANDED_OFF",
                 "EXPIRED",
                 "COMPLETED",
                 "CANCELLED"
@@ -1912,6 +2105,8 @@ const docTemplate = `{
             "x-enum-varnames": [
                 "QueueStatusWaiting",
                 "QueueStatusReserved",
+                "QueueStatusConfirmed",
+                "QueueStatusHandedOff",
                 "QueueStatusExpired",
                 "QueueStatusCompleted",
                 "QueueStatusCancelled"
