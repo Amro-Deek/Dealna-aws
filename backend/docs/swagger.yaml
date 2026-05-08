@@ -213,6 +213,15 @@ definitions:
     - QueueStatusExpired
     - QueueStatusCompleted
     - QueueStatusCancelled
+  domain.QueuePosition:
+    properties:
+      entry:
+        $ref: '#/definitions/domain.QueueEntry'
+      position:
+        type: integer
+      total:
+        type: integer
+    type: object
   dto.CompleteStudentRegistrationRequest:
     properties:
       academicYear:
@@ -1437,6 +1446,29 @@ paths:
           schema:
             type: string
       summary: Get user position in queue
+      tags:
+      - Giveaway Queue
+  /queue/me:
+    get:
+      description: Get all active queue entries for the authenticated user
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.QueuePosition'
+            type: array
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get user's queue entries
       tags:
       - Giveaway Queue
   /transactions/{transactionId}/confirm:

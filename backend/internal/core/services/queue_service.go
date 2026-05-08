@@ -84,6 +84,26 @@ func (s *QueueService) GetPosition(ctx context.Context, itemID, entryID string) 
 	return s.repo.GetQueuePosition(ctx, itemID, entryID)
 }
 
+func (s *QueueService) GetQueueEntriesByUser(ctx context.Context, userID string) ([]domain.QueuePosition, error) {
+	entries, err := s.repo.GetQueueEntriesByUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []domain.QueuePosition
+	for i := range entries {
+		entry := entries[i]
+		pos, _ := s.repo.GetQueuePosition(ctx, entry.ItemID, entry.EntryID)
+		total, _ := s.repo.CountQueueEntries(ctx, entry.ItemID)
+		results = append(results, domain.QueuePosition{
+			Entry:    &entry,
+			Position: pos,
+			Total:    total,
+		})
+	}
+	return results, nil
+}
+
 func (s *QueueService) ExpireStaleEntries(ctx context.Context) error {
 	// 1. Expire 1-hour RESERVED entries
 	expiredReserved, err := s.repo.ExpireReservedEntries(ctx)

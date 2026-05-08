@@ -1236,6 +1236,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/queue/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all active queue entries for the authenticated user",
+                "tags": [
+                    "Giveaway Queue"
+                ],
+                "summary": "Get user's queue entries",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.QueuePosition"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/queue/{itemId}/entries/{entryId}/accept": {
             "post": {
                 "security": [
@@ -2111,6 +2148,20 @@ const docTemplate = `{
                 "QueueStatusCompleted",
                 "QueueStatusCancelled"
             ]
+        },
+        "domain.QueuePosition": {
+            "type": "object",
+            "properties": {
+                "entry": {
+                    "$ref": "#/definitions/domain.QueueEntry"
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
         },
         "dto.CompleteStudentRegistrationRequest": {
             "type": "object",

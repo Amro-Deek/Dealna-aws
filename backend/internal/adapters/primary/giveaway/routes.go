@@ -28,6 +28,7 @@ func NewRoutes(
 func (r *Routes) Register(router chi.Router) {
 	router.Route("/giveaway", func(rg chi.Router) {
 		// Queue
+		rg.Get("/queue/me", r.Queue.GetMyQueues)
 		rg.Post("/queue/{itemId}/join", r.Queue.JoinQueue)
 		rg.Post("/queue/{itemId}/leave", r.Queue.LeaveQueue)
 		rg.Get("/queue/{itemId}/position/{entryId}", r.Queue.GetQueuePosition)

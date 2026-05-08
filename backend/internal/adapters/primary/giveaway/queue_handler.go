@@ -194,3 +194,26 @@ func (h *QueueHandler) ConfirmHandoff(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 }
+
+// GetMyQueues godoc
+// @Summary      Get user's queue entries
+// @Description  Get all active queue entries for the authenticated user
+// @Tags         Giveaway Queue
+// @Security     BearerAuth
+// @Success      200      {array}   domain.QueuePosition
+// @Failure      401      {string}  string  "unauthorized"
+// @Failure      500      {string}  string  "internal error"
+// @Router       /queue/me [get]
+func (h *QueueHandler) GetMyQueues(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.UserIDFromContext(r.Context())
+	if userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	entries, err := h.qService.GetQueueEntriesByUser(r.Context(), userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(entries)
+}
