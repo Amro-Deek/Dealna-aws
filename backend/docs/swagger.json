@@ -1265,6 +1265,58 @@
                 }
             }
         },
+        "/queue/{itemId}/entries": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all active queue entries for a specific item (Owner only)",
+                "tags": [
+                    "Giveaway Queue"
+                ],
+                "summary": "Get queue entries for an item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.QueueEntry"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "forbidden",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/queue/{itemId}/entries/{entryId}/accept": {
             "post": {
                 "security": [
@@ -1497,7 +1549,7 @@
             }
         },
         "/queue/{itemId}/leave": {
-            "delete": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []

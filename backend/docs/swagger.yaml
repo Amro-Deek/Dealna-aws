@@ -1245,6 +1245,39 @@ paths:
       summary: List purchase requests for an item
       tags:
       - Purchases
+  /queue/{itemId}/entries:
+    get:
+      description: Get all active queue entries for a specific item (Owner only)
+      parameters:
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.QueueEntry'
+            type: array
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "403":
+          description: forbidden
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get queue entries for an item
+      tags:
+      - Giveaway Queue
   /queue/{itemId}/entries/{entryId}/accept:
     post:
       description: Owner accepts the current reserved user's turn
@@ -1394,7 +1427,7 @@ paths:
       tags:
       - Giveaway Queue
   /queue/{itemId}/leave:
-    delete:
+    post:
       description: Removes the authenticated user from the giveaway queue for the
         specified item
       parameters:

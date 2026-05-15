@@ -51,7 +51,7 @@ func (h *QueueHandler) JoinQueue(w http.ResponseWriter, r *http.Request) {
 // @Success      200     "OK"
 // @Failure      401     {string}  string  "unauthorized"
 // @Failure      500     {string}  string  "internal error"
-// @Router       /queue/{itemId}/leave [delete]
+// @Router       /queue/{itemId}/leave [post]
 func (h *QueueHandler) LeaveQueue(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	userID := middleware.UserIDFromContext(r.Context())
@@ -213,6 +213,37 @@ func (h *QueueHandler) GetMyQueues(w http.ResponseWriter, r *http.Request) {
 	entries, err := h.qService.GetQueueEntriesByUser(r.Context(), userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(entries)
+}
+
+// GetQueueEntries godoc
+// @Summary      Get queue entries for an item
+// @Description  Get all active queue entries for a specific item (Owner only)
+// @Tags         Giveaway Queue
+// @Security     BearerAuth
+// @Param        itemId  path  string  true  "Item ID"
+// @Success      200      {array}   domain.QueueEntry
+// @Failure      401      {string}  string  "unauthorized"
+// @Failure      403      {string}  string  "forbidden"
+// @Failure      500      {string}  string  "internal error"
+// @Router       /queue/{itemId}/entries [get]
+func (h *QueueHandler) GetQueueEntries(w http.ResponseWriter, r *http.Request) {
+	itemID := chi.URLParam(r, "itemId")
+	userID := middleware.UserIDFromContext(r.Context())
+	if userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	
+	entries, err := h.qService.GetQueueEntriesByItem(r.Context(), itemID, userID)
+	if err != nil {
+		if err.Error() == "only the item owner can view its queue entries" {
+			http.Error(w, err.Error(), http.StatusForbidden)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	json.NewEncoder(w).Encode(entries)

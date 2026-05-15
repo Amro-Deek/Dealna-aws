@@ -27,6 +27,14 @@ func NewQueueService(repo ports.IQueueRepository, notifs *NotificationService, i
 }
 
 func (s *QueueService) JoinQueue(ctx context.Context, itemID, userID string) (*domain.QueueEntry, error) {
+	ownerID, err := s.repo.GetItemOwner(ctx, itemID)
+	if err != nil {
+		return nil, errors.New("item not found")
+	}
+	if ownerID == userID {
+		return nil, errors.New("owner cannot join their own queue")
+	}
+
 	// Pre-flight checks for user-friendly errors
 	activeCount, alreadyInQueue, inCooldown, err := s.repo.GetJoinEligibility(ctx, itemID, userID)
 	if err != nil {
@@ -102,6 +110,17 @@ func (s *QueueService) GetQueueEntriesByUser(ctx context.Context, userID string)
 		})
 	}
 	return results, nil
+}
+
+func (s *QueueService) GetQueueEntriesByItem(ctx context.Context, itemID, callerID string) ([]domain.QueueEntry, error) {
+	ownerID, err := s.repo.GetItemOwner(ctx, itemID)
+	if err != nil {
+		return nil, errors.New("item not found")
+	}
+	if ownerID != callerID {
+		return nil, errors.New("only the item owner can view its queue entries")
+	}
+	return s.repo.GetQueueByItem(ctx, itemID)
 }
 
 func (s *QueueService) ExpireStaleEntries(ctx context.Context) error {
