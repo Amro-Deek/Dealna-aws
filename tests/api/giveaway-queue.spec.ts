@@ -86,9 +86,14 @@ test.describe.serial('Giveaway Queue API', () => {
     
     // Seed a dummy owner to avoid "owner cannot join own queue" error
     const ownerRes = await dbHelper.getPool().query(`
-      INSERT INTO "User" (email, role, account_status, university_id) 
-      SELECT 'dummy_owner_' || $1 || '@birzeit.edu', 'STUDENT', 'ACTIVE', university_id 
-      FROM university WHERE domain = 'birzeit.edu'
+      WITH new_user AS (
+        INSERT INTO "User" (email, role, account_status, university_id) 
+        SELECT 'dummy_owner_' || $1 || '@birzeit.edu', 'STUDENT', 'ACTIVE', university_id 
+        FROM university WHERE domain = 'birzeit.edu'
+        RETURNING user_id
+      )
+      INSERT INTO profile (user_id, display_name)
+      SELECT user_id, 'Dummy Owner ' || $1 FROM new_user
       RETURNING user_id`, [ts]);
     const dummyOwnerId = ownerRes.rows[0].user_id;
 
