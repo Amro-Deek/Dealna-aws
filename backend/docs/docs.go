@@ -1816,18 +1816,18 @@ const docTemplate = `{
                 }
             }
         },
-        "/transactions/{transactionId}/confirm": {
+        "/transactions/{transactionId}/confirm-buyer": {
             "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Allows the seller to confirm a transaction",
+                "description": "Allows the buyer to confirm they received the item",
                 "tags": [
                     "Transactions"
                 ],
-                "summary": "Confirm a transaction",
+                "summary": "Confirm a transaction (Buyer)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1862,18 +1862,18 @@ const docTemplate = `{
                 }
             }
         },
-        "/transactions/{transactionId}/confirm-buyer": {
+        "/transactions/{transactionId}/confirm-seller": {
             "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Allows the buyer to confirm they received the item",
+                "description": "Allows the seller to confirm they handed off the item",
                 "tags": [
                     "Transactions"
                 ],
-                "summary": "Confirm a transaction (Buyer)",
+                "summary": "Confirm a transaction (Seller)",
                 "parameters": [
                     {
                         "type": "string",

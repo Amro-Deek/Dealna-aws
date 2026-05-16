@@ -1618,35 +1618,6 @@ paths:
       summary: Get user's queue entries
       tags:
       - Giveaway Queue
-  /transactions/{transactionId}/confirm:
-    post:
-      description: Allows the seller to confirm a transaction
-      parameters:
-      - description: Transaction ID
-        in: path
-        name: transactionId
-        required: true
-        type: string
-      responses:
-        "200":
-          description: 'Returns { \"message\": \"Confirmed\" }'
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: unauthorized
-          schema:
-            type: string
-        "500":
-          description: internal error
-          schema:
-            type: string
-      security:
-      - BearerAuth: []
-      summary: Confirm a transaction
-      tags:
-      - Transactions
   /transactions/{transactionId}/confirm-buyer:
     post:
       description: Allows the buyer to confirm they received the item
@@ -1674,6 +1645,35 @@ paths:
       security:
       - BearerAuth: []
       summary: Confirm a transaction (Buyer)
+      tags:
+      - Transactions
+  /transactions/{transactionId}/confirm-seller:
+    post:
+      description: Allows the seller to confirm they handed off the item
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: transactionId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: 'Returns { \"message\": \"Confirmed\" }'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Confirm a transaction (Seller)
       tags:
       - Transactions
   /users/{profileId}/follow:
