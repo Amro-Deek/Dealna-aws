@@ -83,8 +83,16 @@ test.describe.serial('Giveaway Queue API', () => {
     // 6. Seed test item
     const userId = await dbHelper.getUserIdByEmail(testEmail);
     if (!userId) throw new Error('User ID not found after registration');
+    
+    // Seed a dummy owner to avoid "owner cannot join own queue" error
+    const ownerRes = await dbHelper.getPool().query(`
+      INSERT INTO "User" (email, auth_provider, status, role) 
+      VALUES ('dummy_owner_' || $1 || '@birzeit.edu', 'KEYCLOAK', 'ACTIVE', 'STUDENT') 
+      RETURNING user_id`, [ts]);
+    const dummyOwnerId = ownerRes.rows[0].user_id;
+
     const categoryId = await dbHelper.seedTestCategory('Test Category');
-    itemID = await dbHelper.seedTestItem(userId, categoryId, 'Test Giveaway Item', 0);
+    itemID = await dbHelper.seedTestItem(dummyOwnerId, categoryId, 'Test Giveaway Item', 0);
 
     // Ensure backend/DB/Keycloak are fully synced before starting tests
     await new Promise(ok => setTimeout(ok, 3000));

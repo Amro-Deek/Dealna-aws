@@ -76,8 +76,15 @@ test.describe.serial('Purchase Requests API', () => {
 
     const userId = await dbHelper.getUserIdByEmail(testEmail);
     if (!userId) throw new Error('User ID not found');
+
+    const ownerRes = await dbHelper.getPool().query(`
+      INSERT INTO "User" (email, auth_provider, status, role) 
+      VALUES ('dummy_purchase_owner_' || $1 || '@birzeit.edu', 'KEYCLOAK', 'ACTIVE', 'STUDENT') 
+      RETURNING user_id`, [ts]);
+    const dummyOwnerId = ownerRes.rows[0].user_id;
+
     const categoryId = await dbHelper.seedTestCategory('Electronics');
-    itemID = await dbHelper.seedTestItem(userId, categoryId, 'Test Sale Item', 100);
+    itemID = await dbHelper.seedTestItem(dummyOwnerId, categoryId, 'Test Sale Item', 100);
 
     console.log(`✅ Purchase tester ready: ${testEmail}`);
   });
@@ -88,15 +95,15 @@ test.describe.serial('Purchase Requests API', () => {
     await dbHelper.close();
   });
 
-  test('POST /giveaway/purchase/:myItemId/request should create a purchase request', async ({ request }) => {
-    const res = await request.post(`/api/v1/giveaway/purchase/${itemID}/request`, {
+  test('POST /giveaway/purchases/items/:myItemId/request should create a purchase request', async ({ request }) => {
+    const res = await request.post(`/api/v1/giveaway/purchases/items/${itemID}/request`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(res.status(), `Purchase request failed: ${await res.text()}`).toBe(200);
   });
 
-  test('GET /giveaway/purchase/:myItemId/requests should return all requests', async ({ request }) => {
-    const res = await request.get(`/api/v1/giveaway/purchase/${itemID}/requests`, {
+  test('GET /giveaway/purchases/items/:myItemId/requests should return all requests', async ({ request }) => {
+    const res = await request.get(`/api/v1/giveaway/purchases/items/${itemID}/requests`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(res.status(), `List requests failed: ${await res.text()}`).toBe(200);
