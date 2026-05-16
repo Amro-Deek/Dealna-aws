@@ -39,11 +39,16 @@ func (r *Routes) Register(router chi.Router) {
 		rg.Post("/queue/{itemId}/entries/{entryId}/complete", r.Queue.ConfirmHandoff)
 
 		// Purchase Requests
-		rg.Post("/purchase/{itemId}/request", r.Purchase.CreateRequest)
-		rg.Get("/purchase/{itemId}/requests", r.Purchase.ListRequests)
+		rg.Get("/purchases/me", r.Purchase.GetMyRequests)
+		rg.Post("/purchases/items/{itemId}/request", r.Purchase.CreateRequest)
+		rg.Get("/purchases/items/{itemId}/requests", r.Purchase.ListRequests)
+		rg.Post("/purchases/items/{itemId}/requests/{requestId}/accept", r.Purchase.AcceptRequest)
+		rg.Post("/purchases/items/{itemId}/requests/{requestId}/reject", r.Purchase.RejectRequest)
+		rg.Post("/purchases/items/{itemId}/requests/{requestId}/cancel", r.Purchase.CancelRequest)
 
 		// Transaction
-		rg.Post("/transaction/{transactionId}/confirm-seller", r.Transaction.ConfirmSeller)
+		rg.Post("/transactions/{transactionId}/confirm-seller", r.Transaction.ConfirmSeller)
+		rg.Post("/transactions/{transactionId}/confirm-buyer", r.Transaction.ConfirmBuyer)
 		
 		// Notifications
 		rg.Get("/notifications", r.Notification.ListNotifications)

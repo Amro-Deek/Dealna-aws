@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/services"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -28,7 +29,37 @@ func NewTransactionHandler(tService *services.TransactionService) *TransactionHa
 // @Router       /transactions/{transactionId}/confirm [post]
 func (h *TransactionHandler) ConfirmSeller(w http.ResponseWriter, r *http.Request) {
 	txID := chi.URLParam(r, "transactionId")
-	err := h.tService.ConfirmSeller(r.Context(), txID)
+	callerID := middleware.UserIDFromContext(r.Context())
+	if callerID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	err := h.tService.ConfirmSeller(r.Context(), txID, callerID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(map[string]string{"message": "Confirmed"})
+}
+
+// ConfirmBuyer godoc
+// @Summary      Confirm a transaction (Buyer)
+// @Description  Allows the buyer to confirm they received the item
+// @Tags         Transactions
+// @Security     BearerAuth
+// @Param        transactionId  path  string  true  "Transaction ID"
+// @Success      200            {object}  map[string]string "Returns { \"message\": \"Confirmed\" }"
+// @Failure      401            {string}  string  "unauthorized"
+// @Failure      500            {string}  string  "internal error"
+// @Router       /transactions/{transactionId}/confirm-buyer [post]
+func (h *TransactionHandler) ConfirmBuyer(w http.ResponseWriter, r *http.Request) {
+	txID := chi.URLParam(r, "transactionId")
+	callerID := middleware.UserIDFromContext(r.Context())
+	if callerID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	err := h.tService.ConfirmBuyer(r.Context(), txID, callerID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -176,7 +176,7 @@ func main() {
 	notificationSvc := services.NewNotificationService(notificationRepo)
 	queueSvc := services.NewQueueService(queueRepo, notificationSvc, itemRepo)
 	queueSvc.StartWorkers(context.Background())
-	purchaseSvc := services.NewPurchaseService(purchaseRepo, notificationSvc)
+	purchaseSvc := services.NewPurchaseService(purchaseRepo, notificationSvc, itemRepo)
 	transactionSvc := services.NewTransactionService(transactionRepo, notificationSvc)
 
 	queueH := giveaway.NewQueueHandler(queueSvc)

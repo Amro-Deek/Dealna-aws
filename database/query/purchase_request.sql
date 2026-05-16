@@ -26,3 +26,8 @@ WHERE item_id = $1 AND request_id != $2 AND status = 'PENDING';
 UPDATE purchase_request
 SET status = 'PENDING', updated_at = CURRENT_TIMESTAMP
 WHERE item_id = $1 AND status = 'FROZEN';
+
+-- name: GetPurchaseRequestsByBuyer :many
+SELECT * FROM purchase_request
+WHERE buyer_id = $1
+ORDER BY updated_at DESC;

@@ -77,3 +77,15 @@ func (r *PurchaseRequestRepository) FreezeOtherRequests(ctx context.Context, ite
 func (r *PurchaseRequestRepository) UnfreezeRequests(ctx context.Context, itemID string) error {
 	return r.q.UnfreezeRequests(ctx, parseUUID(itemID))
 }
+
+func (r *PurchaseRequestRepository) GetPurchaseRequestsByBuyer(ctx context.Context, buyerID string) ([]domain.PurchaseRequest, error) {
+	reqs, err := r.q.GetPurchaseRequestsByBuyer(ctx, toUUID(buyerID))
+	if err != nil {
+		return nil, err
+	}
+	res := make([]domain.PurchaseRequest, len(reqs))
+	for i, req := range reqs {
+		res[i] = *mapPurchaseRequest(req)
+	}
+	return res, nil
+}

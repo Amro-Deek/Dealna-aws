@@ -101,8 +101,15 @@ func (s *QueueService) GetQueueEntriesByUser(ctx context.Context, userID string)
 	var results []domain.QueuePosition
 	for i := range entries {
 		entry := entries[i]
-		pos, _ := s.repo.GetQueuePosition(ctx, entry.ItemID, entry.EntryID)
-		total, _ := s.repo.CountQueueEntries(ctx, entry.ItemID)
+		var pos, total int
+		if entry.EntryStatus == domain.QueueStatusWaiting ||
+			entry.EntryStatus == domain.QueueStatusReserved ||
+			entry.EntryStatus == domain.QueueStatusConfirmed ||
+			entry.EntryStatus == domain.QueueStatusHandedOff {
+			pos, _ = s.repo.GetQueuePosition(ctx, entry.ItemID, entry.EntryID)
+			total, _ = s.repo.CountQueueEntries(ctx, entry.ItemID)
+		}
+		
 		results = append(results, domain.QueuePosition{
 			Entry:    &entry,
 			Position: pos,

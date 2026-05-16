@@ -40,7 +40,7 @@ SELECT count(*) + 1
 FROM queue_entry qe1
 WHERE qe1.item_id = $1 AND qe1.joined_at < (
     SELECT qe2.joined_at FROM queue_entry qe2 WHERE qe2.entry_id = $2
-);
+) AND qe1.entry_status IN ('WAITING', 'RESERVED', 'CONFIRMED', 'HANDED_OFF');
 
 -- name: GetFrontOfQueue :one
 SELECT * FROM queue_entry
@@ -112,11 +112,11 @@ ORDER BY joined_at DESC;
 
 -- name: CountQueueEntries :one
 SELECT count(*) FROM queue_entry
-WHERE item_id = $1;
+WHERE item_id = $1 AND entry_status IN ('WAITING', 'RESERVED', 'CONFIRMED', 'HANDED_OFF');
 
 -- name: LeaveQueue :exec
-DELETE FROM queue_entry
-WHERE item_id = $1 AND user_id = $2;
+UPDATE queue_entry SET entry_status = 'CANCELLED'
+WHERE item_id = $1 AND user_id = $2 AND entry_status IN ('WAITING', 'RESERVED', 'CONFIRMED', 'HANDED_OFF');
 
 -- name: GetEntryByID :one
 SELECT * FROM queue_entry
