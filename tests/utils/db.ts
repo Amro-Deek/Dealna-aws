@@ -156,10 +156,10 @@ export class DatabaseHelper {
     const res = await pool.query('SELECT university_id FROM university WHERE domain = $1', [domain]);
     if (res.rows.length === 0) {
       await pool.query(
-        'INSERT INTO university (name, domain, status) VALUES ($1, $2, $3)',
+        'INSERT INTO university (name, domain, status) VALUES ($1, $2, $3) ON CONFLICT (domain) DO NOTHING',
         [name, domain, 'ACTIVE']
       );
-      console.log(`🏢 Seeded university: ${name} (${domain})`);
+      console.log(`🏢 Ensured university exists: ${name} (${domain})`);
     }
   }
 
