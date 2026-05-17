@@ -22,7 +22,7 @@ build:
 build-linux:
 	sqlc generate
 	swag init \
-		-g server/main.go \
+		-g cmd/server/main.go \
 		--dir ./cmd,./internal \
 		--output docs
 	go mod tidy
