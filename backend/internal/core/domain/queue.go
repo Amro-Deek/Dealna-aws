@@ -24,6 +24,8 @@ type QueueEntry struct {
 	EntryStatus   QueueEntryStatus
 	TurnStartedAt *time.Time
 	UpdatedAt     time.Time
+	BuyerName     string
+	BuyerPic      string
 }
 
 type QueuePosition struct {

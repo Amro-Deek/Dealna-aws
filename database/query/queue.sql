@@ -31,9 +31,14 @@ FROM queue_entry
 WHERE item_id = $1;
 
 -- name: GetQueueByItemID :many
-SELECT * FROM queue_entry
-WHERE item_id = $1
-ORDER BY joined_at ASC;
+SELECT 
+    qe.*,
+    p.display_name AS buyer_name,
+    p.profile_picture_url AS buyer_pic
+FROM queue_entry qe
+JOIN public.profile p ON qe.user_id = p.user_id
+WHERE qe.item_id = $1
+ORDER BY qe.joined_at ASC;
 
 -- name: GetQueuePosition :one
 SELECT count(*) + 1

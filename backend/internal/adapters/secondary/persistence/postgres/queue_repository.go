@@ -71,7 +71,22 @@ func (r *QueueRepository) GetQueueByItem(ctx context.Context, itemID string) ([]
 	}
 	var res []domain.QueueEntry
 	for _, e := range entries {
-		res = append(res, *mapQueueEntry(e))
+		var ts *time.Time
+		if e.TurnStartedAt.Valid {
+			t := e.TurnStartedAt.Time
+			ts = &t
+		}
+		res = append(res, domain.QueueEntry{
+			EntryID:       uuidToString(e.EntryID),
+			ItemID:        uuidToString(e.ItemID),
+			UserID:        uuidToString(e.UserID),
+			JoinedAt:      e.JoinedAt.Time,
+			EntryStatus:   domain.QueueEntryStatus(e.EntryStatus),
+			TurnStartedAt: ts,
+			UpdatedAt:     e.UpdatedAt.Time,
+			BuyerName:     e.BuyerName.String,
+			BuyerPic:      e.BuyerPic.String,
+		})
 	}
 	return res, nil
 }
