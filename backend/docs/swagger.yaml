@@ -180,6 +180,10 @@ definitions:
     - PurchaseRequestCancelled
   domain.QueueEntry:
     properties:
+      buyerName:
+        type: string
+      buyerPic:
+        type: string
       entryID:
         type: string
       entryStatus:

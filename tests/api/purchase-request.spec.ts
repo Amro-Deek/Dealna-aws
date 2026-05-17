@@ -101,15 +101,15 @@ test.describe.serial('Purchase Requests API', () => {
     await dbHelper.close();
   });
 
-  test('POST /giveaway/purchases/items/:myItemId/request should create a purchase request', async ({ request }) => {
-    const res = await request.post(`/api/v1/giveaway/purchases/items/${itemID}/request`, {
+  test('POST /purchases/items/:myItemId/request should create a purchase request', async ({ request }) => {
+    const res = await request.post(`/api/v1/purchases/items/${itemID}/request`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(res.status(), `Purchase request failed: ${await res.text()}`).toBe(200);
   });
 
-  test('GET /giveaway/purchases/items/:myItemId/requests should return all requests', async ({ request }) => {
-    const res = await request.get(`/api/v1/giveaway/purchases/items/${itemID}/requests`, {
+  test('GET /purchases/items/:myItemId/requests should return all requests', async ({ request }) => {
+    const res = await request.get(`/api/v1/purchases/items/${itemID}/requests`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(res.status(), `List requests failed: ${await res.text()}`).toBe(200);

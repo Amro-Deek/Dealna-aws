@@ -14,6 +14,7 @@ import (
 	authHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/http"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/giveaway"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/items"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/marketplace"
 	profileHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile"
 	profileHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile/http"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/social"
@@ -184,7 +185,8 @@ func main() {
 	transactionH := giveaway.NewTransactionHandler(transactionSvc)
 	notificationH := giveaway.NewNotificationHandler(notificationSvc)
 
-	giveawayRoutes := giveaway.NewRoutes(queueH, purchaseH, transactionH, notificationH)
+	giveawayRoutes := giveaway.NewRoutes(queueH, notificationH)
+	marketplaceRoutes := marketplace.NewRoutes(purchaseH, transactionH)
 
 	// =========================
 	// Follow / Social Setup
@@ -204,6 +206,7 @@ func main() {
 		profileRoutes,
 		itemRoutes,
 		giveawayRoutes,
+		marketplaceRoutes,
 		socialRoutes,
 		jwtProvider,
 		appLogger,

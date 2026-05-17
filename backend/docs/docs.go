@@ -2381,6 +2381,12 @@ const docTemplate = `{
         "domain.QueueEntry": {
             "type": "object",
             "properties": {
+                "buyerName": {
+                    "type": "string"
+                },
+                "buyerPic": {
+                    "type": "string"
+                },
                 "entryID": {
                     "type": "string"
                 },

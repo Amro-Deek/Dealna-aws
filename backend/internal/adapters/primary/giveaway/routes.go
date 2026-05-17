@@ -6,21 +6,15 @@ import (
 
 type Routes struct {
 	Queue        *QueueHandler
-	Purchase     *PurchaseHandler
-	Transaction  *TransactionHandler
 	Notification *NotificationHandler
 }
 
 func NewRoutes(
 	queueH *QueueHandler,
-	purchaseH *PurchaseHandler,
-	transactionH *TransactionHandler,
 	notificationH *NotificationHandler,
 ) *Routes {
 	return &Routes{
 		Queue:        queueH,
-		Purchase:     purchaseH,
-		Transaction:  transactionH,
 		Notification: notificationH,
 	}
 }
@@ -38,18 +32,6 @@ func (r *Routes) Register(router chi.Router) {
 		rg.Post("/queue/{itemId}/entries/{entryId}/handoff", r.Queue.InitiateHandoff)
 		rg.Post("/queue/{itemId}/entries/{entryId}/complete", r.Queue.ConfirmHandoff)
 
-		// Purchase Requests
-		rg.Get("/purchases/me", r.Purchase.GetMyRequests)
-		rg.Post("/purchases/items/{itemId}/request", r.Purchase.CreateRequest)
-		rg.Get("/purchases/items/{itemId}/requests", r.Purchase.ListRequests)
-		rg.Post("/purchases/items/{itemId}/requests/{requestId}/accept", r.Purchase.AcceptRequest)
-		rg.Post("/purchases/items/{itemId}/requests/{requestId}/reject", r.Purchase.RejectRequest)
-		rg.Post("/purchases/items/{itemId}/requests/{requestId}/cancel", r.Purchase.CancelRequest)
-
-		// Transaction
-		rg.Post("/transactions/{transactionId}/confirm-seller", r.Transaction.ConfirmSeller)
-		rg.Post("/transactions/{transactionId}/confirm-buyer", r.Transaction.ConfirmBuyer)
-		
 		// Notifications
 		rg.Get("/notifications", r.Notification.ListNotifications)
 		rg.Post("/notifications/{notificationId}/read", r.Notification.MarkRead)
