@@ -26,7 +26,7 @@ func NewQueueHandler(qService *services.QueueService) *QueueHandler {
 // @Success      200     {object}  domain.QueueEntry
 // @Failure      401     {string}  string  "unauthorized"
 // @Failure      500     {string}  string  "internal error"
-// @Router       /queue/{itemId}/join [post]
+// @Router       /api/v1/giveaway/queue/{itemId}/join [post]
 func (h *QueueHandler) JoinQueue(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	userID := middleware.UserIDFromContext(r.Context())
@@ -51,7 +51,7 @@ func (h *QueueHandler) JoinQueue(w http.ResponseWriter, r *http.Request) {
 // @Success      200     "OK"
 // @Failure      401     {string}  string  "unauthorized"
 // @Failure      500     {string}  string  "internal error"
-// @Router       /queue/{itemId}/leave [post]
+// @Router       /api/v1/giveaway/queue/{itemId}/leave [post]
 func (h *QueueHandler) LeaveQueue(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	userID := middleware.UserIDFromContext(r.Context())
@@ -75,7 +75,7 @@ func (h *QueueHandler) LeaveQueue(w http.ResponseWriter, r *http.Request) {
 // @Param        entryId  path  string  true  "Queue Entry ID"
 // @Success      200      {object}  map[string]int "Returns { \"position\": 1 }"
 // @Failure      500      {string}  string  "internal error"
-// @Router       /queue/{itemId}/position/{entryId} [get]
+// @Router       /api/v1/giveaway/queue/{itemId}/position/{entryId} [get]
 func (h *QueueHandler) GetQueuePosition(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	entryID := chi.URLParam(r, "entryId")
@@ -97,7 +97,7 @@ func (h *QueueHandler) GetQueuePosition(w http.ResponseWriter, r *http.Request) 
 // @Success      200      "OK"
 // @Failure      401      {string}  string  "unauthorized"
 // @Failure      500      {string}  string  "internal error"
-// @Router       /queue/{itemId}/entries/{entryId}/accept [post]
+// @Router       /api/v1/giveaway/queue/{itemId}/entries/{entryId}/accept [post]
 func (h *QueueHandler) AcceptTurn(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	entryID := chi.URLParam(r, "entryId")
@@ -124,7 +124,7 @@ func (h *QueueHandler) AcceptTurn(w http.ResponseWriter, r *http.Request) {
 // @Success      200      "OK"
 // @Failure      401      {string}  string  "unauthorized"
 // @Failure      500      {string}  string  "internal error"
-// @Router       /queue/{itemId}/entries/{entryId}/reject [post]
+// @Router       /api/v1/giveaway/queue/{itemId}/entries/{entryId}/reject [post]
 func (h *QueueHandler) RejectTurn(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	entryID := chi.URLParam(r, "entryId")
@@ -151,7 +151,7 @@ func (h *QueueHandler) RejectTurn(w http.ResponseWriter, r *http.Request) {
 // @Success      200      "OK"
 // @Failure      401      {string}  string  "unauthorized"
 // @Failure      500      {string}  string  "internal error"
-// @Router       /queue/{itemId}/entries/{entryId}/handoff [post]
+// @Router       /api/v1/giveaway/queue/{itemId}/entries/{entryId}/handoff [post]
 func (h *QueueHandler) InitiateHandoff(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	entryID := chi.URLParam(r, "entryId")
@@ -178,7 +178,7 @@ func (h *QueueHandler) InitiateHandoff(w http.ResponseWriter, r *http.Request) {
 // @Success      200      "OK"
 // @Failure      401      {string}  string  "unauthorized"
 // @Failure      500      {string}  string  "internal error"
-// @Router       /queue/{itemId}/entries/{entryId}/complete [post]
+// @Router       /api/v1/giveaway/queue/{itemId}/entries/{entryId}/complete [post]
 func (h *QueueHandler) ConfirmHandoff(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	entryID := chi.URLParam(r, "entryId")
@@ -203,7 +203,7 @@ func (h *QueueHandler) ConfirmHandoff(w http.ResponseWriter, r *http.Request) {
 // @Success      200      {array}   domain.QueuePosition
 // @Failure      401      {string}  string  "unauthorized"
 // @Failure      500      {string}  string  "internal error"
-// @Router       /queue/me [get]
+// @Router       /api/v1/giveaway/queue/me [get]
 func (h *QueueHandler) GetMyQueues(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromContext(r.Context())
 	if userID == "" {
@@ -228,7 +228,7 @@ func (h *QueueHandler) GetMyQueues(w http.ResponseWriter, r *http.Request) {
 // @Failure      401      {string}  string  "unauthorized"
 // @Failure      403      {string}  string  "forbidden"
 // @Failure      500      {string}  string  "internal error"
-// @Router       /queue/{itemId}/entries [get]
+// @Router       /api/v1/giveaway/queue/{itemId}/entries [get]
 func (h *QueueHandler) GetQueueEntries(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	userID := middleware.UserIDFromContext(r.Context())

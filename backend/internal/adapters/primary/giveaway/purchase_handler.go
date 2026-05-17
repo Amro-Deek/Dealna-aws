@@ -26,7 +26,7 @@ func NewPurchaseHandler(pService *services.PurchaseService) *PurchaseHandler {
 // @Success      200     {object}  domain.PurchaseRequest
 // @Failure      401     {string}  string  "unauthorized"
 // @Failure      500     {string}  string  "internal error"
-// @Router       /purchases/items/{itemId}/request [post]
+// @Router       /api/v1/purchases/items/{itemId}/request [post]
 func (h *PurchaseHandler) CreateRequest(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	buyerID := middleware.UserIDFromContext(r.Context())
@@ -51,7 +51,7 @@ func (h *PurchaseHandler) CreateRequest(w http.ResponseWriter, r *http.Request) 
 // @Success      200     {array}   domain.PurchaseRequest
 // @Failure      401     {string}  string  "unauthorized"
 // @Failure      500     {string}  string  "internal error"
-// @Router       /purchases/items/{itemId}/requests [get]
+// @Router       /api/v1/purchases/items/{itemId}/requests [get]
 func (h *PurchaseHandler) ListRequests(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	reqs, err := h.pService.ListRequests(r.Context(), itemID)
@@ -72,7 +72,7 @@ func (h *PurchaseHandler) ListRequests(w http.ResponseWriter, r *http.Request) {
 // @Success      200     "OK"
 // @Failure      401     {string}  string  "unauthorized"
 // @Failure      500     {string}  string  "internal error"
-// @Router       /purchases/items/{itemId}/requests/{requestId}/accept [post]
+// @Router       /api/v1/purchases/items/{itemId}/requests/{requestId}/accept [post]
 func (h *PurchaseHandler) AcceptRequest(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	reqID := chi.URLParam(r, "requestId")
@@ -103,7 +103,7 @@ func (h *PurchaseHandler) AcceptRequest(w http.ResponseWriter, r *http.Request) 
 // @Success      200     "OK"
 // @Failure      401     {string}  string  "unauthorized"
 // @Failure      500     {string}  string  "internal error"
-// @Router       /purchases/items/{itemId}/requests/{requestId}/reject [post]
+// @Router       /api/v1/purchases/items/{itemId}/requests/{requestId}/reject [post]
 func (h *PurchaseHandler) RejectRequest(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	reqID := chi.URLParam(r, "requestId")
@@ -134,7 +134,7 @@ func (h *PurchaseHandler) RejectRequest(w http.ResponseWriter, r *http.Request) 
 // @Success      200     "OK"
 // @Failure      401     {string}  string  "unauthorized"
 // @Failure      500     {string}  string  "internal error"
-// @Router       /purchases/items/{itemId}/requests/{requestId}/cancel [post]
+// @Router       /api/v1/purchases/items/{itemId}/requests/{requestId}/cancel [post]
 func (h *PurchaseHandler) CancelRequest(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	reqID := chi.URLParam(r, "requestId")
@@ -163,7 +163,7 @@ func (h *PurchaseHandler) CancelRequest(w http.ResponseWriter, r *http.Request) 
 // @Success      200     {array}   domain.PurchaseRequest
 // @Failure      401     {string}  string  "unauthorized"
 // @Failure      500     {string}  string  "internal error"
-// @Router       /purchases/me [get]
+// @Router       /api/v1/purchases/me [get]
 func (h *PurchaseHandler) GetMyRequests(w http.ResponseWriter, r *http.Request) {
 	callerID := middleware.UserIDFromContext(r.Context())
 	if callerID == "" {

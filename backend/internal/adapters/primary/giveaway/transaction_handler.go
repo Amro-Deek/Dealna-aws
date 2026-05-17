@@ -26,7 +26,7 @@ func NewTransactionHandler(tService *services.TransactionService) *TransactionHa
 // @Success      200            {object}  map[string]string "Returns { \"message\": \"Confirmed\" }"
 // @Failure      401            {string}  string  "unauthorized"
 // @Failure      500            {string}  string  "internal error"
-// @Router       /transactions/{transactionId}/confirm-seller [post]
+// @Router       /api/v1/transactions/{transactionId}/confirm-seller [post]
 func (h *TransactionHandler) ConfirmSeller(w http.ResponseWriter, r *http.Request) {
 	txID := chi.URLParam(r, "transactionId")
 	callerID := middleware.UserIDFromContext(r.Context())
@@ -51,7 +51,7 @@ func (h *TransactionHandler) ConfirmSeller(w http.ResponseWriter, r *http.Reques
 // @Success      200            {object}  map[string]string "Returns { \"message\": \"Confirmed\" }"
 // @Failure      401            {string}  string  "unauthorized"
 // @Failure      500            {string}  string  "internal error"
-// @Router       /transactions/{transactionId}/confirm-buyer [post]
+// @Router       /api/v1/transactions/{transactionId}/confirm-buyer [post]
 func (h *TransactionHandler) ConfirmBuyer(w http.ResponseWriter, r *http.Request) {
 	txID := chi.URLParam(r, "transactionId")
 	callerID := middleware.UserIDFromContext(r.Context())
