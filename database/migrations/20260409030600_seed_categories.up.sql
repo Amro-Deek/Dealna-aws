@@ -4,5 +4,4 @@ INSERT INTO public.category (name, description) VALUES
   ('Dorm & Housing', 'Mini-fridges, fans, heaters, desks, roommate requests "سكنات"'),
   ('Tutoring & Academic Services', 'Private tutoring "دروس خصوصية", project assistance, translation/proofreading'),
   ('Transportation', 'Carpooling "نقل ومواصلات", rideshares from/to Ramallah, Nablus, etc.'),
-  ('Clothing & Graduation', 'Graduation gowns "روب تخرج", specialized clothing'),
-  ('Free / Giveaways', 'Exchange items, donations, "تبرع"');
+  ('Clothing & Graduation', 'Graduation gowns "روب تخرج", specialized clothing');

@@ -5,6 +5,5 @@ WHERE name IN (
   'Dorm & Housing', 
   'Tutoring & Academic Services', 
   'Transportation', 
-  'Clothing & Graduation', 
-  'Free / Giveaways'
+  'Clothing & Graduation'
 );
