@@ -22,8 +22,9 @@ export class DatabaseHelper {
 
   /**
    * Safely get the pool, reconnecting if it was previously closed.
+   * Public to allow tests to run custom queries.
    */
-  private getPool(): Pool {
+  getPool(): Pool {
     if (this.closed) {
       this.pool = new Pool({
         connectionString: process.env.DATABASE_URL,
@@ -137,6 +138,31 @@ export class DatabaseHelper {
       [ownerId, categoryId, title, 'Test item description', price, 'AVAILABLE']
     );
     return insertRes.rows[0].item_id.toString();
+  }
+
+  /**
+   * Seed a dummy user with a profile (needed so GetItemDetails JOIN on profile succeeds).
+   * Returns the user_id of the created user.
+   */
+  async seedDummyUser(emailPrefix: string, displayName: string): Promise<string> {
+    const pool = this.getPool();
+    // Step 1: insert User
+    const userRes = await pool.query(
+      `INSERT INTO "User" (email, role, account_status, university_id) 
+       SELECT $1, 'STUDENT', 'ACTIVE', university_id 
+       FROM university WHERE domain = 'birzeit.edu'
+       RETURNING user_id`,
+      [emailPrefix]
+    );
+    const userId = userRes.rows[0].user_id;
+
+    // Step 2: insert Profile for that user
+    await pool.query(
+      `INSERT INTO profile (user_id, display_name) VALUES ($1, $2)`,
+      [userId, displayName]
+    );
+
+    return userId;
   }
 
   /**
