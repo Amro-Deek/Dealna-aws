@@ -153,6 +153,10 @@ definitions:
     properties:
       buyerID:
         type: string
+      buyerName:
+        type: string
+      buyerPic:
+        type: string
       createdAt:
         type: string
       itemID:

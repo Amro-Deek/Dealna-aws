@@ -47,7 +47,16 @@ func (r *PurchaseRequestRepository) GetPurchaseRequestsByItem(ctx context.Contex
 	}
 	res := make([]domain.PurchaseRequest, len(reqs))
 	for i, req := range reqs {
-		res[i] = *mapPurchaseRequest(req)
+		res[i] = domain.PurchaseRequest{
+			RequestID: uuidToString(req.RequestID),
+			ItemID:    uuidToString(req.ItemID),
+			BuyerID:   uuidToString(req.BuyerID),
+			Status:    domain.PurchaseRequestStatus(req.Status),
+			CreatedAt: req.CreatedAt.Time,
+			UpdatedAt: req.UpdatedAt.Time,
+			BuyerName: req.BuyerName.String,
+			BuyerPic:  req.BuyerPic.String,
+		}
 	}
 	return res, nil
 }

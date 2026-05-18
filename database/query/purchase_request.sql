@@ -4,9 +4,14 @@ VALUES ($1, $2)
 RETURNING *;
 
 -- name: GetPurchaseRequestsByItem :many
-SELECT * FROM purchase_request
-WHERE item_id = $1
-ORDER BY created_at ASC;
+SELECT 
+  pr.*,
+  p.display_name AS buyer_name,
+  p.profile_picture_url AS buyer_pic
+FROM purchase_request pr
+INNER JOIN profile p ON p.user_id = pr.buyer_id
+WHERE pr.item_id = $1
+ORDER BY pr.created_at ASC;
 
 -- name: GetPurchaseRequestByID :one
 SELECT * FROM purchase_request

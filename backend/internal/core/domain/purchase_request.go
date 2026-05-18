@@ -21,4 +21,6 @@ type PurchaseRequest struct {
 	Status    PurchaseRequestStatus
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	BuyerName string
+	BuyerPic  string
 }

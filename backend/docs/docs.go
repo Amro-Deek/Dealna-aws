@@ -2344,6 +2344,12 @@ const docTemplate = `{
                 "buyerID": {
                     "type": "string"
                 },
+                "buyerName": {
+                    "type": "string"
+                },
+                "buyerPic": {
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "string"
                 },
