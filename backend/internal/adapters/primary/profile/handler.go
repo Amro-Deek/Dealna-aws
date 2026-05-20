@@ -136,6 +136,50 @@ func (h *ProfileHandler) UpdateStudent(w http.ResponseWriter, r *http.Request) {
 	middleware.WriteJSONResponse(w, http.StatusOK, map[string]string{"message": "Student details updated successfully"})
 }
 
+type UpdateDeviceTokenReq struct {
+	Token string `json:"token"`
+}
+
+// UpdateDeviceToken updates the FCM device token
+// @Summary [Self] Update Device Token
+// @Description Register the device token for FCM push notifications
+// @Tags Profile
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param payload body profile.UpdateDeviceTokenReq true "Device Token Payload"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} middleware.ErrorFrame
+// @Failure 401 {object} middleware.ErrorFrame
+// @Failure 500 {object} middleware.ErrorFrame
+// @Router /api/v1/profile/device-token [put]
+func (h *ProfileHandler) UpdateDeviceToken(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.UserIDFromContext(r.Context())
+	if userID == "" {
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewUnauthorizedError("missing user ID"), nil)
+		return
+	}
+
+	var req UpdateDeviceTokenReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("body", "invalid json"), nil)
+		return
+	}
+
+	if req.Token == "" {
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("body", "token is required"), nil)
+		return
+	}
+
+	err := h.profileService.UpdateDeviceToken(r.Context(), userID, req.Token)
+	if err != nil {
+		middleware.WriteErrorResponse(w, r.Context(), err, h.logger)
+		return
+	}
+
+	middleware.WriteJSONResponse(w, http.StatusOK, map[string]string{"message": "Device token updated successfully"})
+}
+
 type GenerateUploadURLReq struct {
 	Filename    string `json:"filename"`
 	ContentType string `json:"content_type"`

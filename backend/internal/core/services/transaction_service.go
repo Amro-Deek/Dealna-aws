@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
@@ -42,8 +41,8 @@ func (s *TransactionService) ConfirmSeller(ctx context.Context, transactionID, c
 	t, _ = s.repo.GetTransactionByID(ctx, transactionID)
 	if t != nil && t.SellerConfirmed && t.BuyerConfirmed {
 		s.repo.CompleteTransaction(ctx, transactionID)
-		sendTxNotif(s, ctx, t.BuyerID, t.ItemID, transactionID, domain.NotifTypeTransactionDone)
-		sendTxNotif(s, ctx, t.SellerID, t.ItemID, transactionID, domain.NotifTypeTransactionDone)
+		sendTxNotif(s, ctx, t.BuyerID, t.ItemID, transactionID, &callerID, domain.NotifTypeTransactionDone)
+		sendTxNotif(s, ctx, t.SellerID, t.ItemID, transactionID, &callerID, domain.NotifTypeTransactionDone)
 	}
 	return nil
 }
@@ -68,21 +67,22 @@ func (s *TransactionService) ConfirmBuyer(ctx context.Context, transactionID, ca
 	t, _ = s.repo.GetTransactionByID(ctx, transactionID)
 	if t != nil && t.SellerConfirmed && t.BuyerConfirmed {
 		s.repo.CompleteTransaction(ctx, transactionID)
-		sendTxNotif(s, ctx, t.BuyerID, t.ItemID, transactionID, domain.NotifTypeTransactionDone)
-		sendTxNotif(s, ctx, t.SellerID, t.ItemID, transactionID, domain.NotifTypeTransactionDone)
+		sendTxNotif(s, ctx, t.BuyerID, t.ItemID, transactionID, &callerID, domain.NotifTypeTransactionDone)
+		sendTxNotif(s, ctx, t.SellerID, t.ItemID, transactionID, &callerID, domain.NotifTypeTransactionDone)
 	}
 	return nil
 }
 
-func sendTxNotif(s *TransactionService, ctx context.Context, userID, itemID, txID string, typ domain.NotificationType) {
+func sendTxNotif(s *TransactionService, ctx context.Context, userID, itemID, txID string, actingUserID *string, typ domain.NotificationType) {
 	if s.notifs == nil {
 		return
 	}
-	payload, _ := json.Marshal(map[string]string{
-		"item_id":        itemID,
-		"transaction_id": txID,
-	})
-	_ = s.notifs.CreateNotification(ctx, userID, typ, payload)
+	notifCtx := NotificationContext{
+		ItemID:       &itemID,
+		TxID:         &txID,
+		ActingUserID: actingUserID,
+	}
+	_ = s.notifs.CreateNotification(ctx, userID, typ, notifCtx)
 }
 
 func (s *TransactionService) CancelTransaction(ctx context.Context, transactionID, callerID string) error {

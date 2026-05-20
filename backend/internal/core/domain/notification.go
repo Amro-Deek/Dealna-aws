@@ -24,7 +24,7 @@ type Notification struct {
 	NotificationID string
 	UserID         string
 	Type           NotificationType
-	Payload        json.RawMessage
-	IsRead         bool
+	Payload        json.RawMessage  `json:"payload" swaggertype:"object"`
+	IsRead         bool             `json:"is_read"`
 	CreatedAt      time.Time
 }

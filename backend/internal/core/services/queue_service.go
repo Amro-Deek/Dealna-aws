@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
@@ -163,19 +162,20 @@ func (s *QueueService) promoteNext(ctx context.Context, itemID string) {
 	next, _ := s.repo.GetFrontOfQueue(ctx, itemID)
 	if next != nil {
 		s.repo.SetTurnStarted(ctx, next.EntryID)
-		sendQueueNotif(s, ctx, next.UserID, itemID, next.EntryID, domain.NotifTypeTurnStarted)
+		sendQueueNotif(s, ctx, next.UserID, itemID, next.EntryID, nil, domain.NotifTypeTurnStarted)
 	}
 }
 
-func sendQueueNotif(s *QueueService, ctx context.Context, userID, itemID, entryID string, typ domain.NotificationType) {
+func sendQueueNotif(s *QueueService, ctx context.Context, userID, itemID, entryID string, actingUserID *string, typ domain.NotificationType) {
 	if s.notifs == nil {
 		return
 	}
-	payload, _ := json.Marshal(map[string]string{
-		"item_id":  itemID,
-		"entry_id": entryID,
-	})
-	_ = s.notifs.CreateNotification(ctx, userID, typ, payload)
+	notifCtx := NotificationContext{
+		ItemID:       &itemID,
+		EntryID:      &entryID,
+		ActingUserID: actingUserID,
+	}
+	_ = s.notifs.CreateNotification(ctx, userID, typ, notifCtx)
 }
 
 func (s *QueueService) CancelGiveaway(ctx context.Context, itemID string) error {
@@ -200,8 +200,8 @@ func (s *QueueService) AcceptTurn(ctx context.Context, itemID, entryID, callerID
 	}
 
 	err = s.repo.UpdateEntryStatus(ctx, entryID, domain.QueueStatusConfirmed)
-	if err == nil {
-		sendQueueNotif(s, ctx, entry.UserID, itemID, entryID, domain.NotifTypeTurnAccepted)
+	if entry.UserID != callerID {
+		sendQueueNotif(s, ctx, entry.UserID, itemID, entryID, &callerID, domain.NotifTypeTurnAccepted)
 	}
 	return err
 }
@@ -228,7 +228,8 @@ func (s *QueueService) RejectTurn(ctx context.Context, itemID, entryID, callerID
 		return err
 	}
 
-	sendQueueNotif(s, ctx, entry.UserID, itemID, entryID, domain.NotifTypeTurnExpired)
+	// Notify user
+	sendQueueNotif(s, ctx, entry.UserID, itemID, entryID, nil, domain.NotifTypeTurnExpired)
 	s.promoteNext(ctx, itemID)
 	return nil
 }
@@ -251,8 +252,8 @@ func (s *QueueService) InitiateHandoff(ctx context.Context, itemID, entryID, cal
 	}
 
 	err = s.repo.UpdateEntryStatus(ctx, entryID, domain.QueueStatusHandedOff)
-	if err == nil {
-		sendQueueNotif(s, ctx, entry.UserID, itemID, entryID, domain.NotifTypeHandoffInitiated)
+	if entry.UserID != callerID {
+		sendQueueNotif(s, ctx, entry.UserID, itemID, entryID, &callerID, domain.NotifTypeHandoffInitiated)
 	}
 	return err
 }
@@ -283,7 +284,9 @@ func (s *QueueService) ConfirmHandoff(ctx context.Context, itemID, entryID, call
 	
 	if err == nil {
 		// Notify owner that receiver confirmed it
-		sendQueueNotif(s, ctx, callerID, itemID, entryID, domain.NotifTypeGiveawayCompleted)
+		if entry.UserID == callerID {
+			sendQueueNotif(s, ctx, callerID, itemID, entryID, &callerID, domain.NotifTypeGiveawayCompleted)
+		}
 	}
 	return err
 }

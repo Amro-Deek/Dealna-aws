@@ -174,7 +174,12 @@ func main() {
 	transactionRepo := postgres.NewTransactionRepository(db)
 	notificationRepo := postgres.NewNotificationRepository(db)
 
-	notificationSvc := services.NewNotificationService(notificationRepo)
+	fcmClient, err := messaging.NewFCMClient(context.Background())
+	if err != nil {
+		log.Printf("⚠️ FCM initialization failed (push notifications disabled): %v", err)
+	}
+
+	notificationSvc := services.NewNotificationService(notificationRepo, userRepo, itemRepo, fcmClient)
 	queueSvc := services.NewQueueService(queueRepo, notificationSvc, itemRepo)
 	queueSvc.StartWorkers(context.Background())
 	purchaseSvc := services.NewPurchaseService(purchaseRepo, notificationSvc, itemRepo)

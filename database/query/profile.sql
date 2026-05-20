@@ -26,3 +26,8 @@ SET
   profile_picture_url = COALESCE(sqlc.narg('profile_picture_url'), profile_picture_url),
   display_name_last_changed_at = COALESCE(sqlc.narg('display_name_last_changed_at'), display_name_last_changed_at)
 WHERE user_id = $1;
+
+-- name: UpdateDeviceToken :exec
+UPDATE profile
+SET device_token = $2
+WHERE user_id = $1;

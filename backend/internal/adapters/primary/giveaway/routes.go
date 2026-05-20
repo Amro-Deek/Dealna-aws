@@ -33,6 +33,7 @@ func (r *Routes) Register(router chi.Router) {
 		rg.Post("/queue/{itemId}/entries/{entryId}/complete", r.Queue.ConfirmHandoff)
 
 		// Notifications
+		rg.Get("/notifications/unread-count", r.Notification.GetUnreadCount)
 		rg.Get("/notifications", r.Notification.ListNotifications)
 		rg.Post("/notifications/{notificationId}/read", r.Notification.MarkRead)
 	})

@@ -1294,6 +1294,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/profile/device-token": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Register the device token for FCM push notifications",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "[Self] Update Device Token",
+                "parameters": [
+                    {
+                        "description": "Device Token Payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/profile.UpdateDeviceTokenReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/profile/picture/upload-url": {
             "post": {
                 "security": [
@@ -1908,6 +1968,118 @@ const docTemplate = `{
                 }
             }
         },
+        "/giveaway/notifications": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of notifications for the current user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Get user notifications",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "offset",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.Notification"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/giveaway/notifications/unread-count": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the number of unread notifications for the user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Get unread notification count",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/giveaway/notifications/{notificationId}/read": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Marks a specific notification as read for the current user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Mark notification as read",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Notification ID",
+                        "name": "notificationId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/users/{profileId}/follow": {
             "post": {
                 "security": [
@@ -2338,6 +2510,56 @@ const docTemplate = `{
                 "ItemStatusSold"
             ]
         },
+        "domain.Notification": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "is_read": {
+                    "type": "boolean"
+                },
+                "notificationID": {
+                    "type": "string"
+                },
+                "payload": {
+                    "type": "object"
+                },
+                "type": {
+                    "$ref": "#/definitions/domain.NotificationType"
+                },
+                "userID": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.NotificationType": {
+            "type": "string",
+            "enum": [
+                "TURN_STARTED",
+                "TURN_ACCEPTED",
+                "HANDOFF_INITIATED",
+                "GIVEAWAY_COMPLETED",
+                "TURN_EXPIRED",
+                "GIVEAWAY_CANCELLED",
+                "PURCHASE_REQUESTED",
+                "PURCHASE_ACCEPTED",
+                "PURCHASE_REJECTED",
+                "TRANSACTION_COMPLETED"
+            ],
+            "x-enum-varnames": [
+                "NotifTypeTurnStarted",
+                "NotifTypeTurnAccepted",
+                "NotifTypeHandoffInitiated",
+                "NotifTypeGiveawayCompleted",
+                "NotifTypeTurnExpired",
+                "NotifTypeGiveawayCancelled",
+                "NotifTypePurchaseRequested",
+                "NotifTypePurchaseAccepted",
+                "NotifTypePurchaseRejected",
+                "NotifTypeTransactionDone"
+            ]
+        },
         "domain.PurchaseRequest": {
             "type": "object",
             "properties": {
@@ -2676,6 +2898,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "filename": {
+                    "type": "string"
+                }
+            }
+        },
+        "profile.UpdateDeviceTokenReq": {
+            "type": "object",
+            "properties": {
+                "token": {
                     "type": "string"
                 }
             }

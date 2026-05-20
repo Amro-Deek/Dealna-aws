@@ -244,6 +244,7 @@ func (r *UserRepository) GetProfile(ctx context.Context, userID string) (*coreDo
 		SoldItemsCount:           int(profileRow.SoldItemsCount),
 		FollowerCount:            int(profileRow.FollowerCount),
 		FollowingCount:           int(profileRow.FollowingCount),
+		DeviceToken:              ptrFromNullableText(profileRow.DeviceToken),
 	}
 
 	var student *coreDomain.Student
@@ -280,6 +281,7 @@ func (r *UserRepository) GetProfileByProfileID(ctx context.Context, profileID st
 		SoldItemsCount:           int(profileRow.SoldItemsCount),
 		FollowerCount:            int(profileRow.FollowerCount),
 		FollowingCount:           int(profileRow.FollowingCount),
+		DeviceToken:              ptrFromNullableText(profileRow.DeviceToken),
 	}, nil
 }
 
@@ -303,6 +305,7 @@ func (r *UserRepository) GetProfileByUserID(ctx context.Context, userID string) 
 		SoldItemsCount:           int(profileRow.SoldItemsCount),
 		FollowerCount:            int(profileRow.FollowerCount),
 		FollowingCount:           int(profileRow.FollowingCount),
+		DeviceToken:              ptrFromNullableText(profileRow.DeviceToken),
 	}, nil
 }
 
@@ -321,6 +324,13 @@ func (r *UserRepository) UpdateStudent(ctx context.Context, userID string, major
 		UserID:       toUUID(userID),
 		Major:        toNullableText(major),
 		AcademicYear: toNullableInt32Ptr(year),
+	})
+}
+
+func (r *UserRepository) UpdateDeviceToken(ctx context.Context, userID string, token string) error {
+	return r.q.UpdateDeviceToken(ctx, generated.UpdateDeviceTokenParams{
+		UserID:      toUUID(userID),
+		DeviceToken: toNullableText(&token),
 	})
 }
 

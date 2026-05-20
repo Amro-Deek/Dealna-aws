@@ -149,3 +149,7 @@ func (s *ProfileService) UpdateProfile(ctx context.Context, userID string, displ
 func (s *ProfileService) UpdateStudentDetails(ctx context.Context, userID string, major *string, year *int) error {
 	return s.users.UpdateStudent(ctx, userID, major, year)
 }
+
+func (s *ProfileService) UpdateDeviceToken(ctx context.Context, userID string, token string) error {
+	return s.users.UpdateDeviceToken(ctx, userID, token)
+}

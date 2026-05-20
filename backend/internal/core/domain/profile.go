@@ -14,4 +14,5 @@ type Profile struct {
 	SoldItemsCount           int
 	FollowerCount            int
 	FollowingCount           int
+	DeviceToken              *string
 }

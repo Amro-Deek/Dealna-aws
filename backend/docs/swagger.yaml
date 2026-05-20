@@ -149,6 +149,45 @@ definitions:
     - ItemStatusAvailable
     - ItemStatusReserved
     - ItemStatusSold
+  domain.Notification:
+    properties:
+      createdAt:
+        type: string
+      is_read:
+        type: boolean
+      notificationID:
+        type: string
+      payload:
+        type: object
+      type:
+        $ref: '#/definitions/domain.NotificationType'
+      userID:
+        type: string
+    type: object
+  domain.NotificationType:
+    enum:
+    - TURN_STARTED
+    - TURN_ACCEPTED
+    - HANDOFF_INITIATED
+    - GIVEAWAY_COMPLETED
+    - TURN_EXPIRED
+    - GIVEAWAY_CANCELLED
+    - PURCHASE_REQUESTED
+    - PURCHASE_ACCEPTED
+    - PURCHASE_REJECTED
+    - TRANSACTION_COMPLETED
+    type: string
+    x-enum-varnames:
+    - NotifTypeTurnStarted
+    - NotifTypeTurnAccepted
+    - NotifTypeHandoffInitiated
+    - NotifTypeGiveawayCompleted
+    - NotifTypeTurnExpired
+    - NotifTypeGiveawayCancelled
+    - NotifTypePurchaseRequested
+    - NotifTypePurchaseAccepted
+    - NotifTypePurchaseRejected
+    - NotifTypeTransactionDone
   domain.PurchaseRequest:
     properties:
       buyerID:
@@ -391,6 +430,11 @@ definitions:
       content_type:
         type: string
       filename:
+        type: string
+    type: object
+  profile.UpdateDeviceTokenReq:
+    properties:
+      token:
         type: string
     type: object
   profile.UpdateProfileReq:
@@ -1277,6 +1321,44 @@ paths:
       summary: '[Self] Update Base Profile'
       tags:
       - Profile
+  /api/v1/profile/device-token:
+    put:
+      consumes:
+      - application/json
+      description: Register the device token for FCM push notifications
+      parameters:
+      - description: Device Token Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/profile.UpdateDeviceTokenReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: '[Self] Update Device Token'
+      tags:
+      - Profile
   /api/v1/profile/picture/upload-url:
     post:
       consumes:
@@ -1684,6 +1766,76 @@ paths:
       summary: Get current user
       tags:
       - Users
+  /giveaway/notifications:
+    get:
+      consumes:
+      - application/json
+      description: Returns a paginated list of notifications for the current user
+      parameters:
+      - default: 50
+        description: limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Notification'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get user notifications
+      tags:
+      - notifications
+  /giveaway/notifications/{notificationId}/read:
+    post:
+      consumes:
+      - application/json
+      description: Marks a specific notification as read for the current user
+      parameters:
+      - description: Notification ID
+        in: path
+        name: notificationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Mark notification as read
+      tags:
+      - notifications
+  /giveaway/notifications/unread-count:
+    get:
+      consumes:
+      - application/json
+      description: Returns the number of unread notifications for the user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: integer
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get unread notification count
+      tags:
+      - notifications
   /users/{profileId}/follow:
     post:
       description: Authenticated user follows the profile with the given profileId

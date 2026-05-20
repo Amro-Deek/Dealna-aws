@@ -242,6 +242,7 @@ CREATE TABLE public.profile (
     display_name character varying(50),
     bio text,
     profile_picture_url character varying(500),
+    device_token character varying(500),
     rating_count integer DEFAULT 0 NOT NULL,
     sold_items_count integer DEFAULT 0 NOT NULL,
     total_reviews_count integer DEFAULT 0 NOT NULL,

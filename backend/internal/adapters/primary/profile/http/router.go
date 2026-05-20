@@ -19,6 +19,7 @@ func (r *Routes) Register(router chi.Router) {
 		router.Get("/", r.handler.GetMyProfile)
 		router.Put("/", r.handler.UpdateProfile)
 		router.Put("/student", r.handler.UpdateStudent)
+		router.Put("/device-token", r.handler.UpdateDeviceToken)
 		router.Post("/picture/upload-url", r.handler.GenerateUploadURL)
 	})
 }

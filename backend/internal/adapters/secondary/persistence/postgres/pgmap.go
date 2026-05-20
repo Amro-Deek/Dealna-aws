@@ -78,6 +78,13 @@ func fromNullableText(t pgtype.Text) string {
 	return t.String
 }
 
+func ptrFromNullableText(t pgtype.Text) *string {
+	if !t.Valid {
+		return nil
+	}
+	return &t.String
+}
+
 func fromNullableTime(t pgtype.Timestamp) time.Time {
 	if !t.Valid {
 		return time.Time{}

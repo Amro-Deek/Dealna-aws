@@ -45,7 +45,11 @@ func (s *PurchaseService) SendRequest(ctx context.Context, itemID, buyerID strin
 		}
 	}
 
-	return s.repo.CreatePurchaseRequest(ctx, itemID, buyerID)
+	req, err := s.repo.CreatePurchaseRequest(ctx, itemID, buyerID)
+	if err == nil {
+		sendPurchaseNotif(s, ctx, item.OwnerID.String(), itemID, req.RequestID, &buyerID, domain.NotifTypePurchaseRequested)
+	}
+	return req, err
 }
 
 func (s *PurchaseService) AcceptRequest(ctx context.Context, requestID, itemID, callerID string) error {
@@ -71,7 +75,11 @@ func (s *PurchaseService) AcceptRequest(ctx context.Context, requestID, itemID, 
 	if err != nil {
 		return err
 	}
-	return s.repo.FreezeOtherRequests(ctx, itemID, requestID)
+	err = s.repo.FreezeOtherRequests(ctx, itemID, requestID)
+	if err == nil {
+		sendPurchaseNotif(s, ctx, req.BuyerID, itemID, requestID, &callerID, domain.NotifTypePurchaseAccepted)
+	}
+	return err
 }
 
 func (s *PurchaseService) RejectRequest(ctx context.Context, requestID, itemID, callerID string) error {
@@ -93,7 +101,11 @@ func (s *PurchaseService) RejectRequest(ctx context.Context, requestID, itemID, 
 		return errors.New("only pending requests can be rejected")
 	}
 
-	return s.repo.UpdatePurchaseRequestStatus(ctx, requestID, domain.PurchaseRequestRejected)
+	err = s.repo.UpdatePurchaseRequestStatus(ctx, requestID, domain.PurchaseRequestRejected)
+	if err == nil {
+		sendPurchaseNotif(s, ctx, req.BuyerID, itemID, requestID, &callerID, domain.NotifTypePurchaseRejected)
+	}
+	return err
 }
 
 func (s *PurchaseService) CancelRequest(ctx context.Context, requestID, itemID, callerID string) error {
@@ -110,7 +122,16 @@ func (s *PurchaseService) CancelRequest(ctx context.Context, requestID, itemID, 
 		return err
 	}
 	// If the accepted request is cancelled, unfreeze others
-	return s.repo.UnfreezeRequests(ctx, itemID)
+	err = s.repo.UnfreezeRequests(ctx, itemID)
+	if err == nil {
+		// Fetch item owner
+		parsedItemID, _ := uuid.Parse(itemID)
+		item, _ := s.itemRepo.GetItemDetail(ctx, parsedItemID)
+		if item != nil {
+			sendPurchaseNotif(s, ctx, item.OwnerID.String(), itemID, requestID, &callerID, domain.NotifTypeGiveawayCancelled)
+		}
+	}
+	return err
 }
 
 func (s *PurchaseService) ListRequests(ctx context.Context, itemID string) ([]domain.PurchaseRequest, error) {
@@ -119,4 +140,16 @@ func (s *PurchaseService) ListRequests(ctx context.Context, itemID string) ([]do
 
 func (s *PurchaseService) GetMyRequests(ctx context.Context, buyerID string) ([]domain.PurchaseRequest, error) {
 	return s.repo.GetPurchaseRequestsByBuyer(ctx, buyerID)
+}
+
+func sendPurchaseNotif(s *PurchaseService, ctx context.Context, userID, itemID, requestID string, actingUserID *string, typ domain.NotificationType) {
+	if s.notifs == nil {
+		return
+	}
+	notifCtx := NotificationContext{
+		ItemID:       &itemID,
+		EntryID:      &requestID,
+		ActingUserID: actingUserID,
+	}
+	_ = s.notifs.CreateNotification(ctx, userID, typ, notifCtx)
 }
