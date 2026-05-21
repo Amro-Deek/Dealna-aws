@@ -46,7 +46,7 @@ search_worker/function.zip
 backend/cmd/migrate_trgm/
 backend/cmd/seeder/
 
-docs
+docs/
 TODO.md
 
 # Large folders to save space

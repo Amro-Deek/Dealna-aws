@@ -2,10 +2,12 @@ package services
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
+	"github.com/jackc/pgx/v5"
 )
 
 type ProfileDTO struct {
@@ -79,7 +81,10 @@ func (s *ProfileService) GetMyProfile(ctx context.Context, userID string) (*Prof
 func (s *ProfileService) GetPublicProfile(ctx context.Context, profileID string) (*ProfileDTO, error) {
 	profile, err := s.users.GetProfileByProfileID(ctx, profileID)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, middleware.NewUserNotFoundError(profileID)
+		}
+		return nil, middleware.NewDatabaseError("get public profile", err)
 	}
 
 	// We only return public info
@@ -101,7 +106,10 @@ func (s *ProfileService) GetPublicProfile(ctx context.Context, profileID string)
 func (s *ProfileService) GetPublicProfileByUserID(ctx context.Context, userID string) (*ProfileDTO, error) {
 	profile, err := s.users.GetProfileByUserID(ctx, userID)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, middleware.NewUserNotFoundError(userID)
+		}
+		return nil, middleware.NewDatabaseError("get public profile by user id", err)
 	}
 
 	return &ProfileDTO{
