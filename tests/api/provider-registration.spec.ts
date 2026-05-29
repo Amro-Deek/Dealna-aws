@@ -43,9 +43,16 @@ test.describe.serial('Provider Registration API Flow', () => {
   });
 
   test('Verify Keycloak User Email', async () => {
-    // We forcefully verify the email via Keycloak Admin API so we can login
-    await new Promise(resolve => setTimeout(resolve, 500));
-    await kcHelper.verifyUserEmail(testEmail);
+    // Retry up to 5 times (5 seconds total) in case Keycloak is slow
+    for (let i = 0; i < 5; i++) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      try {
+        await kcHelper.verifyUserEmail(testEmail);
+        return; // Success
+      } catch (e) {
+        if (i === 4) throw e; // Fail on last retry
+      }
+    }
   });
 
   test('POST /api/v1/auth/login - Success (Get APPLICANT Token)', async ({ request }) => {
@@ -186,8 +193,16 @@ test.describe.serial('Provider Registration API Flow', () => {
     });
     expect(resReg.status()).toBe(204);
 
-    // 2. Verify email
-    await kcHelper.verifyUserEmail(adminEmail);
+    // 2. Verify email with retry
+    for (let i = 0; i < 5; i++) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      try {
+        await kcHelper.verifyUserEmail(adminEmail);
+        break; // Success
+      } catch (e) {
+        if (i === 4) throw e;
+      }
+    }
 
     // 3. Promote to ADMIN in Postgres and add to admin table
     const resUpdate = await dbHelper.getPool().query(`UPDATE "User" SET role = 'ADMIN' WHERE email = $1 RETURNING user_id`, [adminEmail]);

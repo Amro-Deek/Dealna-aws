@@ -137,7 +137,9 @@ export class KeycloakHelper {
       if (!searchRes.ok) throw new Error(`Failed to search user`);
 
       const users = await searchRes.json();
-      if (!users || users.length === 0) return;
+      if (!users || users.length === 0) {
+        throw new Error(`User ${email} not found in Keycloak for verification`);
+      }
 
       const userId = users[0].id;
       const userObj = users[0];
