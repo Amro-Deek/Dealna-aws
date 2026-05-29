@@ -56,18 +56,31 @@ test.describe.serial('Provider Registration API Flow', () => {
   });
 
   test('POST /api/v1/auth/login - Success (Get APPLICANT Token)', async ({ request }) => {
-    const response = await request.post('/api/v1/auth/login', {
-      data: {
-        email: testEmail,
-        password: password
+    let response;
+    let body;
+    
+    // Retry login up to 5 times (Keycloak sometimes takes a moment to sync passwords/verification)
+    for (let i = 0; i < 5; i++) {
+      response = await request.post('/api/v1/auth/login', {
+        data: {
+          email: testEmail,
+          password: password
+        }
+      });
+      
+      if (response.status() === 200) {
+        break;
       }
-    });
+      
+      console.log(`Login attempt ${i + 1} failed with status ${response.status()}:`, await response.text());
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
     
     if (response.status() !== 200) {
       console.error(await response.text());
     }
-    expect(response.status()).toBe(200);
-    const body = await response.json();
+    expect(response.status(), `Login finally failed with status ${response.status()}`).toBe(200);
+    body = await response.json();
     expect(body.access_token).toBeDefined();
     expect(body.user.role).toBe('APPLICANT');
     accessToken = body.access_token;
