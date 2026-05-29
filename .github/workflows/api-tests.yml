@@ -110,6 +110,7 @@ jobs:
           docker exec keycloak /opt/keycloak/bin/kcadm.sh create clients -r Dealna \
             -s clientId=frontend-client \
             -s publicClient=true \
+            -s directAccessGrantsEnabled=true \
             -s redirectUris='["http://localhost:8000/*"]' \
             -s webOrigins='["*"]'
 
