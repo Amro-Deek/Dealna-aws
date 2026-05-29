@@ -35,3 +35,31 @@ func AuthMiddleware(
 		})
 	}
 }
+
+// RequireRole enforces that the authenticated user has the specified role
+func RequireRole(role string, logger StructuredLoggerInterface) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			userRole := RoleFromContext(r.Context())
+			if userRole != role {
+				WriteErrorResponse(w, r.Context(), NewForbiddenError("insufficient permissions"), logger)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// ForbidRole ensures that the authenticated user DOES NOT have the specified role
+func ForbidRole(role string, logger StructuredLoggerInterface) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			userRole := RoleFromContext(r.Context())
+			if userRole == role {
+				WriteErrorResponse(w, r.Context(), NewForbiddenError("providers cannot perform this action"), logger)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}

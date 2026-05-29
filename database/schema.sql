@@ -322,7 +322,12 @@ CREATE TABLE public.providerapplicationdocument (
     document_id uuid DEFAULT gen_random_uuid() NOT NULL,
     application_id uuid NOT NULL,
     file_path character varying(500) NOT NULL,
-    uploaded_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    uploaded_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    document_type character varying(100),
+    original_filename character varying(500),
+    content_type character varying(100),
+    size_bytes bigint,
+    upload_status character varying(50) DEFAULT 'PENDING'
 );
 
 
@@ -968,8 +973,11 @@ ALTER TABLE ONLY public.providerapplication
 -- Name: providerapplication fk_provapp_applicant; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
 --
 
+-- Name: providerapplication fk_provapp_applicant; Type: FK CONSTRAINT; Schema: public; Owner: dealna_user
+--
+
 ALTER TABLE ONLY public.providerapplication
-    ADD CONSTRAINT fk_provapp_applicant FOREIGN KEY (applicant_id) REFERENCES public.providerapplicant(applicant_id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_provapp_applicant FOREIGN KEY (applicant_id) REFERENCES public."User"(user_id) ON DELETE CASCADE;
 
 
 --

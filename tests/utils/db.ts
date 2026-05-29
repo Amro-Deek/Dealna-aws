@@ -48,16 +48,32 @@ export class DatabaseHelper {
     return null;
   }
 
-  /**
-   * Seed a pending student pre-registration (requested activation, not verified).
-   */
-  async seedPendingPreRegistration(email: string, token: string): Promise<void> {
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // Expires tomorrow
-    await this.getPool().query(
-      `INSERT INTO student_pre_registration (email, token, expires_at) VALUES ($1, $2, $3)`,
-      [email, token, expiresAt]
-    );
-  }
+	/**
+	 * Seed a pending student pre-registration (requested activation, not verified).
+	 */
+	async seedPendingPreRegistration(email: string, token: string): Promise<void> {
+	  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // Expires tomorrow
+	  await this.getPool().query(
+		`INSERT INTO student_pre_registration (email, token, expires_at) VALUES ($1, $2, $3)`,
+		[email, token, expiresAt]
+	  );
+	}
+
+	async seedAdminUser(email: string, keycloakSub: string): Promise<void> {
+		const res = await this.getPool().query(
+			`INSERT INTO "User" (email, role, account_status, email_verified, university_id, keycloak_sub)
+			VALUES ($1, 'ADMIN', 'ACTIVE', true, '00000000-0000-0000-0000-000000000000', $2)
+			ON CONFLICT (email) DO UPDATE SET role = 'ADMIN', keycloak_sub = EXCLUDED.keycloak_sub
+			RETURNING user_id`,
+			[email, keycloakSub]
+		);
+		const userId = res.rows[0].user_id;
+
+		await this.getPool().query(
+			`INSERT INTO admin (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING`,
+			[userId]
+		);
+	}
 
   /**
    * Seed a verified student pre-registration (clicked the link, ready to complete).

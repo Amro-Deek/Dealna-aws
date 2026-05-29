@@ -176,6 +176,8 @@ definitions:
     - PURCHASE_ACCEPTED
     - PURCHASE_REJECTED
     - TRANSACTION_COMPLETED
+    - APPLICATION_APPROVED
+    - APPLICATION_REJECTED
     type: string
     x-enum-varnames:
     - NotifTypeTurnStarted
@@ -188,6 +190,35 @@ definitions:
     - NotifTypePurchaseAccepted
     - NotifTypePurchaseRejected
     - NotifTypeTransactionDone
+    - NotifTypeApplicationApproved
+    - NotifTypeApplicationRejected
+  domain.ProviderApplication:
+    properties:
+      address:
+        type: string
+      admin_comment:
+        type: string
+      applicant_id:
+        type: string
+      business_name:
+        type: string
+      business_type:
+        type: string
+      id:
+        type: string
+      phone_number:
+        type: string
+      reviewed_at:
+        type: string
+      reviewed_by_admin_id:
+        type: string
+      status:
+        type: string
+      submitted_at:
+        type: string
+      university_id:
+        type: string
+    type: object
   domain.PurchaseRequest:
     properties:
       buyerID:
@@ -282,6 +313,38 @@ definitions:
       password:
         type: string
     type: object
+  dto.ConfirmDocumentUploadRequest:
+    properties:
+      content_type:
+        type: string
+      document_type:
+        type: string
+      object_key:
+        type: string
+      original_filename:
+        type: string
+      size_bytes:
+        type: integer
+    required:
+    - content_type
+    - document_type
+    - object_key
+    - original_filename
+    - size_bytes
+    type: object
+  dto.GetDocumentUploadURLRequest:
+    properties:
+      content_type:
+        type: string
+      document_type:
+        type: string
+      original_filename:
+        type: string
+    required:
+    - content_type
+    - document_type
+    - original_filename
+    type: object
   dto.LoginRequest:
     properties:
       email:
@@ -334,15 +397,52 @@ definitions:
       refreshToken:
         type: string
     type: object
+  dto.RejectProviderApplicationRequest:
+    properties:
+      comment:
+        type: string
+    required:
+    - comment
+    type: object
   dto.RequestActivationRequest:
     properties:
       email:
         type: string
     type: object
+  dto.RequestProviderRegistrationRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
   dto.ResendActivationRequest:
     properties:
       email:
         type: string
+    type: object
+  dto.StartProviderApplicationRequest:
+    properties:
+      address:
+        type: string
+      business_name:
+        type: string
+      business_type:
+        type: string
+      phone_number:
+        type: string
+      university_id:
+        type: string
+    required:
+    - address
+    - business_name
+    - business_type
+    - phone_number
+    - university_id
     type: object
   dto.StudentRegistrationStatusResponse:
     properties:
@@ -496,6 +596,79 @@ info:
   title: Dealna API
   version: "1.0"
 paths:
+  /api/v1/auth/admin/providers/{id}/approve:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Approves a provider application and upgrades the applicant to a PROVIDER role
+        Gets the current status of the logged in user's provider application
+      parameters:
+      - description: Applicant ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.ProviderApplication'
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      - BearerAuth: []
+      summary: Get provider application status
+      tags:
+      - Admin
+      - Provider Registration
+  /api/v1/auth/admin/providers/{id}/reject:
+    post:
+      consumes:
+      - application/json
+      description: Rejects a provider application and provides a comment
+      parameters:
+      - description: Applicant ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Rejection Details
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RejectProviderApplicationRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Reject provider application
+      tags:
+      - Admin
   /api/v1/auth/login:
     post:
       consumes:
@@ -550,6 +723,169 @@ paths:
       security:
       - BearerAuth: []
       summary: Logout
+      tags:
+      - Auth
+  /api/v1/auth/providers/application/document-url:
+    post:
+      consumes:
+      - application/json
+      description: Get an S3 presigned URL to upload a document
+      parameters:
+      - description: Document details
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GetDocumentUploadURLRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Get document upload URL
+      tags:
+      - Auth
+  /api/v1/auth/providers/application/document/confirm:
+    post:
+      consumes:
+      - application/json
+      description: Confirms that a document was uploaded successfully
+      parameters:
+      - description: Document details
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ConfirmDocumentUploadRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Confirm document upload
+      tags:
+      - Auth
+  /api/v1/auth/providers/application/start:
+    post:
+      consumes:
+      - application/json
+      description: Creates a DRAFT application for the provider
+      parameters:
+      - description: Application details
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.StartProviderApplicationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Start provider application
+      tags:
+      - Auth
+  /api/v1/auth/providers/application/status:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        Approves a provider application and upgrades the applicant to a PROVIDER role
+        Gets the current status of the logged in user's provider application
+      parameters:
+      - description: Applicant ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.ProviderApplication'
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      - BearerAuth: []
+      summary: Get provider application status
+      tags:
+      - Admin
+      - Provider Registration
+  /api/v1/auth/providers/application/submit:
+    post:
+      consumes:
+      - application/json
+      description: Submits the application for review
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Submit provider application
+      tags:
+      - Auth
+  /api/v1/auth/providers/register:
+    post:
+      consumes:
+      - application/json
+      description: Register provider in Keycloak and send verification email
+      parameters:
+      - description: Registration data
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RequestProviderRegistrationRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      summary: Request provider registration
       tags:
       - Auth
   /api/v1/auth/refresh:

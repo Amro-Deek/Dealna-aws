@@ -35,6 +35,9 @@ backend/test
 backend/test_build
 backend/check_db.go
 backend/check_user.go
+backend/check_schema.go
+backend/test_profile.go
+backend/test_profile_id.go
 
 # Scratch / debug scripts
 search_worker/check_qdrant.py
@@ -55,3 +58,11 @@ node_modules/
 venv/
 __pycache__/
 .cache/
+
+# Recently added test / scratch files
+check_kc.js
+kc_test.ts
+login_test.js
+student_test.js
+backend/test.json
+tests/drop_constraints.ts

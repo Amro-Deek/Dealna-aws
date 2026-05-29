@@ -32,3 +32,7 @@ func (f *RepositoryFactory) Item() ports.ItemRepository {
 	return postgres.NewItemRepository(f.pool)
 }
 
+func (f *RepositoryFactory) Provider() ports.IProviderRepository {
+	return postgres.NewProviderRepository(f.pool)
+}
+

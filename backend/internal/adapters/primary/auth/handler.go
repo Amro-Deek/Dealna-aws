@@ -11,18 +11,21 @@ import (
 type Handler struct {
 	authService      *services.AuthService
 	preRegService    *services.StudentRegistrationService
+	providerRegSvc   *services.ProviderRegistrationService
 	userService      *services.UserService
 }
 
 func NewHandler(
 	authService *services.AuthService,
 	preRegService *services.StudentRegistrationService,
+	providerRegSvc *services.ProviderRegistrationService,
 	userService *services.UserService,
 ) *Handler {
 	return &Handler{
-		authService:   authService,
-		preRegService: preRegService,
-		userService:   userService,
+		authService:    authService,
+		preRegService:  preRegService,
+		providerRegSvc: providerRegSvc,
+		userService:    userService,
 	}
 }
 
@@ -95,4 +98,61 @@ func (h *Handler) GetStudentRegistrationStatus(
 	email string,
 ) (*domain.StudentPreRegistration, error) {
 	return h.preRegService.GetRegistrationStatus(ctx, email)
+}
+
+func (h *Handler) RequestProviderRegistration(
+	ctx context.Context,
+	email string,
+	password string,
+) error {
+	return h.providerRegSvc.RequestProviderRegistration(ctx, email, password)
+}
+func (h *Handler) StartProviderApplication(
+	ctx context.Context,
+	userID string,
+	universityID string,
+	businessName string,
+	phoneNumber string,
+	businessType string,
+	address string,
+) (*domain.ProviderApplication, error) {
+	return h.providerRegSvc.StartApplication(ctx, userID, universityID, businessName, phoneNumber, businessType, address)
+}
+
+func (h *Handler) GetDocumentUploadURL(
+	ctx context.Context,
+	userID string,
+	documentType string,
+	originalFilename string,
+	contentType string,
+) (string, string, error) {
+	return h.providerRegSvc.GetDocumentUploadURL(ctx, userID, documentType, originalFilename, contentType)
+}
+
+func (h *Handler) ConfirmDocumentUpload(
+	ctx context.Context,
+	userID string,
+	objectKey string,
+	documentType string,
+	originalFilename string,
+	contentType string,
+	sizeBytes int64,
+) error {
+	return h.providerRegSvc.ConfirmDocumentUpload(ctx, userID, objectKey, documentType, originalFilename, contentType, sizeBytes)
+}
+
+func (h *Handler) SubmitProviderApplication(ctx context.Context, userID string) error {
+	return h.providerRegSvc.SubmitApplication(ctx, userID)
+}
+
+func (h *Handler) ApproveProviderApplication(ctx context.Context, adminID, applicantID string) error {
+	return h.providerRegSvc.ApproveApplication(ctx, adminID, applicantID)
+}
+
+func (h *Handler) RejectProviderApplication(ctx context.Context, adminID, applicantID, comment string) error {
+	return h.providerRegSvc.RejectApplication(ctx, adminID, applicantID, comment)
+}
+
+func (h *Handler) GetProviderApplicationStatus(ctx context.Context, applicantID string) (*domain.ProviderApplication, error) {
+	return h.providerRegSvc.GetApplicationStatus(ctx, applicantID)
 }

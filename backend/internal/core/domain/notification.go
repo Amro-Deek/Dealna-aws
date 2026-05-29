@@ -18,6 +18,8 @@ const (
 	NotifTypePurchaseAccepted  NotificationType = "PURCHASE_ACCEPTED"
 	NotifTypePurchaseRejected  NotificationType = "PURCHASE_REJECTED"
 	NotifTypeTransactionDone   NotificationType = "TRANSACTION_COMPLETED"
+	NotifTypeApplicationApproved NotificationType = "APPLICATION_APPROVED"
+	NotifTypeApplicationRejected NotificationType = "APPLICATION_REJECTED"
 )
 
 type Notification struct {

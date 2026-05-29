@@ -50,6 +50,32 @@ export class KeycloakHelper {
     return data.access_token;
   }
 
+  async ensureRoleExists(roleName: string): Promise<void> {
+    try {
+      const token = await this.getAdminToken();
+      const rolesEndpoint = `${this.baseURL}/admin/realms/${this.realm}/roles`;
+      
+      const checkRes = await fetch(`${rolesEndpoint}/${roleName}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (checkRes.ok) return;
+
+      const createRes = await fetch(rolesEndpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: roleName })
+      });
+      if (!createRes.ok && createRes.status !== 409) {
+        throw new Error(`Failed to create role ${roleName}: ${await createRes.text()}`);
+      }
+    } catch (e) {
+      console.error('ensureRoleExists error:', e);
+    }
+  }
+
   /**
    * Deletes a user by their email address
    */
@@ -93,6 +119,46 @@ export class KeycloakHelper {
       console.log(`🧹 Cleaned up Keycloak user: ${email}`);
     } catch (e) {
       console.error(`❌ Error cleaning up Keycloak user ${email}:`, e);
+    }
+  }
+
+  /**
+   * Forcefully verifies a user's email so they can log in
+   */
+  async verifyUserEmail(email: string): Promise<void> {
+    try {
+      const token = await this.getAdminToken();
+
+      const searchUrl = `${this.baseURL}/admin/realms/${this.realm}/users?email=${encodeURIComponent(email)}&exact=true`;
+      const searchRes = await fetch(searchUrl, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!searchRes.ok) throw new Error(`Failed to search user`);
+
+      const users = await searchRes.json();
+      if (!users || users.length === 0) return;
+
+      const userId = users[0].id;
+      const userObj = users[0];
+      userObj.emailVerified = true;
+      userObj.requiredActions = [];
+
+      const updateUrl = `${this.baseURL}/admin/realms/${this.realm}/users/${userId}`;
+      const updateRes = await fetch(updateUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userObj),
+      });
+
+      if (!updateRes.ok) throw new Error(`Failed to update user: ${await updateRes.text()}`);
+
+      console.log(`✅ Verified Keycloak user email: ${email}`);
+    } catch (e) {
+      console.error(`❌ Error verifying Keycloak user ${email}:`, e);
     }
   }
 }

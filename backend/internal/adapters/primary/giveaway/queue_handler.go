@@ -34,6 +34,10 @@ func (h *QueueHandler) JoinQueue(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
+	if middleware.RoleFromContext(r.Context()) == "PROVIDER" {
+		http.Error(w, "Providers cannot join queues", http.StatusForbidden)
+		return
+	}
 	entry, err := h.qService.JoinQueue(r.Context(), itemID, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

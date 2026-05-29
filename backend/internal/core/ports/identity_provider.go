@@ -20,4 +20,8 @@ type IIdentityProvider interface {
 	Refresh(ctx context.Context, refreshToken string) (*IdentityLoginResult, error)
 	// Logout invalidates a session using the refresh token
 	Logout(ctx context.Context, refreshToken string) error
+
+	ResetPassword(ctx context.Context, email, newPassword string) error
+	ExecuteActionsEmail(ctx context.Context, keycloakSub string, actions []string) error
+	AssignRoleToUser(ctx context.Context, keycloakSub string, roleName string) error
 }

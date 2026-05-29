@@ -72,12 +72,37 @@ func NewRouter(
 			r.Post("/student/resend", authRoutes.ResendActivationHandler)
 			r.Get("/student/status", authRoutes.GetRegistrationStatusHandler)
 
+			// =============================
+			// Provider Registration Flow (Public)
+			// =============================
+			r.Post("/providers/register", authRoutes.RequestProviderRegistrationHandler)
+
 			// ---------
 			// Protected
 			// ---------
 			r.Group(func(r chi.Router) {
 				r.Use(middleware.AuthMiddleware(authProvider, logger))
 				r.Post("/logout", authRoutes.LogoutHandler)
+
+				// =============================
+				// Provider Registration Flow (Protected)
+				// =============================
+				r.Route("/providers/application", func(r chi.Router) {
+					r.Post("/start", authRoutes.StartProviderApplicationHandler)
+					r.Post("/document-url", authRoutes.GetDocumentUploadURLHandler)
+					r.Post("/document/confirm", authRoutes.ConfirmDocumentUploadHandler)
+					r.Post("/submit", authRoutes.SubmitProviderApplicationHandler)
+					r.Get("/status", authRoutes.GetProviderApplicationStatusHandler)
+				})
+
+				// =============================
+				// Admin Routes (Protected)
+				// =============================
+				r.Route("/admin", func(r chi.Router) {
+					r.Use(middleware.RequireRole("ADMIN", logger))
+					r.Post("/providers/{id}/approve", authRoutes.ApproveProviderApplicationHandler)
+					r.Post("/providers/{id}/reject", authRoutes.RejectProviderApplicationHandler)
+				})
 			})
 		})
 

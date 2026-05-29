@@ -1,10 +1,12 @@
 package auth
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -231,6 +233,40 @@ func (k *KeycloakIdentityProvider) DeleteUser(ctx context.Context, keycloakSub s
 	return nil
 }
 
+func (k *KeycloakIdentityProvider) ResetPassword(ctx context.Context, email, newPassword string) error {
+	// Not implemented for this context yet
+	return nil
+}
+
+func (k *KeycloakIdentityProvider) ExecuteActionsEmail(ctx context.Context, keycloakSub string, actions []string) error {
+	adminToken, err := k.getAdminToken(ctx)
+	if err != nil {
+		return err
+	}
+
+	url := k.baseURL + "/admin/realms/" + k.realm + "/users/" + keycloakSub + "/execute-actions-email"
+
+	bodyBytes, _ := json.Marshal(actions)
+	req, err := http.NewRequestWithContext(ctx, "PUT", url, strings.NewReader(string(bodyBytes)))
+	if err != nil {
+		return middleware.NewInternalError(err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+adminToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := k.httpClient.Do(req)
+	if err != nil {
+		return middleware.NewInternalError(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return middleware.NewInternalError(errors.New("failed to execute actions email"))
+	}
+
+	return nil
+}
 func (k *KeycloakIdentityProvider) getAdminToken(ctx context.Context) (string, error) {
 	form := url.Values{}
 	form.Set("client_id", k.adminClientID)
@@ -355,6 +391,62 @@ func (k *KeycloakIdentityProvider) Logout(ctx context.Context, refreshToken stri
 
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
 		return middleware.NewUnauthorizedError("failed to logout")
+	}
+
+	return nil
+}
+
+func (k *KeycloakIdentityProvider) AssignRoleToUser(ctx context.Context, keycloakSub string, roleName string) error {
+	token, err := k.getAdminToken(ctx)
+	if err != nil {
+		return err
+	}
+
+	// 1. Get Realm Role Representation
+	roleEndpoint := k.baseURL + "/admin/realms/" + k.realm + "/roles/" + url.PathEscape(roleName)
+	req1, err := http.NewRequestWithContext(ctx, http.MethodGet, roleEndpoint, nil)
+	if err != nil {
+		return middleware.NewInternalError(err)
+	}
+	req1.Header.Set("Authorization", "Bearer "+token)
+
+	resp1, err := k.httpClient.Do(req1)
+	if err != nil {
+		return middleware.NewInternalError(err)
+	}
+	defer resp1.Body.Close()
+
+	if resp1.StatusCode != http.StatusOK {
+		return middleware.NewInternalError(fmt.Errorf("failed to get role representation, status: %d", resp1.StatusCode))
+	}
+
+	var roleRep map[string]interface{}
+	if err := json.NewDecoder(resp1.Body).Decode(&roleRep); err != nil {
+		return middleware.NewInternalError(err)
+	}
+
+	// 2. Assign role to user
+	assignEndpoint := k.baseURL + "/admin/realms/" + k.realm + "/users/" + keycloakSub + "/role-mappings/realm"
+	bodyBytes, err := json.Marshal([]map[string]interface{}{roleRep})
+	if err != nil {
+		return middleware.NewInternalError(err)
+	}
+
+	req2, err := http.NewRequestWithContext(ctx, http.MethodPost, assignEndpoint, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return middleware.NewInternalError(err)
+	}
+	req2.Header.Set("Authorization", "Bearer "+token)
+	req2.Header.Set("Content-Type", "application/json")
+
+	resp2, err := k.httpClient.Do(req2)
+	if err != nil {
+		return middleware.NewInternalError(err)
+	}
+	defer resp2.Body.Close()
+
+	if resp2.StatusCode != http.StatusNoContent && resp2.StatusCode != http.StatusOK {
+		return middleware.NewInternalError(fmt.Errorf("failed to assign role, status: %d", resp2.StatusCode))
 	}
 
 	return nil

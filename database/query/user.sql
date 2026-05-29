@@ -49,3 +49,20 @@ FROM public."User"
 WHERE user_id = $1
   AND deleted_at IS NULL
 LIMIT 1;
+
+-- name: CreateApplicantUser :one
+INSERT INTO "User" (
+    email,
+    role,
+    keycloak_sub,
+    account_status,
+    email_verified,
+    university_id
+) VALUES (
+    $1, 'APPLICANT', $2, 'PENDING', false, (SELECT university_id FROM university WHERE domain = 'birzeit.edu' LIMIT 1)
+) RETURNING user_id, email, role, keycloak_sub;
+
+-- name: UpdateUserRole :exec
+UPDATE "User"
+SET role = $2
+WHERE user_id = $1;

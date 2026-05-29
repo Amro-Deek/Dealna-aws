@@ -23,6 +23,15 @@ type IUserRepository interface {
 		studentID string,
 	) (*domain.User, error)
 
+	CreateApplicantUser(
+		ctx context.Context,
+		email string,
+		keycloakSub string,
+	) (*domain.User, error)
+
+	UpdateUserRole(ctx context.Context, userID string, role string) error
+
+
 	GetProfile(ctx context.Context, userID string) (*domain.Profile, *domain.Student, error)
 	GetProfileByProfileID(ctx context.Context, profileID string) (*domain.Profile, error)
 	GetProfileByUserID(ctx context.Context, userID string) (*domain.Profile, error)

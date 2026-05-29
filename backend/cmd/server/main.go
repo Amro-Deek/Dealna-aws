@@ -99,6 +99,7 @@ func main() {
 	studentPreRegRepo := repoFactory.StudentPreRegistration()
 	universityRepo := repoFactory.University()
 	itemRepo := repoFactory.Item()
+	providerRepo := repoFactory.Provider()
 
 	// =========================
 	// Secondary adapters
@@ -146,6 +147,21 @@ func main() {
 		keycloakIdentity,
 		universityRepo,
 	)
+	notificationRepo := postgres.NewNotificationRepository(db)
+	fcmClient, err := messaging.NewFCMClient(context.Background())
+	if err != nil {
+		log.Printf("⚠️ FCM initialization failed (push notifications disabled): %v", err)
+	}
+	notificationSvc := services.NewNotificationService(notificationRepo, userRepo, itemRepo, fcmClient)
+
+	providerRegistrationService := services.NewProviderRegistrationService(
+		userRepo,
+		providerRepo,
+		emailAdapter.NewSMTPEmailService(cfg.SMTP), // TODO: replace with real email service
+		keycloakIdentity,
+		s3Provider,
+		notificationSvc,
+	)
 	profileService := services.NewProfileService(userRepo)
 	storageService := services.NewStorageService(s3Provider)
 	itemService := services.NewItemService(itemRepo, s3Provider, lambdaPublisher, qdrantClient)
@@ -153,7 +169,7 @@ func main() {
 	// =========================
 	// Handlers
 	// =========================
-	authH := authHandler.NewHandler(authService, StudentRegistrationService, userService)
+	authH := authHandler.NewHandler(authService, StudentRegistrationService, providerRegistrationService, userService)
 	userH := userHandler.NewHandler(userService)
 	profileH := profileHandler.NewProfileHandler(profileService, storageService, appLogger)
 	itemH := items.NewItemHandler(itemService, appLogger)
@@ -172,14 +188,6 @@ func main() {
 	queueRepo := postgres.NewQueueRepository(db)
 	purchaseRepo := postgres.NewPurchaseRequestRepository(db)
 	transactionRepo := postgres.NewTransactionRepository(db)
-	notificationRepo := postgres.NewNotificationRepository(db)
-
-	fcmClient, err := messaging.NewFCMClient(context.Background())
-	if err != nil {
-		log.Printf("⚠️ FCM initialization failed (push notifications disabled): %v", err)
-	}
-
-	notificationSvc := services.NewNotificationService(notificationRepo, userRepo, itemRepo, fcmClient)
 	queueSvc := services.NewQueueService(queueRepo, notificationSvc, itemRepo)
 	queueSvc.StartWorkers(context.Background())
 	purchaseSvc := services.NewPurchaseService(purchaseRepo, notificationSvc, itemRepo)

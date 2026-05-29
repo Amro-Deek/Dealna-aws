@@ -109,6 +109,36 @@ func mapUser(
 	}
 }
 
+func (r *UserRepository) CreateApplicantUser(
+	ctx context.Context,
+	email string,
+	keycloakSub string,
+) (*coreDomain.User, error) {
+
+	row, err := r.q.CreateApplicantUser(ctx, generated.CreateApplicantUserParams{
+		Email:       email,
+		KeycloakSub: toUUID(keycloakSub),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &coreDomain.User{
+		ID:          row.UserID.String(),
+		Email:       row.Email,
+		Role:        row.Role,
+		KeycloakSub: row.KeycloakSub.String(),
+	}, nil
+}
+
+func (r *UserRepository) UpdateUserRole(ctx context.Context, userID string, role string) error {
+	return r.q.UpdateUserRole(ctx, generated.UpdateUserRoleParams{
+		UserID: toUUID(userID),
+		Role:   role,
+	})
+}
+
+
 /*
 func (r *UserRepository) CreateStudent(
 	ctx context.Context,

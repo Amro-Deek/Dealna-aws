@@ -119,3 +119,17 @@ func toNullableInt32Ptr(v *int) pgtype.Int4 {
 	}
 	return pgtype.Int4{Int32: int32(*v), Valid: true}
 }
+
+func toNullableInt8(v *int64) pgtype.Int8 {
+	if v == nil {
+		return pgtype.Int8{Valid: false}
+	}
+	return pgtype.Int8{Int64: *v, Valid: true}
+}
+
+func ptrFromNullableInt8(v pgtype.Int8) *int64 {
+	if !v.Valid {
+		return nil
+	}
+	return &v.Int64
+}
