@@ -87,6 +87,9 @@ test.describe.serial('Provider Registration API Flow', () => {
       }
     });
 
+    if (response.status() !== 200) {
+      console.error(await response.text());
+    }
     expect(response.status()).toBe(200);
     const body = await response.json();
     expect(body.business_name).toBe('Test Provider Store');
