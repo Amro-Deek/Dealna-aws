@@ -33,6 +33,18 @@ SET status = 'PENDING', updated_at = CURRENT_TIMESTAMP
 WHERE item_id = $1 AND status = 'FROZEN';
 
 -- name: GetPurchaseRequestsByBuyer :many
-SELECT * FROM purchase_request
-WHERE buyer_id = $1
-ORDER BY updated_at DESC;
+SELECT 
+  pr.*,
+  i.title AS item_title,
+  i.price AS item_price,
+  COALESCE((
+      SELECT a.file_path 
+      FROM public.attachment a 
+      WHERE a.item_id = i.item_id 
+      ORDER BY a.uploaded_at ASC 
+      LIMIT 1
+  ), '') AS item_image
+FROM purchase_request pr
+INNER JOIN public.item i ON i.item_id = pr.item_id
+WHERE pr.buyer_id = $1
+ORDER BY pr.updated_at DESC;

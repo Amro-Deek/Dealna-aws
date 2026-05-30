@@ -23,4 +23,9 @@ type PurchaseRequest struct {
 	UpdatedAt time.Time
 	BuyerName string
 	BuyerPic  string
+	
+	// Hydrated fields
+	ItemTitle string
+	ItemPrice float64
+	ItemImage string
 }

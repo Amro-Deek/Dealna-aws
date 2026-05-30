@@ -94,7 +94,23 @@ func (r *PurchaseRequestRepository) GetPurchaseRequestsByBuyer(ctx context.Conte
 	}
 	res := make([]domain.PurchaseRequest, len(reqs))
 	for i, req := range reqs {
-		res[i] = *mapPurchaseRequest(req)
+		price, _ := req.ItemPrice.Float64Value()
+		var img string
+		if s, ok := req.ItemImage.(string); ok {
+			img = s
+		}
+		
+		res[i] = domain.PurchaseRequest{
+			RequestID: uuidToString(req.RequestID),
+			ItemID:    uuidToString(req.ItemID),
+			BuyerID:   uuidToString(req.BuyerID),
+			Status:    domain.PurchaseRequestStatus(req.Status),
+			CreatedAt: req.CreatedAt.Time,
+			UpdatedAt: req.UpdatedAt.Time,
+			ItemTitle: req.ItemTitle,
+			ItemPrice: price.Float64,
+			ItemImage: img,
+		}
 	}
 	return res, nil
 }
