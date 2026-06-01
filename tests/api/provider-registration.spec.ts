@@ -41,14 +41,14 @@ test.describe.serial('Provider Registration API Flow', () => {
     expect(response.status()).toBe(204); // No Content
   });
 
-  test('Fetch token from Database for activation', async () => {
+  test('Fetch token from Database for activation', async ({ request }) => {
     const res = await dbHelper.getPool().query('SELECT token FROM provider_pre_registration WHERE email = $1', [testEmail]);
     expect(res.rows.length).toBe(1);
     const token = res.rows[0].token;
 
     // Call activate
-    const actRes = await fetch(`${process.env.TEST_API_URL || 'http://localhost:8080'}/api/v1/auth/providers/activate?token=${token}`);
-    expect(actRes.status).toBe(204);
+    const actRes = await request.get(`/api/v1/auth/providers/activate?token=${token}`);
+    expect(actRes.status()).toBe(204);
   });
 
   test('POST /api/v1/auth/providers/complete - Success', async ({ request }) => {
@@ -222,8 +222,8 @@ test.describe.serial('Provider Registration API Flow', () => {
     // 2. Fetch token from Database for activation
     const resAdminToken = await dbHelper.getPool().query('SELECT token FROM provider_pre_registration WHERE email = $1', [adminEmail]);
     const adminTokenVal = resAdminToken.rows[0].token;
-    const actAdminRes = await fetch(`${process.env.TEST_API_URL || 'http://localhost:8080'}/api/v1/auth/providers/activate?token=${adminTokenVal}`);
-    expect(actAdminRes.status).toBe(204);
+    const actAdminRes = await request.get(`/api/v1/auth/providers/activate?token=${adminTokenVal}`);
+    expect(actAdminRes.status()).toBe(204);
 
     // 3. Complete Registration
     const completeAdminRes = await request.post('/api/v1/auth/providers/complete', {
