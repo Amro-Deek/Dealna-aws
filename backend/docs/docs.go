@@ -217,6 +217,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth/providers/activate": {
+            "get": {
+                "description": "Check activation link validity",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Verify provider activation token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Activation token",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/providers/application/document-url": {
             "post": {
                 "security": [
@@ -437,9 +469,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/auth/providers/register": {
+        "/api/v1/auth/providers/complete": {
             "post": {
-                "description": "Register provider in Keycloak and send verification email",
+                "description": "Finalize provider account",
                 "consumes": [
                     "application/json"
                 ],
@@ -449,7 +481,7 @@ const docTemplate = `{
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Request provider registration",
+                "summary": "Complete provider registration",
                 "parameters": [
                     {
                         "description": "Registration data",
@@ -457,7 +489,81 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.RequestProviderRegistrationRequest"
+                            "$ref": "#/definitions/dto.CompleteProviderRegistrationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/providers/request-activation": {
+            "post": {
+                "description": "Start provider registration process and send verification email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Request provider activation",
+                "parameters": [
+                    {
+                        "description": "Registration data",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestActivationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/providers/resend": {
+            "post": {
+                "description": "Resend activation email for provider",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Resend activation link",
+                "parameters": [
+                    {
+                        "description": "Email",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestActivationRequest"
                         }
                     }
                 ],
@@ -710,6 +816,40 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/domain.Category"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/chat/token": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a custom Firebase Auth token for the logged-in user to connect to Firebase directly.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Get Firebase Chat Token",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
                         }
                     }
                 }
@@ -1932,53 +2072,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/purchases/items/{itemId}/requests/{requestId}/accept": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Allows the seller to accept a specific purchase request",
-                "tags": [
-                    "Purchases"
-                ],
-                "summary": "Accept a purchase request",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Item ID",
-                        "name": "itemId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Request ID",
-                        "name": "requestId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "401": {
-                        "description": "unauthorized",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "internal error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/purchases/items/{itemId}/requests/{requestId}/cancel": {
             "post": {
                 "security": [
@@ -2992,6 +3085,17 @@ const docTemplate = `{
                 "itemID": {
                     "type": "string"
                 },
+                "itemImage": {
+                    "type": "string"
+                },
+                "itemPrice": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "itemTitle": {
+                    "description": "Hydrated fields",
+                    "type": "string"
+                },
                 "requestID": {
                     "type": "string"
                 },
@@ -3008,6 +3112,7 @@ const docTemplate = `{
             "enum": [
                 "PENDING",
                 "ACCEPTED",
+                "PENDING_TX",
                 "REJECTED",
                 "FROZEN",
                 "CANCELLED"
@@ -3015,6 +3120,7 @@ const docTemplate = `{
             "x-enum-varnames": [
                 "PurchaseRequestPending",
                 "PurchaseRequestAccepted",
+                "PurchaseRequestPendingTx",
                 "PurchaseRequestRejected",
                 "PurchaseRequestFrozen",
                 "PurchaseRequestCancelled"
@@ -3084,6 +3190,22 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.CompleteProviderRegistrationRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
                 }
             }
         },
@@ -3248,22 +3370,6 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string"
-                }
-            }
-        },
-        "dto.RequestProviderRegistrationRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 8
                 }
             }
         },

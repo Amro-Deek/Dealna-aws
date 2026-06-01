@@ -73,7 +73,7 @@ func (h *PurchaseHandler) ListRequests(w http.ResponseWriter, r *http.Request) {
 // @Security     BearerAuth
 // @Param        itemId  path  string  true  "Item ID"
 // @Param        requestId  path  string  true  "Request ID"
-// @Success      200     "OK"
+// @Success      200     {object} AcceptResponse
 // @Failure      401     {string}  string  "unauthorized"
 // @Failure      500     {string}  string  "internal error"
 // @Router       /api/v1/purchases/items/{itemId}/requests/{requestId}/accept [post]

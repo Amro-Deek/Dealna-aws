@@ -12,6 +12,7 @@ import (
 	httpadapter "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary"
 	authHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth"
 	authHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/http"
+	chatHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/chat/http"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/giveaway"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/items"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/marketplace"
@@ -23,6 +24,7 @@ import (
 
 	// Secondary adapters
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/auth"
+	authAdapter "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/auth"
 	emailAdapter "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/email"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/persistence"
 	postgres "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/persistence/postgres"
@@ -212,6 +214,17 @@ func main() {
 	socialRoutes := social.NewRoutes(followH, profileH)
 
 	// =========================
+	// Chat Setup
+	// =========================
+	firebaseAuthProv, err := authAdapter.NewFirebaseAuthProvider(context.Background())
+	if err != nil {
+		log.Printf("⚠️ Firebase Auth initialization failed: %v", err)
+	}
+	chatSvc := services.NewChatService(firebaseAuthProv)
+	chatH := chatHTTP.NewChatHandler(chatSvc, appLogger)
+	chatRoutes := chatHTTP.NewRoutes(chatH)
+
+	// =========================
 	// HTTP Router Adapter
 	// =========================
 	router := httpadapter.NewRouter(
@@ -223,6 +236,7 @@ func main() {
 		giveawayRoutes,
 		marketplaceRoutes,
 		socialRoutes,
+		chatRoutes,
 		jwtProvider,
 		appLogger,
 	)
