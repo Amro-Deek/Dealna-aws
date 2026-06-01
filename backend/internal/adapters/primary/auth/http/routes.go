@@ -68,7 +68,10 @@ func (rt *Routes) RegisterRegistration(router chi.Router) {
 	})
 
 	router.Route("/auth/providers", func(r chi.Router) {
-		r.Post("/register", rt.RequestProviderRegistrationHandler)
+		r.Post("/request-activation", rt.RequestProviderActivationHandler)
+		r.Get("/activate", rt.VerifyProviderActivationHandler)
+		r.Post("/complete", rt.CompleteProviderRegistrationHandler)
+		r.Post("/resend", rt.ResendProviderActivationHandler)
 	})
 }
 
@@ -301,23 +304,94 @@ func (rt *Routes) GetRegistrationStatusHandler(w http.ResponseWriter, req *http.
 	})
 }
 
-// @Summary Request provider registration
-// @Description Register provider in Keycloak and send verification email
+// @Summary Request provider activation
+// @Description Start provider registration process and send verification email
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param payload body dto.RequestProviderRegistrationRequest true "Registration data"
+// @Param payload body dto.RequestActivationRequest true "Registration data"
 // @Success 204
 // @Failure 400 {object} middleware.ErrorFrame
-// @Router /api/v1/auth/providers/register [post]
-func (rt *Routes) RequestProviderRegistrationHandler(w http.ResponseWriter, req *http.Request) {
-	var body dto.RequestProviderRegistrationRequest
+// @Router /api/v1/auth/providers/request-activation [post]
+func (rt *Routes) RequestProviderActivationHandler(w http.ResponseWriter, req *http.Request) {
+	var body dto.RequestActivationRequest
 	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)
 		return
 	}
 
-	if err := rt.handler.RequestProviderRegistration(req.Context(), body.Email, body.Password); err != nil {
+	if err := rt.handler.RequestProviderActivation(req.Context(), body.Email); err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// @Summary Verify provider activation token
+// @Description Check activation link validity
+// @Tags Auth
+// @Produce json
+// @Param token query string true "Activation token"
+// @Success 204
+// @Failure 401 {object} middleware.ErrorFrame
+// @Router /api/v1/auth/providers/activate [get]
+func (rt *Routes) VerifyProviderActivationHandler(w http.ResponseWriter, req *http.Request) {
+	token := req.URL.Query().Get("token")
+	if token == "" {
+		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("token", "required"), rt.logger)
+		return
+	}
+
+	if err := rt.handler.VerifyProviderActivation(req.Context(), token); err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// @Summary Complete provider registration
+// @Description Finalize provider account
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param payload body dto.CompleteProviderRegistrationRequest true "Registration data"
+// @Success 204
+// @Failure 401 {object} middleware.ErrorFrame
+// @Router /api/v1/auth/providers/complete [post]
+func (rt *Routes) CompleteProviderRegistrationHandler(w http.ResponseWriter, req *http.Request) {
+	var body dto.CompleteProviderRegistrationRequest
+	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)
+		return
+	}
+
+	if err := rt.handler.CompleteProviderRegistration(req.Context(), body.Email, body.Password); err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// @Summary Resend activation link
+// @Description Resend activation email for provider
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param payload body dto.RequestActivationRequest true "Email"
+// @Success 204
+// @Failure 400 {object} middleware.ErrorFrame
+// @Router /api/v1/auth/providers/resend [post]
+func (rt *Routes) ResendProviderActivationHandler(w http.ResponseWriter, req *http.Request) {
+	var body dto.RequestActivationRequest
+	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)
+		return
+	}
+
+	if err := rt.handler.ResendProviderActivation(req.Context(), body.Email); err != nil {
 		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
 		return
 	}

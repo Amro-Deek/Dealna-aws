@@ -154,9 +154,11 @@ func main() {
 	}
 	notificationSvc := services.NewNotificationService(notificationRepo, userRepo, itemRepo, fcmClient)
 
+	providerPreRegRepo := postgres.NewProviderPreRegistrationRepository(db)
 	providerRegistrationService := services.NewProviderRegistrationService(
 		userRepo,
 		providerRepo,
+		providerPreRegRepo,
 		emailAdapter.NewSMTPEmailService(cfg.SMTP), // TODO: replace with real email service
 		keycloakIdentity,
 		s3Provider,
@@ -190,7 +192,7 @@ func main() {
 	transactionRepo := postgres.NewTransactionRepository(db)
 	queueSvc := services.NewQueueService(queueRepo, notificationSvc, itemRepo)
 	queueSvc.StartWorkers(context.Background())
-	purchaseSvc := services.NewPurchaseService(purchaseRepo, notificationSvc, itemRepo)
+	purchaseSvc := services.NewPurchaseService(purchaseRepo, notificationSvc, itemRepo, transactionRepo)
 	transactionSvc := services.NewTransactionService(transactionRepo, notificationSvc)
 
 	queueH := giveaway.NewQueueHandler(queueSvc)

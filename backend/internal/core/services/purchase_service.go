@@ -13,10 +13,11 @@ type PurchaseService struct {
 	repo     ports.IPurchaseRequestRepository
 	notifs   *NotificationService
 	itemRepo ports.ItemRepository
+	txRepo   ports.ITransactionRepository
 }
 
-func NewPurchaseService(repo ports.IPurchaseRequestRepository, notifs *NotificationService, itemRepo ports.ItemRepository) *PurchaseService {
-	return &PurchaseService{repo: repo, notifs: notifs, itemRepo: itemRepo}
+func NewPurchaseService(repo ports.IPurchaseRequestRepository, notifs *NotificationService, itemRepo ports.ItemRepository, txRepo ports.ITransactionRepository) *PurchaseService {
+	return &PurchaseService{repo: repo, notifs: notifs, itemRepo: itemRepo, txRepo: txRepo}
 }
 
 func (s *PurchaseService) SendRequest(ctx context.Context, itemID, buyerID string) (*domain.PurchaseRequest, error) {
@@ -52,34 +53,41 @@ func (s *PurchaseService) SendRequest(ctx context.Context, itemID, buyerID strin
 	return req, err
 }
 
-func (s *PurchaseService) AcceptRequest(ctx context.Context, requestID, itemID, callerID string) error {
+func (s *PurchaseService) AcceptRequest(ctx context.Context, requestID, itemID, callerID string) (string, error) {
 	// Verify Owner
 	parsedItemID, err := uuid.Parse(itemID)
 	if err != nil {
-		return err
+		return "", err
 	}
 	item, err := s.itemRepo.GetItemDetail(ctx, parsedItemID)
 	if err != nil || item.OwnerID.String() != callerID {
-		return errors.New("only the item owner can accept purchase requests")
+		return "", errors.New("only the item owner can accept purchase requests")
 	}
 
 	req, err := s.repo.GetPurchaseRequestByID(ctx, requestID)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if req.Status != domain.PurchaseRequestPending {
-		return errors.New("only pending requests can be accepted")
+		return "", errors.New("only pending requests can be accepted")
 	}
 
-	err = s.repo.UpdatePurchaseRequestStatus(ctx, requestID, domain.PurchaseRequestAccepted)
+	err = s.repo.UpdatePurchaseRequestStatus(ctx, requestID, domain.PurchaseRequestPendingTx)
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = s.repo.FreezeOtherRequests(ctx, itemID, requestID)
+	
+	// Create Transaction
+	tx, err := s.txRepo.CreateTransaction(ctx, itemID, req.BuyerID, callerID)
+	if err != nil {
+		return "", err
+	}
+
 	if err == nil {
 		sendPurchaseNotif(s, ctx, req.BuyerID, itemID, requestID, &callerID, domain.NotifTypePurchaseAccepted)
 	}
-	return err
+	return tx.TransactionID, err
 }
 
 func (s *PurchaseService) RejectRequest(ctx context.Context, requestID, itemID, callerID string) error {

@@ -28,8 +28,31 @@ test.describe.serial('Provider Registration API Flow', () => {
     }
   });
 
-  test('POST /api/v1/auth/providers/register - Success', async ({ request }) => {
-    const response = await request.post('/api/v1/auth/providers/register', {
+  test('POST /api/v1/auth/providers/request-activation - Success', async ({ request }) => {
+    const response = await request.post('/api/v1/auth/providers/request-activation', {
+      data: {
+        email: testEmail
+      }
+    });
+    
+    if (response.status() !== 204) {
+      console.error(await response.text());
+    }
+    expect(response.status()).toBe(204); // No Content
+  });
+
+  test('Fetch token from Database for activation', async () => {
+    const res = await dbHelper.getPool().query('SELECT token FROM provider_pre_registration WHERE email = $1', [testEmail]);
+    expect(res.rows.length).toBe(1);
+    const token = res.rows[0].token;
+
+    // Call activate
+    const actRes = await fetch(`${process.env.TEST_API_URL || 'http://localhost:8080'}/api/v1/auth/providers/activate?token=${token}`);
+    expect(actRes.status).toBe(204);
+  });
+
+  test('POST /api/v1/auth/providers/complete - Success', async ({ request }) => {
+    const response = await request.post('/api/v1/auth/providers/complete', {
       data: {
         email: testEmail,
         password: password
@@ -41,8 +64,6 @@ test.describe.serial('Provider Registration API Flow', () => {
     }
     expect(response.status()).toBe(204); // No Content
   });
-
-  // Removed Verify Keycloak User Email test because backend already sets emailVerified=true during provider registration
 
   test('POST /api/v1/auth/login - Success (Get APPLICANT Token)', async ({ request }) => {
     let response;
@@ -190,13 +211,28 @@ test.describe.serial('Provider Registration API Flow', () => {
 
   test('Admin Registration & Login', async ({ request }) => {
     // 1. Register admin as a normal user
-    const resReg = await request.post('/api/v1/auth/providers/register', {
+    // 1. Request Activation
+    const resReg = await request.post('/api/v1/auth/providers/request-activation', {
+      data: {
+        email: adminEmail
+      }
+    });
+    expect(resReg.status()).toBe(204);
+
+    // 2. Fetch token from Database for activation
+    const resAdminToken = await dbHelper.getPool().query('SELECT token FROM provider_pre_registration WHERE email = $1', [adminEmail]);
+    const adminTokenVal = resAdminToken.rows[0].token;
+    const actAdminRes = await fetch(`${process.env.TEST_API_URL || 'http://localhost:8080'}/api/v1/auth/providers/activate?token=${adminTokenVal}`);
+    expect(actAdminRes.status).toBe(204);
+
+    // 3. Complete Registration
+    const completeAdminRes = await request.post('/api/v1/auth/providers/complete', {
       data: {
         email: adminEmail,
         password: 'Password123!'
       }
     });
-    expect(resReg.status()).toBe(204);
+    expect(completeAdminRes.status()).toBe(204);
 
     // (Removed manual verifyUserEmail because backend already sets emailVerified=true during registration)
 

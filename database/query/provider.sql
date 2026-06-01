@@ -16,6 +16,16 @@ UPDATE providerapplication
 SET status = $2
 WHERE application_id = $1;
 
+-- name: UpdateProviderApplication :one
+UPDATE providerapplication
+SET university_id = $2,
+    business_name = $3,
+    phone_number = $4,
+    business_type = $5,
+    address = $6
+WHERE applicant_id = $1
+RETURNING *;
+
 -- name: UpdateProviderApplicationReview :exec
 UPDATE providerapplication
 SET status = $2,

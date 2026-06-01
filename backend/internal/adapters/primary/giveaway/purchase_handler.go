@@ -77,6 +77,10 @@ func (h *PurchaseHandler) ListRequests(w http.ResponseWriter, r *http.Request) {
 // @Failure      401     {string}  string  "unauthorized"
 // @Failure      500     {string}  string  "internal error"
 // @Router       /api/v1/purchases/items/{itemId}/requests/{requestId}/accept [post]
+type AcceptResponse struct {
+	TransactionID string `json:"transactionId"`
+}
+
 func (h *PurchaseHandler) AcceptRequest(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	reqID := chi.URLParam(r, "requestId")
@@ -85,7 +89,7 @@ func (h *PurchaseHandler) AcceptRequest(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
-	err := h.pService.AcceptRequest(r.Context(), reqID, itemID, callerID)
+	txID, err := h.pService.AcceptRequest(r.Context(), reqID, itemID, callerID)
 	if err != nil {
 		if err.Error() == "only the item owner can accept purchase requests" {
 			http.Error(w, err.Error(), http.StatusForbidden)
@@ -94,7 +98,9 @@ func (h *PurchaseHandler) AcceptRequest(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(AcceptResponse{TransactionID: txID})
 }
 
 // RejectRequest godoc

@@ -100,12 +100,33 @@ func (h *Handler) GetStudentRegistrationStatus(
 	return h.preRegService.GetRegistrationStatus(ctx, email)
 }
 
-func (h *Handler) RequestProviderRegistration(
+func (h *Handler) RequestProviderActivation(
+	ctx context.Context,
+	email string,
+) error {
+	return h.providerRegSvc.RequestProviderActivation(ctx, email)
+}
+
+func (h *Handler) VerifyProviderActivation(
+	ctx context.Context,
+	token string,
+) error {
+	return h.providerRegSvc.VerifyProviderActivation(ctx, token)
+}
+
+func (h *Handler) CompleteProviderRegistration(
 	ctx context.Context,
 	email string,
 	password string,
 ) error {
-	return h.providerRegSvc.RequestProviderRegistration(ctx, email, password)
+	return h.providerRegSvc.CompleteProviderRegistration(ctx, email, password)
+}
+
+func (h *Handler) ResendProviderActivation(
+	ctx context.Context,
+	email string,
+) error {
+	return h.providerRegSvc.ResendProviderActivation(ctx, email)
 }
 func (h *Handler) StartProviderApplication(
 	ctx context.Context,

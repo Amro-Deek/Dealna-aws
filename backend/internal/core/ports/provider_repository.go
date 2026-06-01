@@ -9,6 +9,7 @@ import (
 type IProviderRepository interface {
 	CreateProviderApplication(ctx context.Context, applicantID, universityID, businessName string, phoneNumber, businessType, address *string, status string) (*domain.ProviderApplication, error)
 	GetProviderApplicationByApplicantID(ctx context.Context, applicantID string) (*domain.ProviderApplication, error)
+	UpdateProviderApplication(ctx context.Context, applicantID, universityID, businessName string, phoneNumber, businessType, address *string) (*domain.ProviderApplication, error)
 	UpdateProviderApplicationStatus(ctx context.Context, applicationID, status string) error
 	UpdateProviderApplicationReview(ctx context.Context, applicationID, status, adminID, comment string) error
 	CreateProviderApplicationDocument(ctx context.Context, applicationID, filePath, documentType, originalFilename, contentType string, sizeBytes int64, uploadStatus string) (*domain.ProviderApplicationDocument, error)

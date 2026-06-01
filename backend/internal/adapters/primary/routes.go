@@ -75,7 +75,10 @@ func NewRouter(
 			// =============================
 			// Provider Registration Flow (Public)
 			// =============================
-			r.Post("/providers/register", authRoutes.RequestProviderRegistrationHandler)
+			r.Post("/providers/request-activation", authRoutes.RequestProviderActivationHandler)
+			r.Get("/providers/activate", authRoutes.VerifyProviderActivationHandler)
+			r.Post("/providers/complete", authRoutes.CompleteProviderRegistrationHandler)
+			r.Post("/providers/resend", authRoutes.ResendProviderActivationHandler)
 
 			// ---------
 			// Protected

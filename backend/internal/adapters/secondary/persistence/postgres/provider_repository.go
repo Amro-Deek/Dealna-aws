@@ -64,6 +64,27 @@ func (r *ProviderRepository) UpdateProviderApplicationStatus(ctx context.Context
 	})
 }
 
+func (r *ProviderRepository) UpdateProviderApplication(ctx context.Context, applicantID, universityID, businessName string, phoneNumber, businessType, address *string) (*domain.ProviderApplication, error) {
+	row, err := r.q.UpdateProviderApplication(ctx, generated.UpdateProviderApplicationParams{
+		ApplicantID:  toUUID(applicantID),
+		UniversityID: toUUID(universityID),
+		BusinessName: businessName,
+		PhoneNumber:  toNullableText(phoneNumber),
+		BusinessType: toNullableText(businessType),
+		Address:      toNullableText(address),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &domain.ProviderApplication{
+		ID:           row.ApplicationID.String(),
+		ApplicantID:  row.ApplicantID.String(),
+		UniversityID: row.UniversityID.String(),
+		BusinessName: row.BusinessName,
+		Status:       row.Status,
+	}, nil
+}
+
 func (r *ProviderRepository) UpdateProviderApplicationReview(ctx context.Context, applicationID, status, adminID, comment string) error {
 	return r.q.UpdateProviderApplicationReview(ctx, generated.UpdateProviderApplicationReviewParams{
 		ApplicationID:     toUUID(applicationID),

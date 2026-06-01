@@ -9,6 +9,7 @@ type PurchaseRequestStatus string
 const (
 	PurchaseRequestPending   PurchaseRequestStatus = "PENDING"
 	PurchaseRequestAccepted  PurchaseRequestStatus = "ACCEPTED"
+	PurchaseRequestPendingTx PurchaseRequestStatus = "PENDING_TX"
 	PurchaseRequestRejected  PurchaseRequestStatus = "REJECTED"
 	PurchaseRequestFrozen    PurchaseRequestStatus = "FROZEN"
 	PurchaseRequestCancelled PurchaseRequestStatus = "CANCELLED"

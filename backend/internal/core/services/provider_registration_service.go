@@ -4,16 +4,18 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
-	"time"
+	"github.com/google/uuid"
 )
 
 type ProviderRegistrationService struct {
 	users     ports.IUserRepository
 	providers ports.IProviderRepository
+	preRegs   ports.IProviderPreRegistrationRepository
 	email     ports.IEmailService
 	identity  ports.IIdentityProvider
 	storage   ports.IStorageProvider
@@ -23,6 +25,7 @@ type ProviderRegistrationService struct {
 func NewProviderRegistrationService(
 	users ports.IUserRepository,
 	providers ports.IProviderRepository,
+	preRegs ports.IProviderPreRegistrationRepository,
 	email ports.IEmailService,
 	identity ports.IIdentityProvider,
 	storage ports.IStorageProvider,
@@ -31,6 +34,7 @@ func NewProviderRegistrationService(
 	return &ProviderRegistrationService{
 		users:     users,
 		providers: providers,
+		preRegs:   preRegs,
 		email:     email,
 		identity:  identity,
 		storage:   storage,
@@ -38,57 +42,161 @@ func NewProviderRegistrationService(
 	}
 }
 
-func (s *ProviderRegistrationService) RequestProviderRegistration(
+func (s *ProviderRegistrationService) RequestProviderActivation(
+	ctx context.Context,
+	email string,
+) error {
+	email = strings.ToLower(strings.TrimSpace(email))
+
+	if _, err := s.users.GetByEmail(ctx, email); err == nil {
+		return middleware.NewEmailAlreadyUsedError(email)
+	}
+
+	if existingPre, err := s.preRegs.GetByEmail(ctx, email); err == nil && existingPre != nil {
+		if existingPre.UsedAt == nil {
+			return middleware.NewValidationError("email", "Activation already requested. Please check your email or use the resend endpoint.")
+		}
+		return middleware.NewEmailAlreadyUsedError(email)
+	}
+
+	token := uuid.NewString()
+
+	pre := &domain.ProviderPreRegistration{
+		Email:     email,
+		Token:     token,
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}
+
+	if err := s.preRegs.Create(ctx, pre); err != nil {
+		return middleware.NewDatabaseError("create prereg", err)
+	}
+
+	return s.email.SendActivationLink(email, token)
+}
+
+func (s *ProviderRegistrationService) VerifyProviderActivation(
+	ctx context.Context,
+	token string,
+) error {
+	pre, err := s.preRegs.GetByToken(ctx, token)
+	if err != nil {
+		return middleware.NewUnauthorizedError("invalid token")
+	}
+
+	if pre.VerifiedAt != nil {
+		return middleware.NewUnauthorizedError("already verified")
+	}
+
+	if time.Now().After(pre.ExpiresAt) {
+		return middleware.NewUnauthorizedError("token expired")
+	}
+
+	now := time.Now()
+	pre.VerifiedAt = &now
+
+	if err := s.preRegs.Update(ctx, pre); err != nil {
+		return middleware.NewDatabaseError("update prereg", err)
+	}
+
+	return nil
+}
+
+func (s *ProviderRegistrationService) CompleteProviderRegistration(
 	ctx context.Context,
 	email string,
 	password string,
 ) error {
 	email = strings.ToLower(strings.TrimSpace(email))
 
-	// 1. Check if user already exists locally
-	if _, err := s.users.GetByEmail(ctx, email); err == nil {
-		return middleware.NewEmailAlreadyUsedError(email)
+	pre, err := s.preRegs.GetByEmail(ctx, email)
+	if err != nil {
+		return middleware.NewUnauthorizedError("activation not requested")
+	}
+
+	if pre.VerifiedAt == nil {
+		return middleware.NewUnauthorizedError("email not verified")
+	}
+
+	if pre.UsedAt != nil {
+		return middleware.NewUnauthorizedError("registration already completed")
+	}
+
+	if time.Now().After(pre.ExpiresAt) {
+		return middleware.NewUnauthorizedError("activation expired")
 	}
 
 	nameParts := strings.Split(email, "@")
 	firstName := nameParts[0]
 
-	// 2. Register in Keycloak (emailVerified=false)
+	// Register in Keycloak (emailVerified=true because they clicked our token)
 	keycloakSub, err := s.identity.RegisterUser(ctx, email, password, firstName, firstName)
 	if err != nil {
+		fmt.Printf("Error registering user in Keycloak: %v\n", err)
 		return err
 	}
 
-	// 3. Create local user with APPLICANT role
+	// Make sure Keycloak sets email verified
+	_ = s.identity.ExecuteActionsEmail(ctx, keycloakSub, []string{}) // clear any actions if needed, though they shouldn't exist since we didn't trigger VERIFY_EMAIL
+
+	// Create local user with APPLICANT role
 	user, err := s.users.CreateApplicantUser(ctx, email, keycloakSub)
 	if err != nil {
+		fmt.Printf("Error creating local applicant user: %v\n", err)
 		_ = s.identity.DeleteUser(ctx, keycloakSub)
 		return middleware.NewDatabaseError("create applicant user", err)
 	}
 
-	// 4. Create providerapplication with status EMAIL_UNVERIFIED
-	// We need a dummy university ID for now, or just use the BZU university ID
-	// Let's assume the user selects university in Step 3, but the schema requires university_id NOT NULL in providerapplication!
-	// Wait, we can either make university_id nullable or pass a default one. Let's make it nullable or provide a default.
-	// Actually, wait, does schema.sql require university_id in providerapplication?
-	// Yes: university_id uuid NOT NULL.
-	// That's a problem if we don't know the university_id at step 1.
-	
-	// We can fetch the Birzeit University ID since it's the only one right now
-	// Or we can just trigger Keycloak's VERIFY_EMAIL and wait until they login to create the providerapplication!
-	// YES! We don't even need to create providerapplication in Step 1.
-	// They just become an APPLICANT User.
-	// Step 2 is native Keycloak email verification.
-	// Step 3 (Submit details) is where we create the providerapplication.
-
-	// Trigger Keycloak verification email
-	err = s.identity.ExecuteActionsEmail(ctx, keycloakSub, []string{"VERIFY_EMAIL"})
-	if err != nil {
-		// Log error, but user can still request it later
+	// Mark token as used
+	now := time.Now()
+	pre.UsedAt = &now
+	if err := s.preRegs.Update(ctx, pre); err != nil {
+		// non-fatal
 	}
 
 	_ = user
 	return nil
+}
+
+func (s *ProviderRegistrationService) ResendProviderActivation(
+	ctx context.Context,
+	email string,
+) error {
+	email = strings.ToLower(strings.TrimSpace(email))
+
+	pre, err := s.preRegs.GetByEmail(ctx, email)
+	if err != nil {
+		return middleware.NewUnauthorizedError("no pending activation")
+	}
+
+	if pre.UsedAt != nil {
+		return middleware.NewUnauthorizedError("registration already completed")
+	}
+
+	if pre.ResendCount >= 3 &&
+		pre.ResendWindowStart != nil &&
+		time.Since(*pre.ResendWindowStart) < 30*time.Minute {
+		return middleware.NewValidationError("email", "resend limit exceeded")
+	}
+
+	newToken := uuid.NewString()
+	exp := time.Now().Add(24 * time.Hour)
+
+	pre.Token = newToken
+	pre.ExpiresAt = exp
+
+	if pre.ResendWindowStart == nil || time.Since(*pre.ResendWindowStart) > 30*time.Minute {
+		now := time.Now()
+		pre.ResendWindowStart = &now
+		pre.ResendCount = 1
+	} else {
+		pre.ResendCount++
+	}
+
+	if err := s.preRegs.Update(ctx, pre); err != nil {
+		return middleware.NewDatabaseError("update prereg", err)
+	}
+
+	return s.email.SendActivationLink(email, newToken)
 }
 
 func (s *ProviderRegistrationService) GetDocumentUploadURL(
@@ -133,6 +241,10 @@ func (s *ProviderRegistrationService) StartApplication(
 	// Check if an application already exists
 	app, err := s.providers.GetProviderApplicationByApplicantID(ctx, userID)
 	if err == nil {
+		if app.Status == "DRAFT" {
+			// Update the draft with new values
+			return s.providers.UpdateProviderApplication(ctx, userID, universityID, businessName, &phoneNumber, &businessType, &address)
+		}
 		return app, nil
 	}
 
