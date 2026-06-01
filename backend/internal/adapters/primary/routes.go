@@ -16,6 +16,7 @@ import (
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/items"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/marketplace"
 	profileHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile/http"
+	ratingsHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/ratings/http"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/social"
 	userHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/http"
 
@@ -32,6 +33,7 @@ func NewRouter(
 	marketplaceRoutes *marketplace.Routes,
 	socialRoutes *social.Routes,
 	chatRoutes *chatHTTP.Routes,
+	ratingRoutes *ratingsHTTP.Routes,
 	authProvider ports.IAuthContextProvider,
 	logger middleware.StructuredLoggerInterface,
 ) http.Handler {
@@ -128,6 +130,7 @@ func NewRouter(
 			marketplaceRoutes.Register(r)
 			socialRoutes.Register(r)
 			chatRoutes.RegisterProtected(r)
+			ratingRoutes.Register(r)
 		})
 	})
 

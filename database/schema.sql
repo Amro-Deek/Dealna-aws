@@ -55,7 +55,10 @@ CREATE TABLE public."User" (
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     deleted_at timestamp without time zone,
     university_id uuid NOT NULL,
-    keycloak_sub uuid
+    keycloak_sub uuid,
+    total_ratings integer DEFAULT 0,
+    sum_ratings integer DEFAULT 0,
+    bayesian_rating numeric(3,2) DEFAULT 0.00
 );
 
 
@@ -199,6 +202,13 @@ ALTER TABLE public.item OWNER TO dealna_user;
 -- TOC entry 225 (class 1259 OID 16516)
 -- Name: message; Type: TABLE; Schema: public; Owner: dealna_user
 --
+
+CREATE TABLE public.sys_config (
+    key character varying(255) NOT NULL PRIMARY KEY,
+    value text NOT NULL,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+ALTER TABLE public.sys_config OWNER TO dealna_user;
 
 CREATE TABLE public.message (
     message_id uuid DEFAULT gen_random_uuid() NOT NULL,

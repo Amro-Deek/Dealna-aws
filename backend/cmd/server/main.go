@@ -6,6 +6,7 @@ import (
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/config"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/database"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/database/generated"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
 
 	// Primary adapters
@@ -18,6 +19,7 @@ import (
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/marketplace"
 	profileHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile"
 	profileHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile/http"
+	ratingsHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/ratings/http"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/social"
 	userHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users"
 	userHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/http"
@@ -205,6 +207,11 @@ func main() {
 	giveawayRoutes := giveaway.NewRoutes(queueH, notificationH)
 	marketplaceRoutes := marketplace.NewRoutes(purchaseH, transactionH)
 
+	ratingRepo := postgres.NewRatingRepository(generated.New(db))
+	ratingService := services.NewRatingService(ratingRepo, transactionRepo, userRepo)
+	ratingH := ratingsHTTP.NewRatingHandler(ratingService)
+	ratingRoutes := ratingsHTTP.NewRoutes(ratingH)
+
 	// =========================
 	// Follow / Social Setup
 	// =========================
@@ -237,6 +244,7 @@ func main() {
 		marketplaceRoutes,
 		socialRoutes,
 		chatRoutes,
+		ratingRoutes,
 		jwtProvider,
 		appLogger,
 	)
