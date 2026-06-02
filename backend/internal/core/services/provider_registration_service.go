@@ -206,7 +206,6 @@ func (s *ProviderRegistrationService) GetDocumentUploadURL(
 	originalFilename string,
 	contentType string,
 ) (string, string, error) {
-	// Use S3 provider to get a presigned URL
 	// We generate a unique object key using userID and documentType
 	// Or we can just use a UUID.
 	

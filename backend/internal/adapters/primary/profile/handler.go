@@ -183,6 +183,7 @@ func (h *ProfileHandler) UpdateDeviceToken(w http.ResponseWriter, r *http.Reques
 type GenerateUploadURLReq struct {
 	Filename    string `json:"filename"`
 	ContentType string `json:"content_type"`
+	FileSize    int64  `json:"file_size"`
 }
 
 // GenerateUploadURL generates an S3 presigned URL for profile pictures
@@ -213,6 +214,16 @@ func (h *ProfileHandler) GenerateUploadURL(w http.ResponseWriter, r *http.Reques
 
 	if req.Filename == "" || req.ContentType == "" {
 		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("body", "filename and content_type are required"), nil)
+		return
+	}
+
+	if req.FileSize <= 0 {
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("body", "file_size is required and must be greater than 0"), nil)
+		return
+	}
+
+	if req.FileSize > 5*1024*1024 { // 5MB Limit
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("body", "File is too large. Maximum allowed size is 5MB. Please compress the image before uploading."), nil)
 		return
 	}
 
