@@ -66,6 +66,10 @@ func (h *PurchaseHandler) ListRequests(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(reqs)
 }
 
+type AcceptResponse struct {
+	TransactionID string `json:"transactionId"`
+}
+
 // AcceptRequest godoc
 // @Summary      Accept a purchase request
 // @Description  Allows the seller to accept a specific purchase request
@@ -77,10 +81,6 @@ func (h *PurchaseHandler) ListRequests(w http.ResponseWriter, r *http.Request) {
 // @Failure      401     {string}  string  "unauthorized"
 // @Failure      500     {string}  string  "internal error"
 // @Router       /api/v1/purchases/items/{itemId}/requests/{requestId}/accept [post]
-type AcceptResponse struct {
-	TransactionID string `json:"transactionId"`
-}
-
 func (h *PurchaseHandler) AcceptRequest(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	reqID := chi.URLParam(r, "requestId")

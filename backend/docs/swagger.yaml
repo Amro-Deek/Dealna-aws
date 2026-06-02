@@ -469,6 +469,11 @@ definitions:
       verified_at:
         type: string
     type: object
+  giveaway.AcceptResponse:
+    properties:
+      transactionId:
+        type: string
+    type: object
   middleware.ErrCode:
     enum:
     - USER_NOT_FOUND
@@ -1941,6 +1946,38 @@ paths:
       security:
       - BearerAuth: []
       summary: List purchase requests for an item
+      tags:
+      - Purchases
+  /api/v1/purchases/items/{itemId}/requests/{requestId}/accept:
+    post:
+      description: Allows the seller to accept a specific purchase request
+      parameters:
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: string
+      - description: Request ID
+        in: path
+        name: requestId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/giveaway.AcceptResponse'
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Accept a purchase request
       tags:
       - Purchases
   /api/v1/purchases/items/{itemId}/requests/{requestId}/cancel:

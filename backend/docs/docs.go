@@ -2072,6 +2072,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/purchases/items/{itemId}/requests/{requestId}/accept": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows the seller to accept a specific purchase request",
+                "tags": [
+                    "Purchases"
+                ],
+                "summary": "Accept a purchase request",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Request ID",
+                        "name": "requestId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/giveaway.AcceptResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/purchases/items/{itemId}/requests/{requestId}/cancel": {
             "post": {
                 "security": [
@@ -3427,6 +3477,14 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "verified_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "giveaway.AcceptResponse": {
+            "type": "object",
+            "properties": {
+                "transactionId": {
                     "type": "string"
                 }
             }
