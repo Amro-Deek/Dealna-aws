@@ -100,16 +100,23 @@ func (r *PurchaseRequestRepository) GetPurchaseRequestsByBuyer(ctx context.Conte
 			img = s
 		}
 		
+		var txID *string
+		if req.TransactionID.Valid {
+			str := uuidToString(req.TransactionID)
+			txID = &str
+		}
+		
 		res[i] = domain.PurchaseRequest{
-			RequestID: uuidToString(req.RequestID),
-			ItemID:    uuidToString(req.ItemID),
-			BuyerID:   uuidToString(req.BuyerID),
-			Status:    domain.PurchaseRequestStatus(req.Status),
-			CreatedAt: req.CreatedAt.Time,
-			UpdatedAt: req.UpdatedAt.Time,
-			ItemTitle: req.ItemTitle,
-			ItemPrice: price.Float64,
-			ItemImage: img,
+			RequestID:     uuidToString(req.RequestID),
+			ItemID:        uuidToString(req.ItemID),
+			BuyerID:       uuidToString(req.BuyerID),
+			Status:        domain.PurchaseRequestStatus(req.Status),
+			CreatedAt:     req.CreatedAt.Time,
+			UpdatedAt:     req.UpdatedAt.Time,
+			ItemTitle:     req.ItemTitle,
+			ItemPrice:     price.Float64,
+			ItemImage:     img,
+			TransactionID: txID,
 		}
 	}
 	return res, nil

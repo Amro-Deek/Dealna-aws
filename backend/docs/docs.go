@@ -3152,6 +3152,9 @@ const docTemplate = `{
                 "status": {
                     "$ref": "#/definitions/domain.PurchaseRequestStatus"
                 },
+                "transactionId": {
+                    "type": "string"
+                },
                 "updatedAt": {
                     "type": "string"
                 }
@@ -3574,6 +3577,9 @@ const docTemplate = `{
             "properties": {
                 "content_type": {
                     "type": "string"
+                },
+                "file_size": {
+                    "type": "integer"
                 },
                 "filename": {
                     "type": "string"

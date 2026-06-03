@@ -43,7 +43,15 @@ SELECT
       WHERE a.item_id = i.item_id 
       ORDER BY a.uploaded_at ASC 
       LIMIT 1
-  ), '') AS item_image
+  ), '') AS item_image,
+  (
+      SELECT t.transaction_id 
+      FROM public.transaction t 
+      WHERE t.item_id = pr.item_id 
+        AND t.buyer_id = pr.buyer_id 
+        AND t.status != 'CANCELLED' 
+      LIMIT 1
+  ) AS transaction_id
 FROM purchase_request pr
 INNER JOIN public.item i ON i.item_id = pr.item_id
 WHERE pr.buyer_id = $1

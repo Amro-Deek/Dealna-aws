@@ -3144,6 +3144,9 @@
                 "status": {
                     "$ref": "#/definitions/domain.PurchaseRequestStatus"
                 },
+                "transactionId": {
+                    "type": "string"
+                },
                 "updatedAt": {
                     "type": "string"
                 }
@@ -3566,6 +3569,9 @@
             "properties": {
                 "content_type": {
                     "type": "string"
+                },
+                "file_size": {
+                    "type": "integer"
                 },
                 "filename": {
                     "type": "string"

@@ -26,7 +26,8 @@ type PurchaseRequest struct {
 	BuyerPic  string
 	
 	// Hydrated fields
-	ItemTitle string
-	ItemPrice float64
-	ItemImage string
+	ItemTitle     string
+	ItemPrice     float64
+	ItemImage     string
+	TransactionID *string `json:"transactionId,omitempty"`
 }
