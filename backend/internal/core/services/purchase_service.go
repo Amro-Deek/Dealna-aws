@@ -38,11 +38,12 @@ func (s *PurchaseService) SendRequest(ctx context.Context, itemID, buyerID strin
 	
 	// Check for existing requests to prevent spam
 	existingReqs, err := s.repo.GetPurchaseRequestsByBuyer(ctx, buyerID)
-	if err == nil {
-		for _, req := range existingReqs {
-			if req.ItemID == itemID && (req.Status == domain.PurchaseRequestPending || req.Status == domain.PurchaseRequestAccepted) {
-				return nil, errors.New("you already have an active purchase request for this item")
-			}
+	if err != nil {
+		return nil, errors.New("failed to check existing requests: " + err.Error())
+	}
+	for _, req := range existingReqs {
+		if req.ItemID == itemID && (req.Status == domain.PurchaseRequestPending || req.Status == domain.PurchaseRequestAccepted) {
+			return nil, errors.New("you already have an active purchase request for this item")
 		}
 	}
 

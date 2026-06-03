@@ -49,7 +49,7 @@ SELECT
       FROM public.transaction t 
       WHERE t.item_id = pr.item_id 
         AND t.buyer_id = pr.buyer_id 
-        AND t.status != 'CANCELLED' 
+        AND t.transaction_status != 'CANCELLED' 
       LIMIT 1
   ) AS transaction_id
 FROM purchase_request pr
