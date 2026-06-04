@@ -127,7 +127,17 @@ func (s *TransactionService) CancelTransaction(ctx context.Context, transactionI
 	if t.Status != domain.TransactionPending {
 		return errors.New("cannot cancel a transaction that is not pending")
 	}
-	return s.repo.CancelTransaction(ctx, transactionID)
+	err = s.repo.CancelTransaction(ctx, transactionID)
+	if err != nil {
+		return err
+	}
+
+	if s.prRepo != nil {
+		s.prRepo.UpdatePurchaseRequestStatusByItemAndBuyer(ctx, t.ItemID, t.BuyerID, domain.PurchaseRequestCancelled)
+		s.prRepo.UnfreezeRequests(ctx, t.ItemID)
+	}
+
+	return nil
 }
 
 func (s *TransactionService) GetTransaction(ctx context.Context, itemID string) (*domain.Transaction, error) {

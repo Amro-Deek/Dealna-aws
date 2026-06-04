@@ -37,5 +37,6 @@ func (r *Routes) Register(router chi.Router) {
 	router.Route("/transactions", func(rg chi.Router) {
 		rg.Post("/{transactionId}/confirm-seller", r.Transaction.ConfirmSeller)
 		rg.Post("/{transactionId}/confirm-buyer", r.Transaction.ConfirmBuyer)
+		rg.Post("/{transactionId}/cancel", r.Transaction.CancelTransaction)
 	})
 }
