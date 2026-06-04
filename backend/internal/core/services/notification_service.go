@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 
@@ -97,16 +98,16 @@ func (s *NotificationService) CreateNotification(ctx context.Context, userID str
 			go func() {
 				err := s.fcmClient.SendVisiblePush(context.Background(), *profile.DeviceToken, title, body, data)
 				if err != nil {
-					fmt.Printf("❌ Failed to send FCM push notification to token %s: %v\n", *profile.DeviceToken, err)
+					log.Printf("❌ Failed to send FCM push notification to token %s: %v\n", *profile.DeviceToken, err)
 				} else {
-					fmt.Printf("✅ Successfully sent FCM push notification to token %s\n", *profile.DeviceToken)
+					log.Printf("✅ Successfully sent FCM push notification to token %s\n", *profile.DeviceToken)
 				}
 			}()
 		} else {
-			fmt.Printf("⚠️ Cannot send FCM push notification: user %s has no device token\n", userID)
+			log.Printf("⚠️ Cannot send FCM push notification: user %s has no device token\n", userID)
 		}
 	} else {
-		fmt.Printf("⚠️ Cannot send FCM push notification: fcmClient or userRepo is nil\n")
+		log.Printf("⚠️ Cannot send FCM push notification: fcmClient or userRepo is nil\n")
 	}
 
 	return nil
