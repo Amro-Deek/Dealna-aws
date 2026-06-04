@@ -94,8 +94,19 @@ func (s *NotificationService) CreateNotification(ctx context.Context, userID str
 			data["unread_count"] = fmt.Sprintf("%d", unreadCount)
 
 			// Fire and forget
-			go s.fcmClient.SendVisiblePush(context.Background(), *profile.DeviceToken, title, body, data)
+			go func() {
+				err := s.fcmClient.SendVisiblePush(context.Background(), *profile.DeviceToken, title, body, data)
+				if err != nil {
+					fmt.Printf("❌ Failed to send FCM push notification to token %s: %v\n", *profile.DeviceToken, err)
+				} else {
+					fmt.Printf("✅ Successfully sent FCM push notification to token %s\n", *profile.DeviceToken)
+				}
+			}()
+		} else {
+			fmt.Printf("⚠️ Cannot send FCM push notification: user %s has no device token\n", userID)
 		}
+	} else {
+		fmt.Printf("⚠️ Cannot send FCM push notification: fcmClient or userRepo is nil\n")
 	}
 
 	return nil
