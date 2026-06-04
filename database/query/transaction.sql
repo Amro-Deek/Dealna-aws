@@ -23,10 +23,10 @@ WHERE transaction_id = $1;
 
 -- name: CompleteTransaction :exec
 UPDATE transaction
-SET status = 'COMPLETED', updated_at = CURRENT_TIMESTAMP
+SET transaction_status = 'COMPLETED', updated_at = CURRENT_TIMESTAMP
 WHERE transaction_id = $1;
 
 -- name: CancelTransaction :exec
 UPDATE transaction
-SET status = 'CANCELLED', updated_at = CURRENT_TIMESTAMP
+SET transaction_status = 'CANCELLED', updated_at = CURRENT_TIMESTAMP
 WHERE transaction_id = $1;
