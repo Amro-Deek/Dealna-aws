@@ -7,7 +7,15 @@ RETURNING *;
 SELECT 
   pr.*,
   p.display_name AS buyer_name,
-  p.profile_picture_url AS buyer_pic
+  p.profile_picture_url AS buyer_pic,
+  (
+      SELECT t.transaction_id 
+      FROM public.transaction t 
+      WHERE t.item_id = pr.item_id 
+        AND t.buyer_id = pr.buyer_id 
+        AND t.transaction_status != 'CANCELLED' 
+      LIMIT 1
+  ) AS transaction_id
 FROM purchase_request pr
 INNER JOIN profile p ON p.user_id = pr.buyer_id
 WHERE pr.item_id = $1
