@@ -6,15 +6,28 @@ import (
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
+	"github.com/google/uuid"
 )
 
 type TransactionService struct {
-	repo   ports.ITransactionRepository
-	notifs *NotificationService
+	repo     ports.ITransactionRepository
+	prRepo   ports.IPurchaseRequestRepository
+	itemRepo ports.ItemRepository
+	notifs   *NotificationService
 }
 
-func NewTransactionService(repo ports.ITransactionRepository, notifs *NotificationService) *TransactionService {
-	return &TransactionService{repo: repo, notifs: notifs}
+func NewTransactionService(
+	repo ports.ITransactionRepository,
+	prRepo ports.IPurchaseRequestRepository,
+	itemRepo ports.ItemRepository,
+	notifs *NotificationService,
+) *TransactionService {
+	return &TransactionService{
+		repo:     repo,
+		prRepo:   prRepo,
+		itemRepo: itemRepo,
+		notifs:   notifs,
+	}
 }
 
 func (s *TransactionService) StartTransaction(ctx context.Context, itemID, buyerID, sellerID string) (*domain.Transaction, error) {
@@ -41,6 +54,15 @@ func (s *TransactionService) ConfirmSeller(ctx context.Context, transactionID, c
 	t, _ = s.repo.GetTransactionByID(ctx, transactionID)
 	if t != nil && t.SellerConfirmed && t.BuyerConfirmed {
 		s.repo.CompleteTransaction(ctx, transactionID)
+		if s.prRepo != nil {
+			s.prRepo.UpdatePurchaseRequestStatusByItemAndBuyer(ctx, t.ItemID, t.BuyerID, domain.PurchaseRequestCompleted)
+		}
+		if s.itemRepo != nil {
+			itemUUID, err := uuid.Parse(t.ItemID)
+			if err == nil {
+				s.itemRepo.UpdateItemStatus(ctx, itemUUID, domain.ItemStatusSold)
+			}
+		}
 		sendTxNotif(s, ctx, t.BuyerID, t.ItemID, transactionID, &callerID, domain.NotifTypeTransactionDone)
 		sendTxNotif(s, ctx, t.SellerID, t.ItemID, transactionID, &callerID, domain.NotifTypeTransactionDone)
 	}
@@ -67,6 +89,15 @@ func (s *TransactionService) ConfirmBuyer(ctx context.Context, transactionID, ca
 	t, _ = s.repo.GetTransactionByID(ctx, transactionID)
 	if t != nil && t.SellerConfirmed && t.BuyerConfirmed {
 		s.repo.CompleteTransaction(ctx, transactionID)
+		if s.prRepo != nil {
+			s.prRepo.UpdatePurchaseRequestStatusByItemAndBuyer(ctx, t.ItemID, t.BuyerID, domain.PurchaseRequestCompleted)
+		}
+		if s.itemRepo != nil {
+			itemUUID, err := uuid.Parse(t.ItemID)
+			if err == nil {
+				s.itemRepo.UpdateItemStatus(ctx, itemUUID, domain.ItemStatusSold)
+			}
+		}
 		sendTxNotif(s, ctx, t.BuyerID, t.ItemID, transactionID, &callerID, domain.NotifTypeTransactionDone)
 		sendTxNotif(s, ctx, t.SellerID, t.ItemID, transactionID, &callerID, domain.NotifTypeTransactionDone)
 	}

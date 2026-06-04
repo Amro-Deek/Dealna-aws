@@ -13,6 +13,7 @@ const (
 	PurchaseRequestRejected  PurchaseRequestStatus = "REJECTED"
 	PurchaseRequestFrozen    PurchaseRequestStatus = "FROZEN"
 	PurchaseRequestCancelled PurchaseRequestStatus = "CANCELLED"
+	PurchaseRequestCompleted PurchaseRequestStatus = "COMPLETED"
 )
 
 type PurchaseRequest struct {

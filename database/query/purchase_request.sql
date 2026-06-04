@@ -30,6 +30,11 @@ UPDATE purchase_request
 SET status = $2, updated_at = CURRENT_TIMESTAMP
 WHERE request_id = $1;
 
+-- name: UpdatePurchaseRequestStatusByItemAndBuyer :exec
+UPDATE purchase_request
+SET status = $3, updated_at = CURRENT_TIMESTAMP
+WHERE item_id = $1 AND buyer_id = $2;
+
 -- name: FreezeOtherRequests :exec
 UPDATE purchase_request
 SET status = 'FROZEN', updated_at = CURRENT_TIMESTAMP

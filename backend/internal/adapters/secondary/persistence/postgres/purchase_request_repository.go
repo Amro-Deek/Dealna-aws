@@ -68,6 +68,14 @@ func (r *PurchaseRequestRepository) GetPurchaseRequestsByItem(ctx context.Contex
 	return res, nil
 }
 
+func (r *PurchaseRequestRepository) UpdatePurchaseRequestStatusByItemAndBuyer(ctx context.Context, itemID string, buyerID string, status domain.PurchaseRequestStatus) error {
+	return r.q.UpdatePurchaseRequestStatusByItemAndBuyer(ctx, generated.UpdatePurchaseRequestStatusByItemAndBuyerParams{
+		ItemID:  toUUID(itemID),
+		BuyerID: toUUID(buyerID),
+		Status:  string(status),
+	})
+}
+
 func (r *PurchaseRequestRepository) GetPurchaseRequestByID(ctx context.Context, requestID string) (*domain.PurchaseRequest, error) {
 	req, err := r.q.GetPurchaseRequestByID(ctx, toUUID(requestID))
 	if err != nil {
