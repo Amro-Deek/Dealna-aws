@@ -20,12 +20,14 @@ func NewTransactionRepository(conn *pgxpool.Pool) *TransactionRepository {
 
 func mapTransaction(t generated.Transaction) *domain.Transaction {
 	return &domain.Transaction{
-		TransactionID: uuidToString(t.TransactionID),
-		ItemID:        uuidToString(t.ItemID),
-		BuyerID:       uuidToString(t.BuyerID),
-		SellerID:      uuidToString(t.SellerID),
-		Status:        domain.TransactionStatus(t.TransactionStatus),
-		CreatedAt:     t.CreatedAt.Time,
+		TransactionID:   uuidToString(t.TransactionID),
+		ItemID:          uuidToString(t.ItemID),
+		BuyerID:         uuidToString(t.BuyerID),
+		SellerID:        uuidToString(t.SellerID),
+		Status:          domain.TransactionStatus(t.TransactionStatus),
+		SellerConfirmed: t.SellerConfirmed,
+		BuyerConfirmed:  t.BuyerConfirmed,
+		CreatedAt:       t.CreatedAt.Time,
 	}
 }
 
