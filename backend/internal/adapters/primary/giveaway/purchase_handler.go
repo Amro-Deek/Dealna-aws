@@ -34,8 +34,8 @@ func (h *PurchaseHandler) CreateRequest(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
-	if middleware.RoleFromContext(r.Context()) == "PROVIDER" {
-		http.Error(w, "Providers cannot make purchases", http.StatusForbidden)
+	if middleware.RoleFromContext(r.Context()) != "STUDENT" {
+		http.Error(w, "Only verified students can make purchases", http.StatusForbidden)
 		return
 	}
 	req, err := h.pService.SendRequest(r.Context(), itemID, buyerID)
