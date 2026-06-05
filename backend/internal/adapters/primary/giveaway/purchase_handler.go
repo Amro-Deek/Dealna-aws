@@ -34,7 +34,7 @@ func (h *PurchaseHandler) CreateRequest(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
-	if middleware.RoleFromContext(r.Context()) != "STUDENT" {
+	if middleware.RoleFromContext(r.Context()) != "VERIFIED_STUDENT" {
 		http.Error(w, "Only verified students can make purchases", http.StatusForbidden)
 		return
 	}
