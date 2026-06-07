@@ -122,6 +122,10 @@ func getNotificationText(typ domain.NotificationType, actingUserName string, pay
 	switch typ {
 	case domain.NotifTypeTurnStarted:
 		return "It's your turn! 🎉", "You are next in line for " + itemTitle + ". You have 24 hours to accept!"
+	case domain.NotifTypeTurnAccepted:
+		return "Turn Accepted! ✅", "Your request for " + itemTitle + " has been accepted."
+	case domain.NotifTypeTurnExpired:
+		return "Turn Expired ⏰", "Your turn for " + itemTitle + " has expired or was rejected."
 	case domain.NotifTypeHandoffInitiated:
 		return "Handoff Initiated 🤝", actingUserName + " has initiated the handoff for " + itemTitle + "."
 	case domain.NotifTypeGiveawayCompleted:
@@ -136,6 +140,8 @@ func getNotificationText(typ domain.NotificationType, actingUserName string, pay
 		return "Request Cancelled ⚠️", actingUserName + " cancelled their request for " + itemTitle + "."
 	case domain.NotifTypeTransactionDone:
 		return "Transaction Completed! ✅", actingUserName + " confirmed the transaction for " + itemTitle + "."
+	case domain.NotifTypeUserJoinedQueue:
+		return "New Queue Entry! 🏃", actingUserName + " has joined the queue for " + itemTitle + "."
 	default:
 		return "New Notification", "You have a new update regarding " + itemTitle + "."
 	}

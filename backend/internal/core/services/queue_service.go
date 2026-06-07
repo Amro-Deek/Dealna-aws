@@ -64,6 +64,8 @@ func (s *QueueService) JoinQueue(ctx context.Context, itemID, userID string) (*d
 		entry.EntryStatus = domain.QueueStatusReserved
 	}
 
+	sendQueueNotif(s, ctx, ownerID, itemID, entry.EntryID, &userID, domain.NotifTypeUserJoinedQueue)
+
 	return entry, nil
 }
 
