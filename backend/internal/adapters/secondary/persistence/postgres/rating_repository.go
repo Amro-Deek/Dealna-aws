@@ -76,7 +76,25 @@ func (r *RatingRepository) GetPendingRatings(ctx context.Context, buyerID uuid.U
 }
 
 func (r *RatingRepository) GetTransactionsToRemind(ctx context.Context, days int) ([]domain.PendingRating, error) {
-	return nil, nil // Stub for now
+	rows, err := r.q.GetTransactionsToRemind(ctx, int32(days))
+	if err != nil {
+		return nil, err
+	}
+	
+	var res []domain.PendingRating
+	for _, row := range rows {
+		txUUID, _ := uuid.Parse(uuidToString(row.TransactionID))
+		buyerUUID, _ := uuid.Parse(uuidToString(row.BuyerID))
+		sellerUUID, _ := uuid.Parse(uuidToString(row.SellerID))
+
+		res = append(res, domain.PendingRating{
+			TransactionID:       txUUID,
+			BuyerID:             buyerUUID,
+			SellerID:            sellerUUID,
+			ItemTitle:           row.ItemTitle,
+		})
+	}
+	return res, nil
 }
 func (r *RatingRepository) CountRatingsBetweenUsers(ctx context.Context, user1, user2 uuid.UUID) (int, error) {
 	count, err := r.q.CountRatingsBetweenUsers(ctx, generated.CountRatingsBetweenUsersParams{
@@ -97,4 +115,28 @@ func (r *RatingRepository) UpdateSysConfig(ctx context.Context, key, value strin
 }
 func (r *RatingRepository) GetSysConfig(ctx context.Context, key string) (string, error) {
 	return "", nil
+}
+
+func (r *RatingRepository) GetUserReviews(ctx context.Context, userID uuid.UUID, limit, offset int) ([]domain.Review, error) {
+	rows, err := r.q.GetUserReviews(ctx, generated.GetUserReviewsParams{
+		RatedUserID: toUUID(userID.String()),
+		Limit:       int32(limit),
+		Offset:      int32(offset),
+	})
+	if err != nil {
+		return nil, err
+	}
+	
+	var res []domain.Review
+	for _, row := range rows {
+		ratingUUID, _ := uuid.Parse(uuidToString(row.RatingID))
+		res = append(res, domain.Review{
+			RatingID:   ratingUUID,
+			Stars:      int(row.Stars),
+			Comment:    row.Comment.String,
+			CreatedAt:  row.CreatedAt.Time,
+			RaterName:  row.RaterName.String,
+		})
+	}
+	return res, nil
 }

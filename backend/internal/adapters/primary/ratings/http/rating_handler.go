@@ -91,3 +91,30 @@ func (h *RatingHandler) GetPendingRatings(w http.ResponseWriter, r *http.Request
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(pending)
 }
+
+func (h *RatingHandler) GetUserReviews(w http.ResponseWriter, r *http.Request) {
+	userIDStr := chi.URLParam(r, "userId")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	limit := 20
+	offset := 0
+
+	// Optionally parse limit and offset from query params here if needed
+
+	reviews, err := h.ratingService.GetUserReviews(r.Context(), userID, limit, offset)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	if reviews == nil {
+		reviews = []domain.Review{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(reviews)
+}

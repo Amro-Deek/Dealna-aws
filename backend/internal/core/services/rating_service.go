@@ -16,6 +16,7 @@ type IRatingRepository interface {
 	GetGlobalRatingAverage(ctx context.Context) (globalAvg float64, totalCount int, err error)
 	UpdateSysConfig(ctx context.Context, key, value string) error
 	GetSysConfig(ctx context.Context, key string) (string, error)
+	GetUserReviews(ctx context.Context, userID uuid.UUID, limit, offset int) ([]domain.Review, error)
 }
 
 type ITransactionRepository interface {
@@ -28,20 +29,22 @@ type IUserRepository interface {
 
 type RatingService struct {
 	ratingRepo IRatingRepository
-	transRepo  ITransactionRepository
+	txRepo     ITransactionRepository
 	userRepo   IUserRepository
+	notifs     *NotificationService
 }
 
-func NewRatingService(rRepo IRatingRepository, tRepo ITransactionRepository, uRepo IUserRepository) *RatingService {
+func NewRatingService(ratingRepo IRatingRepository, txRepo ITransactionRepository, userRepo IUserRepository, notifs *NotificationService) *RatingService {
 	return &RatingService{
-		ratingRepo: rRepo,
-		transRepo:  tRepo,
-		userRepo:   uRepo,
+		ratingRepo: ratingRepo,
+		txRepo:     txRepo,
+		userRepo:   userRepo,
+		notifs:     notifs,
 	}
 }
 
 func (s *RatingService) CreateRating(ctx context.Context, cmd domain.CreateRatingCommand) (domain.Rating, error) {
-	tx, err := s.transRepo.GetTransactionByID(ctx, cmd.TransactionID.String())
+	tx, err := s.txRepo.GetTransactionByID(ctx, cmd.TransactionID.String())
 	if err != nil {
 		return domain.Rating{}, err
 	}
@@ -106,4 +109,14 @@ func (s *RatingService) CreateRating(ctx context.Context, cmd domain.CreateRatin
 
 func (s *RatingService) GetPendingRatings(ctx context.Context, buyerID uuid.UUID) ([]domain.PendingRating, error) {
 	return s.ratingRepo.GetPendingRatings(ctx, buyerID)
+}
+
+func (s *RatingService) GetUserReviews(ctx context.Context, userID uuid.UUID, limit, offset int) ([]domain.Review, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return s.ratingRepo.GetUserReviews(ctx, userID, limit, offset)
 }

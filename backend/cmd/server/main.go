@@ -208,7 +208,8 @@ func main() {
 	marketplaceRoutes := marketplace.NewRoutes(purchaseH, transactionH)
 
 	ratingRepo := postgres.NewRatingRepository(generated.New(db))
-	ratingService := services.NewRatingService(ratingRepo, transactionRepo, userRepo)
+	ratingService := services.NewRatingService(ratingRepo, transactionRepo, userRepo, notificationSvc)
+	go ratingService.StartRatingReminderWorker(context.Background())
 	ratingH := ratingsHTTP.NewRatingHandler(ratingService)
 	ratingRoutes := ratingsHTTP.NewRoutes(ratingH)
 

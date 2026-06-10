@@ -28,9 +28,18 @@ type PendingRating struct {
 	TransactionID       uuid.UUID `json:"transaction_id"`
 	ItemID              uuid.UUID `json:"item_id"`
 	ItemTitle           string    `json:"item_title"`
+	BuyerID             uuid.UUID `json:"buyer_id"`
 	SellerID            uuid.UUID `json:"seller_id"`
 	SellerName          string    `json:"seller_name"`
 	DaysSinceCompletion int       `json:"days_since_completion"`
+}
+
+type Review struct {
+	RatingID   uuid.UUID `json:"rating_id"`
+	Stars      int       `json:"stars"`
+	Comment    string    `json:"comment"`
+	CreatedAt  time.Time `json:"created_at"`
+	RaterName  string    `json:"rater_name"`
 }
 
 type CreateRatingCommand struct {

@@ -22,6 +22,7 @@ const (
 	NotifTypeUserJoinedQueue   NotificationType = "USER_JOINED_QUEUE"
 	NotifTypeApplicationApproved NotificationType = "APPLICATION_APPROVED"
 	NotifTypeApplicationRejected NotificationType = "APPLICATION_REJECTED"
+	NotifTypeRatingReminder      NotificationType = "RATING_REMINDER"
 )
 
 type Notification struct {

@@ -76,3 +76,16 @@ ON CONFLICT (key) DO UPDATE SET
 
 -- name: GetSysConfig :one
 SELECT value FROM sys_config WHERE key = $1;
+
+-- name: GetUserReviews :many
+SELECT 
+    r.rating_id,
+    r.stars,
+    r.comment,
+    r.created_at,
+    p.display_name AS rater_name
+FROM rating r
+JOIN profile p ON r.rater_id = p.user_id
+WHERE r.rated_user_id = $1
+ORDER BY r.created_at DESC
+LIMIT $2 OFFSET $3;

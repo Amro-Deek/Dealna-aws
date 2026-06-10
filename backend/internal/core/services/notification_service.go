@@ -148,6 +148,8 @@ func getNotificationText(typ domain.NotificationType, actingUserName string, pay
 		return "New Queue Entry! 🏃", actingUserName + " has joined the queue for " + itemTitle + "."
 	case domain.NotifTypeChatMessage:
 		return "New Message 💬", actingUserName + " sent you a message regarding " + itemTitle + "."
+	case domain.NotifTypeRatingReminder:
+		return "Rate your experience! ⭐", "Don't forget to leave a review for " + itemTitle + "!"
 	default:
 		return "New Notification", "You have a new update regarding " + itemTitle + "."
 	}
