@@ -74,12 +74,12 @@ func (h *ChatHandler) SendChatNotification(w http.ResponseWriter, r *http.Reques
 
 	var req SendChatNotificationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("invalid JSON payload"), h.logger)
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("payload", "invalid JSON payload"), h.logger)
 		return
 	}
 
 	if req.RoomID == "" || req.ReceiverID == "" || req.ItemID == "" {
-		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("room_id, receiver_id, and item_id are required"), h.logger)
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("fields", "room_id, receiver_id, and item_id are required"), h.logger)
 		return
 	}
 
