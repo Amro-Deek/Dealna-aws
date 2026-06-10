@@ -24,6 +24,19 @@ type CreateRatingRequest struct {
 	Comment string `json:"comment"`
 }
 
+// @Summary Create a rating
+// @Description Allows a buyer to rate a seller after a completed transaction.
+// @Tags Ratings
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param transactionId path string true "Transaction ID"
+// @Param request body CreateRatingRequest true "Rating details"
+// @Success 201 {object} domain.Rating
+// @Failure 400 {string} string "Invalid input or not allowed"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal server error"
+// @Router /api/v1/transactions/{transactionId}/rate [post]
 func (h *RatingHandler) CreateRating(w http.ResponseWriter, r *http.Request) {
 	// In a real app, raterID comes from JWT middleware ctx.
 	// For this snippet, we'll assume we parse it from a header or context.
@@ -70,6 +83,15 @@ func (h *RatingHandler) CreateRating(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(rating)
 }
 
+// @Summary Get pending ratings
+// @Description Fetches a list of completed transactions where the logged-in buyer has not yet submitted a rating.
+// @Tags Ratings
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {array} domain.PendingRating
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal server error"
+// @Router /api/v1/users/me/pending-ratings [get]
 func (h *RatingHandler) GetPendingRatings(w http.ResponseWriter, r *http.Request) {
 	buyerIDStr := middleware.UserIDFromContext(r.Context())
 	buyerID, err := uuid.Parse(buyerIDStr)
@@ -92,6 +114,15 @@ func (h *RatingHandler) GetPendingRatings(w http.ResponseWriter, r *http.Request
 	json.NewEncoder(w).Encode(pending)
 }
 
+// @Summary Get user reviews
+// @Description Fetches a list of public reviews left by buyers for a specific user (seller).
+// @Tags Ratings
+// @Produce json
+// @Param userId path string true "User ID"
+// @Success 200 {array} domain.Review
+// @Failure 400 {string} string "Invalid user ID"
+// @Failure 500 {string} string "Internal server error"
+// @Router /api/v1/users/{userId}/ratings [get]
 func (h *RatingHandler) GetUserReviews(w http.ResponseWriter, r *http.Request) {
 	userIDStr := chi.URLParam(r, "userId")
 	userID, err := uuid.Parse(userIDStr)

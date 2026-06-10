@@ -176,8 +176,11 @@ definitions:
     - PURCHASE_ACCEPTED
     - PURCHASE_REJECTED
     - TRANSACTION_COMPLETED
+    - CHAT_MESSAGE
+    - USER_JOINED_QUEUE
     - APPLICATION_APPROVED
     - APPLICATION_REJECTED
+    - RATING_REMINDER
     type: string
     x-enum-varnames:
     - NotifTypeTurnStarted
@@ -190,8 +193,28 @@ definitions:
     - NotifTypePurchaseAccepted
     - NotifTypePurchaseRejected
     - NotifTypeTransactionDone
+    - NotifTypeChatMessage
+    - NotifTypeUserJoinedQueue
     - NotifTypeApplicationApproved
     - NotifTypeApplicationRejected
+    - NotifTypeRatingReminder
+  domain.PendingRating:
+    properties:
+      buyer_id:
+        type: string
+      days_since_completion:
+        type: integer
+      item_id:
+        type: string
+      item_title:
+        type: string
+      seller_id:
+        type: string
+      seller_name:
+        type: string
+      transaction_id:
+        type: string
+    type: object
   domain.ProviderApplication:
     properties:
       address:
@@ -256,6 +279,7 @@ definitions:
     - REJECTED
     - FROZEN
     - CANCELLED
+    - COMPLETED
     type: string
     x-enum-varnames:
     - PurchaseRequestPending
@@ -264,6 +288,7 @@ definitions:
     - PurchaseRequestRejected
     - PurchaseRequestFrozen
     - PurchaseRequestCancelled
+    - PurchaseRequestCompleted
   domain.QueueEntry:
     properties:
       buyerName:
@@ -310,6 +335,38 @@ definitions:
       position:
         type: integer
       total:
+        type: integer
+    type: object
+  domain.Rating:
+    properties:
+      comment:
+        type: string
+      created_at:
+        type: string
+      is_frozen:
+        type: boolean
+      rated_user_id:
+        type: string
+      rater_id:
+        type: string
+      rating_id:
+        type: string
+      stars:
+        type: integer
+      transaction_id:
+        type: string
+    type: object
+  domain.Review:
+    properties:
+      comment:
+        type: string
+      created_at:
+        type: string
+      rater_name:
+        type: string
+      rating_id:
+        type: string
+      stars:
         type: integer
     type: object
   dto.CompleteProviderRegistrationRequest:
@@ -474,6 +531,22 @@ definitions:
   giveaway.AcceptResponse:
     properties:
       transactionId:
+        type: string
+    type: object
+  http.CreateRatingRequest:
+    properties:
+      comment:
+        type: string
+      stars:
+        type: integer
+    type: object
+  http.SendChatNotificationRequest:
+    properties:
+      item_id:
+        type: string
+      receiver_id:
+        type: string
+      room_id:
         type: string
     type: object
   middleware.ErrCode:
@@ -1134,6 +1207,41 @@ paths:
       summary: List Categories
       tags:
       - Metadata
+  /api/v1/chat/notify:
+    post:
+      consumes:
+      - application/json
+      description: Sends a push notification to the receiver of a chat message. Called
+        by mobile app after writing to Firestore.
+      parameters:
+      - description: Notification details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.SendChatNotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Send Chat Notification
+      tags:
+      - Chat
   /api/v1/chat/token:
     get:
       description: Returns a custom Firebase Auth token for the logged-in user to
@@ -2068,6 +2176,35 @@ paths:
       summary: Get my purchase requests
       tags:
       - Purchases
+  /api/v1/transactions/{transactionId}/cancel:
+    post:
+      description: Allows the buyer or seller to cancel a transaction
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: transactionId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: 'Returns { \"message\": \"Cancelled\" }'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Cancel a transaction
+      tags:
+      - Transactions
   /api/v1/transactions/{transactionId}/confirm-buyer:
     post:
       description: Allows the buyer to confirm they received the item
@@ -2126,6 +2263,47 @@ paths:
       summary: Confirm a transaction (Seller)
       tags:
       - Transactions
+  /api/v1/transactions/{transactionId}/rate:
+    post:
+      consumes:
+      - application/json
+      description: Allows a buyer to rate a seller after a completed transaction.
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: transactionId
+        required: true
+        type: string
+      - description: Rating details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.CreateRatingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Rating'
+        "400":
+          description: Invalid input or not allowed
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create a rating
+      tags:
+      - Ratings
   /api/v1/users/{profileId}/profile:
     get:
       description: Fetch public-facing info of any user (display name, bio, counters).
@@ -2195,6 +2373,36 @@ paths:
       summary: '[Public] Get Owner Profile by User ID'
       tags:
       - Social
+  /api/v1/users/{userId}/ratings:
+    get:
+      description: Fetches a list of public reviews left by buyers for a specific
+        user (seller).
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Review'
+            type: array
+        "400":
+          description: Invalid user ID
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get user reviews
+      tags:
+      - Ratings
   /api/v1/users/me:
     get:
       description: Returns authenticated user profile -test
@@ -2214,6 +2422,32 @@ paths:
       summary: Get current user
       tags:
       - Users
+  /api/v1/users/me/pending-ratings:
+    get:
+      description: Fetches a list of completed transactions where the logged-in buyer
+        has not yet submitted a rating.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.PendingRating'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get pending ratings
+      tags:
+      - Ratings
   /giveaway/notifications:
     get:
       consumes:

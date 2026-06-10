@@ -813,6 +813,60 @@
                 }
             }
         },
+        "/api/v1/chat/notify": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Sends a push notification to the receiver of a chat message. Called by mobile app after writing to Firestore.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Send Chat Notification",
+                "parameters": [
+                    {
+                        "description": "Notification details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.SendChatNotificationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/chat/token": {
             "get": {
                 "security": [
@@ -2245,6 +2299,52 @@
                 }
             }
         },
+        "/api/v1/transactions/{transactionId}/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows the buyer or seller to cancel a transaction",
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Cancel a transaction",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID",
+                        "name": "transactionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns { \\\"message\\\": \\\"Cancelled\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/transactions/{transactionId}/confirm-buyer": {
             "post": {
                 "security": [
@@ -2337,6 +2437,70 @@
                 }
             }
         },
+        "/api/v1/transactions/{transactionId}/rate": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows a buyer to rate a seller after a completed transaction.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ratings"
+                ],
+                "summary": "Create a rating",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID",
+                        "name": "transactionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Rating details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.CreateRatingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Rating"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input or not allowed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users/me": {
             "get": {
                 "security": [
@@ -2363,6 +2527,46 @@
                         "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/me/pending-ratings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Fetches a list of completed transactions where the logged-in buyer has not yet submitted a rating.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ratings"
+                ],
+                "summary": "Get pending ratings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.PendingRating"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -2467,6 +2671,50 @@
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{userId}/ratings": {
+            "get": {
+                "description": "Fetches a list of public reviews left by buyers for a specific user (seller).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ratings"
+                ],
+                "summary": "Get user reviews",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.Review"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid user ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -3050,8 +3298,11 @@
                 "PURCHASE_ACCEPTED",
                 "PURCHASE_REJECTED",
                 "TRANSACTION_COMPLETED",
+                "CHAT_MESSAGE",
+                "USER_JOINED_QUEUE",
                 "APPLICATION_APPROVED",
-                "APPLICATION_REJECTED"
+                "APPLICATION_REJECTED",
+                "RATING_REMINDER"
             ],
             "x-enum-varnames": [
                 "NotifTypeTurnStarted",
@@ -3064,9 +3315,38 @@
                 "NotifTypePurchaseAccepted",
                 "NotifTypePurchaseRejected",
                 "NotifTypeTransactionDone",
+                "NotifTypeChatMessage",
+                "NotifTypeUserJoinedQueue",
                 "NotifTypeApplicationApproved",
-                "NotifTypeApplicationRejected"
+                "NotifTypeApplicationRejected",
+                "NotifTypeRatingReminder"
             ]
+        },
+        "domain.PendingRating": {
+            "type": "object",
+            "properties": {
+                "buyer_id": {
+                    "type": "string"
+                },
+                "days_since_completion": {
+                    "type": "integer"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_title": {
+                    "type": "string"
+                },
+                "seller_id": {
+                    "type": "string"
+                },
+                "seller_name": {
+                    "type": "string"
+                },
+                "transaction_id": {
+                    "type": "string"
+                }
+            }
         },
         "domain.ProviderApplication": {
             "type": "object",
@@ -3160,7 +3440,8 @@
                 "PENDING_TX",
                 "REJECTED",
                 "FROZEN",
-                "CANCELLED"
+                "CANCELLED",
+                "COMPLETED"
             ],
             "x-enum-varnames": [
                 "PurchaseRequestPending",
@@ -3168,7 +3449,8 @@
                 "PurchaseRequestPendingTx",
                 "PurchaseRequestRejected",
                 "PurchaseRequestFrozen",
-                "PurchaseRequestCancelled"
+                "PurchaseRequestCancelled",
+                "PurchaseRequestCompleted"
             ]
         },
         "domain.QueueEntry": {
@@ -3234,6 +3516,55 @@
                     "type": "integer"
                 },
                 "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "domain.Rating": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "is_frozen": {
+                    "type": "boolean"
+                },
+                "rated_user_id": {
+                    "type": "string"
+                },
+                "rater_id": {
+                    "type": "string"
+                },
+                "rating_id": {
+                    "type": "string"
+                },
+                "stars": {
+                    "type": "integer"
+                },
+                "transaction_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.Review": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "rater_name": {
+                    "type": "string"
+                },
+                "rating_id": {
+                    "type": "string"
+                },
+                "stars": {
                     "type": "integer"
                 }
             }
@@ -3480,6 +3811,31 @@
             "type": "object",
             "properties": {
                 "transactionId": {
+                    "type": "string"
+                }
+            }
+        },
+        "http.CreateRatingRequest": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "stars": {
+                    "type": "integer"
+                }
+            }
+        },
+        "http.SendChatNotificationRequest": {
+            "type": "object",
+            "properties": {
+                "item_id": {
+                    "type": "string"
+                },
+                "receiver_id": {
+                    "type": "string"
+                },
+                "room_id": {
                     "type": "string"
                 }
             }
