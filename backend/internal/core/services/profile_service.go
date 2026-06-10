@@ -19,8 +19,10 @@ type ProfileDTO struct {
 	Bio                      string    `json:"bio"`
 	ProfilePictureURL        string    `json:"profile_picture_url"`
 	DisplayNameLastChangedAt time.Time `json:"display_name_last_changed_at"`
-	RatingCount              int       `json:"rating_count"`
-	TotalReviewsCount        int       `json:"total_reviews_count"`
+	RatingCount              int       `json:"rating_count"` // Deprecated
+	TotalReviewsCount        int       `json:"total_reviews_count"` // Deprecated
+	BayesianRating           float64   `json:"bayesian_rating"`
+	TotalRatings             int       `json:"total_ratings"`
 	SoldItemsCount           int       `json:"sold_items_count"`
 	FollowerCount            int       `json:"follower_count"`
 	FollowingCount           int       `json:"following_count"`
@@ -64,6 +66,8 @@ func (s *ProfileService) GetMyProfile(ctx context.Context, userID string) (*Prof
 		dto.DisplayNameLastChangedAt = profile.DisplayNameLastChangedAt
 		dto.RatingCount = profile.RatingCount
 		dto.TotalReviewsCount = profile.TotalReviewsCount
+		dto.BayesianRating = user.BayesianRating
+		dto.TotalRatings = user.TotalRatings
 		dto.SoldItemsCount = profile.SoldItemsCount
 		dto.FollowerCount = profile.FollowerCount
 		dto.FollowingCount = profile.FollowingCount
@@ -87,6 +91,11 @@ func (s *ProfileService) GetPublicProfile(ctx context.Context, profileID string)
 		return nil, middleware.NewDatabaseError("get public profile", err)
 	}
 
+	user, err := s.users.GetByID(ctx, profile.UserID)
+	if err != nil {
+		return nil, middleware.NewDatabaseError("get user for public profile", err)
+	}
+
 	// We only return public info
 	dto := &ProfileDTO{
 		ProfileID:                profile.ProfileID,
@@ -95,6 +104,8 @@ func (s *ProfileService) GetPublicProfile(ctx context.Context, profileID string)
 		ProfilePictureURL:        profile.ProfilePictureURL,
 		RatingCount:              profile.RatingCount,
 		TotalReviewsCount:        profile.TotalReviewsCount,
+		BayesianRating:           user.BayesianRating,
+		TotalRatings:             user.TotalRatings,
 		SoldItemsCount:           profile.SoldItemsCount,
 		FollowerCount:            profile.FollowerCount,
 		FollowingCount:           profile.FollowingCount,
@@ -112,6 +123,11 @@ func (s *ProfileService) GetPublicProfileByUserID(ctx context.Context, userID st
 		return nil, middleware.NewDatabaseError("get public profile by user id", err)
 	}
 
+	user, err := s.users.GetByID(ctx, profile.UserID)
+	if err != nil {
+		return nil, middleware.NewDatabaseError("get user for public profile", err)
+	}
+
 	return &ProfileDTO{
 		ProfileID:         profile.ProfileID,
 		DisplayName:       profile.DisplayName,
@@ -119,6 +135,8 @@ func (s *ProfileService) GetPublicProfileByUserID(ctx context.Context, userID st
 		ProfilePictureURL: profile.ProfilePictureURL,
 		RatingCount:       profile.RatingCount,
 		TotalReviewsCount: profile.TotalReviewsCount,
+		BayesianRating:    user.BayesianRating,
+		TotalRatings:      user.TotalRatings,
 		SoldItemsCount:    profile.SoldItemsCount,
 		FollowerCount:     profile.FollowerCount,
 		FollowingCount:    profile.FollowingCount,

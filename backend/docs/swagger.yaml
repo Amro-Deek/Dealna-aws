@@ -649,6 +649,8 @@ definitions:
     properties:
       academic_year:
         type: integer
+      bayesian_rating:
+        type: number
       bio:
         type: string
       display_name:
@@ -669,6 +671,7 @@ definitions:
       profile_picture_url:
         type: string
       rating_count:
+        description: Deprecated
         type: integer
       role:
         type: string
@@ -676,7 +679,10 @@ definitions:
         type: integer
       student_id:
         type: string
+      total_ratings:
+        type: integer
       total_reviews_count:
+        description: Deprecated
         type: integer
       user_id:
         type: string

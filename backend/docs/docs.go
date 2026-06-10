@@ -3981,6 +3981,9 @@ const docTemplate = `{
                 "academic_year": {
                     "type": "integer"
                 },
+                "bayesian_rating": {
+                    "type": "number"
+                },
                 "bio": {
                     "type": "string"
                 },
@@ -4010,6 +4013,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "rating_count": {
+                    "description": "Deprecated",
                     "type": "integer"
                 },
                 "role": {
@@ -4021,7 +4025,11 @@ const docTemplate = `{
                 "student_id": {
                     "type": "string"
                 },
+                "total_ratings": {
+                    "type": "integer"
+                },
                 "total_reviews_count": {
+                    "description": "Deprecated",
                     "type": "integer"
                 },
                 "user_id": {
