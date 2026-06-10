@@ -29,6 +29,7 @@ type NotificationContext struct {
 	ItemID       *string
 	EntryID      *string
 	TxID         *string
+	RoomID       *string
 }
 
 func (s *NotificationService) CreateNotification(ctx context.Context, userID string, typ domain.NotificationType, notifCtx NotificationContext) error {
@@ -53,6 +54,9 @@ func (s *NotificationService) CreateNotification(ctx context.Context, userID str
 	}
 	if notifCtx.TxID != nil {
 		payloadMap["tx_id"] = *notifCtx.TxID
+	}
+	if notifCtx.RoomID != nil {
+		payloadMap["room_id"] = *notifCtx.RoomID
 	}
 	
 	actingUserName := "System"
@@ -142,6 +146,8 @@ func getNotificationText(typ domain.NotificationType, actingUserName string, pay
 		return "Transaction Completed! ✅", actingUserName + " confirmed the transaction for " + itemTitle + "."
 	case domain.NotifTypeUserJoinedQueue:
 		return "New Queue Entry! 🏃", actingUserName + " has joined the queue for " + itemTitle + "."
+	case domain.NotifTypeChatMessage:
+		return "New Message 💬", actingUserName + " sent you a message regarding " + itemTitle + "."
 	default:
 		return "New Notification", "You have a new update regarding " + itemTitle + "."
 	}

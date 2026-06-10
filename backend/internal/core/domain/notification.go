@@ -18,6 +18,7 @@ const (
 	NotifTypePurchaseAccepted  NotificationType = "PURCHASE_ACCEPTED"
 	NotifTypePurchaseRejected  NotificationType = "PURCHASE_REJECTED"
 	NotifTypeTransactionDone   NotificationType = "TRANSACTION_COMPLETED"
+	NotifTypeChatMessage       NotificationType = "CHAT_MESSAGE"
 	NotifTypeUserJoinedQueue   NotificationType = "USER_JOINED_QUEUE"
 	NotifTypeApplicationApproved NotificationType = "APPLICATION_APPROVED"
 	NotifTypeApplicationRejected NotificationType = "APPLICATION_REJECTED"

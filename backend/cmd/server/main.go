@@ -227,7 +227,7 @@ func main() {
 	if err != nil {
 		log.Printf("⚠️ Firebase Auth initialization failed: %v", err)
 	}
-	chatSvc := services.NewChatService(firebaseAuthProv)
+	chatSvc := services.NewChatService(firebaseAuthProv, notificationService)
 	chatH := chatHTTP.NewChatHandler(chatSvc, appLogger)
 	chatRoutes := chatHTTP.NewRoutes(chatH)
 

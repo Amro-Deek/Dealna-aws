@@ -15,5 +15,6 @@ func NewRoutes(h *ChatHandler) *Routes {
 func (r *Routes) RegisterProtected(router chi.Router) {
 	router.Route("/chat", func(router chi.Router) {
 		router.Get("/token", r.handler.GetChatToken)
+		router.Post("/notify", r.handler.SendChatNotification)
 	})
 }
