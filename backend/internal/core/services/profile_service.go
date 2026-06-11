@@ -99,6 +99,7 @@ func (s *ProfileService) GetPublicProfile(ctx context.Context, profileID string)
 	// We only return public info
 	dto := &ProfileDTO{
 		ProfileID:                profile.ProfileID,
+		UserID:                   user.ID,
 		DisplayName:              profile.DisplayName,
 		Bio:                      profile.Bio,
 		ProfilePictureURL:        profile.ProfilePictureURL,
@@ -130,6 +131,7 @@ func (s *ProfileService) GetPublicProfileByUserID(ctx context.Context, userID st
 
 	return &ProfileDTO{
 		ProfileID:         profile.ProfileID,
+		UserID:            user.ID,
 		DisplayName:       profile.DisplayName,
 		Bio:               profile.Bio,
 		ProfilePictureURL: profile.ProfilePictureURL,
