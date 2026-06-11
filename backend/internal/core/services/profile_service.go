@@ -44,7 +44,7 @@ func NewProfileService(users ports.IUserRepository) *ProfileService {
 func (s *ProfileService) GetMyProfile(ctx context.Context, userID string) (*ProfileDTO, error) {
 	user, err := s.users.GetByID(ctx, userID)
 	if err != nil {
-		return nil, err
+		return nil, middleware.NewDatabaseError("get user by id", err)
 	}
 
 	profile, student, err := s.users.GetProfile(ctx, userID)
