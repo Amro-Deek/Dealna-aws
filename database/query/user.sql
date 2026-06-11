@@ -25,7 +25,10 @@ SELECT
     user_id,
     email,
     role,
-    keycloak_sub
+    keycloak_sub,
+    total_ratings,
+    sum_ratings,
+    bayesian_rating
 FROM "User"
 WHERE user_id = $1
   AND deleted_at IS NULL

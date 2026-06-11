@@ -44,11 +44,22 @@ func (r *UserRepository) GetByID(
 	}
 
 	return &coreDomain.User{
-		ID:          uuidToString(row.UserID),
-		Email:       row.Email,
-		Role:        row.Role,
-		KeycloakSub: uuidToString(row.KeycloakSub),
+		ID:             uuidToString(row.UserID),
+		Email:          row.Email,
+		Role:           row.Role,
+		KeycloakSub:    uuidToString(row.KeycloakSub),
+		TotalRatings:   int(row.TotalRatings.Int32),
+		SumRatings:     int(row.SumRatings.Int32),
+		BayesianRating: getFloat64(row.BayesianRating),
 	}, nil
+}
+
+func getFloat64(n pgtype.Numeric) float64 {
+	if !n.Valid {
+		return 0.0
+	}
+	f, _ := n.Float64Value()
+	return f.Float64
 }
 
 func (r *UserRepository) GetByEmail(
