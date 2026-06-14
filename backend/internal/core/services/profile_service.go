@@ -146,6 +146,8 @@ func (s *ProfileService) GetPublicProfileByUserID(ctx context.Context, userID st
 }
 
 func (s *ProfileService) UpdateProfile(ctx context.Context, userID string, displayName, bio, profilePictureURL *string) error {
+	var newDisplayNameLastChangedAt *time.Time
+
 	// If displayName is being updated, enforce business rules
 	if displayName != nil {
 		profile, _, err := s.users.GetProfile(ctx, userID)
@@ -160,18 +162,12 @@ func (s *ProfileService) UpdateProfile(ctx context.Context, userID string, displ
 				return middleware.NewValidationError("display_name", "Display name can only be changed once every 30 days")
 			}
 			
-			// We should ideally check for display_name uniqueness here across the DB if required.
-			// Assuming DB constraint handles it or it's allowed to have duplicates if it's a nickname.
-			
 			now := time.Now()
-			// DisplayNameLastChangedAt is updated in the repository layer automatically or we pass it
-			// For this implementation, I will assume the repository updates the timestamp or does NOT, since we didn't pass it in UpdateProfile port. 
-			// Wait, the repository accepts a *string, but I'll let the database handle the default now() or we can just proceed.
-			_ = now
+			newDisplayNameLastChangedAt = &now
 		}
 	}
 
-	return s.users.UpdateProfile(ctx, userID, displayName, bio, profilePictureURL, nil)
+	return s.users.UpdateProfile(ctx, userID, displayName, bio, profilePictureURL, newDisplayNameLastChangedAt)
 }
 
 func (s *ProfileService) UpdateStudentDetails(ctx context.Context, userID string, major *string, year *int) error {
