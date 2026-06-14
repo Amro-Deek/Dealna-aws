@@ -91,6 +91,15 @@ func (k *KeycloakIdentityProvider) Login(
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusBadRequest {
+		var kcError struct {
+			Error            string `json:"error"`
+			ErrorDescription string `json:"error_description"`
+		}
+		if err := json.Unmarshal(body, &kcError); err == nil {
+			if strings.Contains(strings.ToLower(kcError.ErrorDescription), "account is not fully set up") || strings.Contains(strings.ToLower(kcError.ErrorDescription), "account disabled") || strings.Contains(strings.ToLower(kcError.ErrorDescription), "account is temporarily disabled") {
+				return nil, middleware.NewAccountLockedError()
+			}
+		}
 		return nil, middleware.NewInvalidCredentialsError()
 	}
 

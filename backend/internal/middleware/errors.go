@@ -26,6 +26,7 @@ const (
 	CodeEmailAlreadyUsed    ErrCode = "EMAIL_ALREADY_USED"
 	CodeInvalidCredentials ErrCode = "INVALID_CREDENTIALS"
 	CodeAccountSuspended   ErrCode = "ACCOUNT_SUSPENDED"
+	CodeAccountLocked      ErrCode = "ACCOUNT_LOCKED"
 	CodeEmailNotVerified   ErrCode = "EMAIL_NOT_VERIFIED"
 	CodeUnauthorized       ErrCode = "UNAUTHORIZED"
 	CodeForbidden          ErrCode = "FORBIDDEN"
@@ -133,6 +134,15 @@ func NewAccountSuspendedError() *DomainError {
 		Message:    "Account is suspended",
 		StatusCode: http.StatusForbidden,
 		Retryable:  false,
+	}
+}
+
+func NewAccountLockedError() *DomainError {
+	return &DomainError{
+		Code:       CodeAccountLocked,
+		Message:    "Account is temporarily locked due to multiple failed login attempts. Please try again later.",
+		StatusCode: http.StatusTooManyRequests,
+		Retryable:  true,
 	}
 }
 
