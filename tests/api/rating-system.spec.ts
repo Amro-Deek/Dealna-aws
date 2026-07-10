@@ -37,14 +37,14 @@ test.describe.serial('Rating System API', () => {
   const ts = Date.now();
   
   // Buyer
-  const buyerEmail    = `buyer_rate_${ts}@student.birzeit.edu`;
+  const buyerEmail    = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
   const testPassword  = 'StrongPassword123!';
   const buyerDisplay  = `Buyer Rate Tester ${ts}`;
   let buyerToken: string;
   let buyerUserId: string;
 
   // Seller
-  const sellerEmail   = `seller_rate_${ts}@student.birzeit.edu`;
+  const sellerEmail   = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
   const sellerDisplay = `Seller Rate Tester ${ts}`;
   let sellerUserId: string;
 

@@ -33,14 +33,14 @@ test.describe.serial('Profile & Follow Integration API', () => {
 
   const ts = Date.now();
   const userA = {
-    email: `usera_${ts}@student.birzeit.edu`,
+    email: `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`,
     display: `User A ${ts}`,
     pass: 'Pass123!',
     token: '',
     profileId: '',
   };
   const userB = {
-    email: `userb_${ts}@student.birzeit.edu`,
+    email: `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`,
     display: `User B ${ts}`,
     pass: 'Pass123!',
     token: '',

@@ -61,8 +61,8 @@ test.describe.serial('Purchase Requests — Happy Path', () => {
   const ts = Date.now();
   const password = 'StrongPassword123!';
 
-  const buyerEmail = `buyer_${ts}@student.birzeit.edu`;
-  const ownerEmail = `purchase_owner_${ts}@student.birzeit.edu`;
+  const buyerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+  const ownerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
 
   let buyerToken: string;
   let ownerToken: string;
@@ -154,8 +154,8 @@ test.describe.serial('Purchase Requests — Reject Flow', () => {
   const ts = Date.now() + 1;
   const password = 'StrongPassword123!';
 
-  const buyerEmail = `buyer_rej_${ts}@student.birzeit.edu`;
-  const ownerEmail = `owner_rej_${ts}@student.birzeit.edu`;
+  const buyerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+  const ownerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
 
   let buyerToken: string;
   let ownerToken: string;
@@ -210,8 +210,8 @@ test.describe.serial('Purchase Requests — Cancel Flow (Buyer)', () => {
   const ts = Date.now() + 2;
   const password = 'StrongPassword123!';
 
-  const buyerEmail = `buyer_cancel_${ts}@student.birzeit.edu`;
-  const ownerEmail = `owner_cancel_${ts}@student.birzeit.edu`;
+  const buyerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+  const ownerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
 
   let buyerToken: string;
   let ownerToken: string;
@@ -265,8 +265,8 @@ test.describe.serial('Purchase Requests — Security & Edge Cases', () => {
   const ts = Date.now() + 3;
   const password = 'StrongPassword123!';
 
-  const ownerEmail = `owner_sec_${ts}@student.birzeit.edu`;
-  const buyerEmail = `buyer_sec_${ts}@student.birzeit.edu`;
+  const ownerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+  const buyerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
 
   let ownerToken: string;
   let buyerToken: string;

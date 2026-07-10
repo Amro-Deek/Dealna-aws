@@ -12,7 +12,7 @@ test.describe.serial('Student Registration API Flow', () => {
 
   // Use a unique timestamp to generate dynamic test data and avoid collisions
   const timestamp = Date.now();
-  const testEmail = `${timestamp}@student.birzeit.edu`;
+  const testEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
   const invalidEmail = `test_${timestamp}@gmail.com`;
   const displayName = `Amro ${timestamp}`;
   const password = 'StrongPassword123!';

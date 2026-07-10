@@ -32,7 +32,7 @@ test.describe.serial('Giveaway Queue API', () => {
   const kcHelper = new KeycloakHelper();
 
   const ts = Date.now();
-  const testEmail = `queue_tester_${ts}@student.birzeit.edu`;
+  const testEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
   const testDisplay = `Queue Tester ${ts}`;
   const testPassword = 'StrongPassword123!';
 
@@ -138,8 +138,8 @@ test.describe.serial('Giveaway Queue State Transitions API', () => {
   const kcHelper = new KeycloakHelper();
 
   const ts = Date.now();
-  const ownerEmail = `owner_${ts}@student.birzeit.edu`;
-  const receiverEmail = `receiver_${ts}@student.birzeit.edu`;
+  const ownerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+  const receiverEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
   const testPassword = 'StrongPassword123!';
 
   let ownerToken: string;
@@ -228,9 +228,9 @@ test.describe.serial('Giveaway Queue Negative and Edge Cases', () => {
   const kcHelper = new KeycloakHelper();
 
   const ts = Date.now();
-  const ownerEmail = `owner_edge_${ts}@student.birzeit.edu`;
-  const receiver1Email = `receiver1_edge_${ts}@student.birzeit.edu`;
-  const receiver2Email = `receiver2_edge_${ts}@student.birzeit.edu`;
+  const ownerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+  const receiver1Email = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+  const receiver2Email = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
   const testPassword = 'StrongPassword123!';
 
   let ownerToken: string;

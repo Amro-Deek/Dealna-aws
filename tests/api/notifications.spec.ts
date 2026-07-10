@@ -32,7 +32,7 @@ test.describe.serial('Notifications API', () => {
   const kcHelper = new KeycloakHelper();
 
   const ts = Date.now();
-  const testEmail = `notif_tester_${ts}@student.birzeit.edu`;
+  const testEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
   const testDisplay = `Notif Tester ${ts}`;
   const testPassword = 'StrongPassword123!';
 
