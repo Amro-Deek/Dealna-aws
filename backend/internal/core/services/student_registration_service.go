@@ -47,6 +47,17 @@ func (s *StudentRegistrationService) isValidUniversityEmail(
 		return false
 	}
 
+	// The local part must be exactly 6 digits
+	localPart := parts[0]
+	if len(localPart) != 6 {
+		return false
+	}
+	for _, char := range localPart {
+		if char < '0' || char > '9' {
+			return false
+		}
+	}
+
 	domain := strings.ToLower(parts[1])
 
 	// Only allow student domain
