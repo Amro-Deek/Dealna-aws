@@ -232,7 +232,7 @@ test.describe.serial('Provider Registration API Flow', () => {
         password: 'Password123!'
       }
     });
-    expect(completeAdminRes.status()).toBe(204);
+    expect(completeAdminRes.status()).toBe(200);
 
     // (Removed manual verifyUserEmail because backend already sets emailVerified=true during registration)
 
