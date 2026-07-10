@@ -97,7 +97,7 @@ func (s *StudentRegistrationService) RequestStudentActivation(
 			if err := s.preRegs.Update(ctx, existingPre); err != nil {
 				return middleware.NewDatabaseError("update prereg", err)
 			}
-			link := fmt.Sprintf("http://98.92.82.224:8080/api/v1/auth/students/activate?token=%s", token)
+			link := fmt.Sprintf("http://98.92.82.224:8080/api/v1/auth/student/activate?token=%s", token)
 			return s.email.SendActivationLink(email, link, "student")
 		}
 		return middleware.NewEmailAlreadyUsedError(email)
