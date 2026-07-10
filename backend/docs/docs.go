@@ -580,6 +580,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth/providers/status": {
+            "get": {
+                "description": "Get provider registration status by email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get provider registration status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Provider email",
+                        "name": "email",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RegistrationStatusResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/refresh": {
             "post": {
                 "description": "Refresh access token using refresh token",
@@ -786,7 +824,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.StudentRegistrationStatusResponse"
+                            "$ref": "#/definitions/dto.RegistrationStatusResponse"
                         }
                     },
                     "401": {
@@ -1692,6 +1730,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/items/{id}/similar": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a list of 5 items that are semantically similar to the provided item.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Items"
+                ],
+                "summary": "Get Similar Items",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.FeedItem"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/items/{id}/status": {
             "patch": {
                 "security": [
@@ -2580,6 +2667,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/users/{id}/items": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns items owned by a specific user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Items"
+                ],
+                "summary": "Get Items by User",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.FeedItem"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorFrame"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users/{profileId}/profile": {
             "get": {
                 "security": [
@@ -3135,6 +3283,9 @@ const docTemplate = `{
                 "owner_profile_pic_url": {
                     "type": "string"
                 },
+                "owner_role": {
+                    "type": "string"
+                },
                 "pickup_location": {
                     "type": "string"
                 },
@@ -3240,6 +3391,9 @@ const docTemplate = `{
                 "owner_profile_pic_url": {
                     "type": "string"
                 },
+                "owner_role": {
+                    "type": "string"
+                },
                 "pickup_location": {
                     "type": "string"
                 },
@@ -3310,7 +3464,10 @@ const docTemplate = `{
                 "USER_JOINED_QUEUE",
                 "APPLICATION_APPROVED",
                 "APPLICATION_REJECTED",
-                "RATING_REMINDER"
+                "RATING_REMINDER",
+                "ADMIN_WARNING",
+                "ADMIN_BAN",
+                "ITEM_DELETED"
             ],
             "x-enum-varnames": [
                 "NotifTypeTurnStarted",
@@ -3327,7 +3484,10 @@ const docTemplate = `{
                 "NotifTypeUserJoinedQueue",
                 "NotifTypeApplicationApproved",
                 "NotifTypeApplicationRejected",
-                "NotifTypeRatingReminder"
+                "NotifTypeRatingReminder",
+                "NotifTypeAdminWarning",
+                "NotifTypeAdminBan",
+                "NotifTypeItemDeleted"
             ]
         },
         "domain.PendingRating": {
@@ -3738,6 +3898,29 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.RegistrationStatusResponse": {
+            "type": "object",
+            "properties": {
+                "can_complete_registration": {
+                    "type": "boolean"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "is_used": {
+                    "type": "boolean"
+                },
+                "is_verified": {
+                    "type": "boolean"
+                },
+                "verified_at": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.RejectProviderApplicationRequest": {
             "type": "object",
             "required": [
@@ -3792,29 +3975,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.StudentRegistrationStatusResponse": {
-            "type": "object",
-            "properties": {
-                "can_complete_registration": {
-                    "type": "boolean"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "expires_at": {
-                    "type": "string"
-                },
-                "is_used": {
-                    "type": "boolean"
-                },
-                "is_verified": {
-                    "type": "boolean"
-                },
-                "verified_at": {
-                    "type": "string"
-                }
-            }
-        },
         "giveaway.AcceptResponse": {
             "type": "object",
             "properties": {
@@ -3855,6 +4015,7 @@ const docTemplate = `{
                 "EMAIL_ALREADY_USED",
                 "INVALID_CREDENTIALS",
                 "ACCOUNT_SUSPENDED",
+                "ACCOUNT_LOCKED",
                 "EMAIL_NOT_VERIFIED",
                 "UNAUTHORIZED",
                 "FORBIDDEN",
@@ -3877,6 +4038,7 @@ const docTemplate = `{
                 "CodeEmailAlreadyUsed",
                 "CodeInvalidCredentials",
                 "CodeAccountSuspended",
+                "CodeAccountLocked",
                 "CodeEmailNotVerified",
                 "CodeUnauthorized",
                 "CodeForbidden",
@@ -4002,6 +4164,9 @@ const docTemplate = `{
                 "following_count": {
                     "type": "integer"
                 },
+                "joined_at": {
+                    "type": "string"
+                },
                 "major": {
                     "description": "Student specific",
                     "type": "string"
@@ -4023,6 +4188,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "student_id": {
+                    "description": "Only returned for own profile",
                     "type": "string"
                 },
                 "total_ratings": {

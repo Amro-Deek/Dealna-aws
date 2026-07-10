@@ -59,6 +59,8 @@ definitions:
         type: string
       owner_profile_pic_url:
         type: string
+      owner_role:
+        type: string
       pickup_location:
         type: string
       price:
@@ -128,6 +130,8 @@ definitions:
         type: string
       owner_profile_pic_url:
         type: string
+      owner_role:
+        type: string
       pickup_location:
         type: string
       price:
@@ -181,6 +185,9 @@ definitions:
     - APPLICATION_APPROVED
     - APPLICATION_REJECTED
     - RATING_REMINDER
+    - ADMIN_WARNING
+    - ADMIN_BAN
+    - ITEM_DELETED
     type: string
     x-enum-varnames:
     - NotifTypeTurnStarted
@@ -198,6 +205,9 @@ definitions:
     - NotifTypeApplicationApproved
     - NotifTypeApplicationRejected
     - NotifTypeRatingReminder
+    - NotifTypeAdminWarning
+    - NotifTypeAdminBan
+    - NotifTypeItemDeleted
   domain.PendingRating:
     properties:
       buyer_id:
@@ -477,6 +487,21 @@ definitions:
       refreshToken:
         type: string
     type: object
+  dto.RegistrationStatusResponse:
+    properties:
+      can_complete_registration:
+        type: boolean
+      email:
+        type: string
+      expires_at:
+        type: string
+      is_used:
+        type: boolean
+      is_verified:
+        type: boolean
+      verified_at:
+        type: string
+    type: object
   dto.RejectProviderApplicationRequest:
     properties:
       comment:
@@ -513,21 +538,6 @@ definitions:
     - phone_number
     - university_id
     type: object
-  dto.StudentRegistrationStatusResponse:
-    properties:
-      can_complete_registration:
-        type: boolean
-      email:
-        type: string
-      expires_at:
-        type: string
-      is_used:
-        type: boolean
-      is_verified:
-        type: boolean
-      verified_at:
-        type: string
-    type: object
   giveaway.AcceptResponse:
     properties:
       transactionId:
@@ -555,6 +565,7 @@ definitions:
     - EMAIL_ALREADY_USED
     - INVALID_CREDENTIALS
     - ACCOUNT_SUSPENDED
+    - ACCOUNT_LOCKED
     - EMAIL_NOT_VERIFIED
     - UNAUTHORIZED
     - FORBIDDEN
@@ -577,6 +588,7 @@ definitions:
     - CodeEmailAlreadyUsed
     - CodeInvalidCredentials
     - CodeAccountSuspended
+    - CodeAccountLocked
     - CodeEmailNotVerified
     - CodeUnauthorized
     - CodeForbidden
@@ -663,6 +675,8 @@ definitions:
         type: integer
       following_count:
         type: integer
+      joined_at:
+        type: string
       major:
         description: Student specific
         type: string
@@ -678,6 +692,7 @@ definitions:
       sold_items_count:
         type: integer
       student_id:
+        description: Only returned for own profile
         type: string
       total_ratings:
         type: integer
@@ -1055,6 +1070,31 @@ paths:
       summary: Resend activation link
       tags:
       - Auth
+  /api/v1/auth/providers/status:
+    get:
+      consumes:
+      - application/json
+      description: Get provider registration status by email
+      parameters:
+      - description: Provider email
+        in: query
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RegistrationStatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      summary: Get provider registration status
+      tags:
+      - Auth
   /api/v1/auth/refresh:
     post:
       consumes:
@@ -1189,7 +1229,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.StudentRegistrationStatusResponse'
+            $ref: '#/definitions/dto.RegistrationStatusResponse'
         "401":
           description: Unauthorized
           schema:
@@ -1627,6 +1667,38 @@ paths:
       security:
       - BearerAuth: []
       summary: Get Item Detail
+      tags:
+      - Items
+  /api/v1/items/{id}/similar:
+    get:
+      description: Returns a list of 5 items that are semantically similar to the
+        provided item.
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.FeedItem'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Get Similar Items
       tags:
       - Items
   /api/v1/items/{id}/status:
@@ -2310,6 +2382,45 @@ paths:
       summary: Create a rating
       tags:
       - Ratings
+  /api/v1/users/{id}/items:
+    get:
+      description: Returns items owned by a specific user.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Items per page (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.FeedItem'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorFrame'
+      security:
+      - BearerAuth: []
+      summary: Get Items by User
+      tags:
+      - Items
   /api/v1/users/{profileId}/profile:
     get:
       description: Fetch public-facing info of any user (display name, bio, counters).

@@ -300,7 +300,7 @@ func (rt *Routes) ResendActivationHandler(w http.ResponseWriter, req *http.Reque
 // @Tags Auth
 // @Produce json
 // @Param email query string true "Student email"
-// @Success 200 {object} dto.StudentRegistrationStatusResponse
+// @Success 200 {object} dto.RegistrationStatusResponse
 // @Failure 401 {object} middleware.ErrorFrame
 // @Router /api/v1/auth/student/status [get]
 func (rt *Routes) GetRegistrationStatusHandler(w http.ResponseWriter, req *http.Request) {
