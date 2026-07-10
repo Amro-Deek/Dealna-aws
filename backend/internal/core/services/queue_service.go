@@ -57,7 +57,7 @@ func (s *QueueService) JoinQueue(ctx context.Context, itemID, userID string) (*d
 	if entry == nil {
 		return nil, errors.New("failed to join queue due to concurrent limit or cooldown")
 	}
-	
+
 	// If it's the first in queue, promote them immediately
 	if activeCount == 0 {
 		s.promoteNext(ctx, itemID)
@@ -76,7 +76,7 @@ func (s *QueueService) LeaveQueue(ctx context.Context, itemID, userID string) er
 		// If no active entry, just call leave
 		return s.repo.LeaveQueue(ctx, itemID, userID)
 	}
-	
+
 	err = s.repo.UpdateEntryStatus(ctx, entry.EntryID, domain.QueueStatusCancelled)
 	if err != nil {
 		return err
@@ -110,7 +110,7 @@ func (s *QueueService) GetQueueEntriesByUser(ctx context.Context, userID string)
 			pos, _ = s.repo.GetQueuePosition(ctx, entry.ItemID, entry.EntryID)
 			total, _ = s.repo.CountQueueEntries(ctx, entry.ItemID)
 		}
-		
+
 		results = append(results, domain.QueuePosition{
 			Entry:    &entry,
 			Position: pos,
@@ -283,7 +283,7 @@ func (s *QueueService) ConfirmHandoff(ctx context.Context, itemID, entryID, call
 	// Update item status to SOLD
 	parsedItemID, _ := uuid.Parse(itemID)
 	err = s.itemRepo.UpdateItemStatus(ctx, parsedItemID, domain.ItemStatusSold)
-	
+
 	if err == nil {
 		// Notify owner that receiver confirmed it
 		if entry.UserID == callerID {

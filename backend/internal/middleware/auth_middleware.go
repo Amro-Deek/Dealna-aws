@@ -3,7 +3,8 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports")
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
+)
 
 // AuthMiddleware is a pure pipe:
 // - extracts auth header

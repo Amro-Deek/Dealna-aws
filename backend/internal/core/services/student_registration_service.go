@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -78,7 +79,15 @@ func (s *StudentRegistrationService) RequestStudentActivation(
 	// check if already in pre-registration
 	if existingPre, err := s.preRegs.GetByEmail(ctx, email); err == nil && existingPre != nil {
 		if existingPre.UsedAt == nil {
-			return middleware.NewValidationError("email", "Activation already requested. Please check your email or use the resend endpoint.")
+			token := uuid.NewString()
+			existingPre.Token = token
+			existingPre.ExpiresAt = time.Now().Add(24 * time.Hour)
+			existingPre.VerifiedAt = nil
+			if err := s.preRegs.Update(ctx, existingPre); err != nil {
+				return middleware.NewDatabaseError("update prereg", err)
+			}
+			link := fmt.Sprintf("http://98.92.82.224:8080/api/v1/auth/students/activate?token=%s", token)
+			return s.email.SendActivationLink(email, link, "student")
 		}
 		return middleware.NewEmailAlreadyUsedError(email)
 	}
@@ -95,7 +104,8 @@ func (s *StudentRegistrationService) RequestStudentActivation(
 		return middleware.NewDatabaseError("create prereg", err)
 	}
 
-	return s.email.SendActivationLink(email, token)
+	link := fmt.Sprintf("http://98.92.82.224:8080/api/v1/auth/student/activate?token=%s", token)
+	return s.email.SendActivationLink(email, link, "student")
 }
 func (s *StudentRegistrationService) VerifyActivation(
 	ctx context.Context,
@@ -219,10 +229,6 @@ func (s *StudentRegistrationService) CompleteStudentRegistration(
 	return nil
 }
 
-
-
-
-
 func (s *StudentRegistrationService) ResendActivation(
 	ctx context.Context,
 	email string,
@@ -263,7 +269,8 @@ func (s *StudentRegistrationService) ResendActivation(
 		return middleware.NewDatabaseError("update prereg", err)
 	}
 
-	return s.email.SendActivationLink(email, newToken)
+	link := fmt.Sprintf("http://98.92.82.224:8080/api/v1/auth/student/activate?token=%s", newToken)
+	return s.email.SendActivationLink(email, link, "student")
 }
 
 func (s *StudentRegistrationService) GetRegistrationStatus(
@@ -278,7 +285,6 @@ func (s *StudentRegistrationService) GetRegistrationStatus(
 
 	return pre, nil
 }
-
 
 func extractStudentID(email string) string {
 	parts := strings.Split(email, "@")

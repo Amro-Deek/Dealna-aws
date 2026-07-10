@@ -19,18 +19,19 @@ type ProfileDTO struct {
 	Bio                      string    `json:"bio"`
 	ProfilePictureURL        string    `json:"profile_picture_url"`
 	DisplayNameLastChangedAt time.Time `json:"display_name_last_changed_at"`
-	RatingCount              int       `json:"rating_count"` // Deprecated
+	RatingCount              int       `json:"rating_count"`        // Deprecated
 	TotalReviewsCount        int       `json:"total_reviews_count"` // Deprecated
 	BayesianRating           float64   `json:"bayesian_rating"`
 	TotalRatings             int       `json:"total_ratings"`
 	SoldItemsCount           int       `json:"sold_items_count"`
 	FollowerCount            int       `json:"follower_count"`
 	FollowingCount           int       `json:"following_count"`
-	
+	JoinedAt                 time.Time `json:"joined_at"`
+
 	// Student specific
-	Major              *string `json:"major,omitempty"`
-	AcademicYear       *int    `json:"academic_year,omitempty"`
-	StudentID          *string `json:"student_id,omitempty"`
+	Major        *string `json:"major,omitempty"`
+	AcademicYear *int    `json:"academic_year,omitempty"`
+	StudentID    *string `json:"student_id,omitempty"` // Only returned for own profile
 }
 
 type ProfileService struct {
@@ -53,10 +54,10 @@ func (s *ProfileService) GetMyProfile(ctx context.Context, userID string) (*Prof
 	}
 
 	dto := &ProfileDTO{
-		ProfileID:                profile.ProfileID,
-		UserID:                   user.ID,
-		Email:                    user.Email,
-		Role:                     user.Role,
+		ProfileID: profile.ProfileID,
+		UserID:    user.ID,
+		Email:     user.Email,
+		Role:      user.Role,
 	}
 
 	if profile != nil {
@@ -71,6 +72,7 @@ func (s *ProfileService) GetMyProfile(ctx context.Context, userID string) (*Prof
 		dto.SoldItemsCount = profile.SoldItemsCount
 		dto.FollowerCount = profile.FollowerCount
 		dto.FollowingCount = profile.FollowingCount
+		dto.JoinedAt = profile.CreatedAt
 	}
 
 	if student != nil {
@@ -96,42 +98,11 @@ func (s *ProfileService) GetPublicProfile(ctx context.Context, profileID string)
 		return nil, middleware.NewDatabaseError("get user for public profile", err)
 	}
 
-	// We only return public info
+	// We only return public info — student_id is intentionally excluded for privacy
 	dto := &ProfileDTO{
-		ProfileID:                profile.ProfileID,
-		UserID:                   user.ID,
-		DisplayName:              profile.DisplayName,
-		Bio:                      profile.Bio,
-		ProfilePictureURL:        profile.ProfilePictureURL,
-		RatingCount:              profile.RatingCount,
-		TotalReviewsCount:        profile.TotalReviewsCount,
-		BayesianRating:           user.BayesianRating,
-		TotalRatings:             user.TotalRatings,
-		SoldItemsCount:           profile.SoldItemsCount,
-		FollowerCount:            profile.FollowerCount,
-		FollowingCount:           profile.FollowingCount,
-	}
-
-	return dto, nil
-}
-
-func (s *ProfileService) GetPublicProfileByUserID(ctx context.Context, userID string) (*ProfileDTO, error) {
-	profile, err := s.users.GetProfileByUserID(ctx, userID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, middleware.NewUserNotFoundError(userID)
-		}
-		return nil, middleware.NewDatabaseError("get public profile by user id", err)
-	}
-
-	user, err := s.users.GetByID(ctx, profile.UserID)
-	if err != nil {
-		return nil, middleware.NewDatabaseError("get user for public profile", err)
-	}
-
-	return &ProfileDTO{
 		ProfileID:         profile.ProfileID,
 		UserID:            user.ID,
+		Email:             user.Email,
 		DisplayName:       profile.DisplayName,
 		Bio:               profile.Bio,
 		ProfilePictureURL: profile.ProfilePictureURL,
@@ -142,7 +113,75 @@ func (s *ProfileService) GetPublicProfileByUserID(ctx context.Context, userID st
 		SoldItemsCount:    profile.SoldItemsCount,
 		FollowerCount:     profile.FollowerCount,
 		FollowingCount:    profile.FollowingCount,
-	}, nil
+		JoinedAt:          profile.CreatedAt,
+		Role:              user.Role,
+	}
+
+	// Fetch student-specific public fields (major and academic year)
+	_, student, err := s.users.GetProfile(ctx, user.ID)
+	if err == nil && student != nil {
+		dto.Major = &student.Major
+		dto.AcademicYear = &student.AcademicYear
+		// NOTE: StudentID is NOT populated here for privacy
+	}
+
+	return dto, nil
+}
+
+func (s *ProfileService) GetPublicProfileByUserID(ctx context.Context, userID string) (*ProfileDTO, error) {
+	profile, err := s.users.GetProfileByUserID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			// If profile doesn't exist, try to get basic user info anyway for admin/display purposes
+			user, uErr := s.users.GetByID(ctx, userID)
+			if uErr != nil {
+				return nil, middleware.NewUserNotFoundError(userID)
+			}
+			return &ProfileDTO{
+				UserID:      user.ID,
+				Email:       user.Email,
+				Role:        user.Role,
+				DisplayName: "No Profile Yet",
+				Bio:         "This user has not set up their profile.",
+				JoinedAt:    time.Now(),
+			}, nil
+		}
+		return nil, middleware.NewDatabaseError("get public profile by user id", err)
+	}
+
+	user, err := s.users.GetByID(ctx, profile.UserID)
+	if err != nil {
+		return nil, middleware.NewDatabaseError("get user for public profile", err)
+	}
+
+	// We only return public info — student_id is intentionally excluded for privacy
+	dto := &ProfileDTO{
+		ProfileID:         profile.ProfileID,
+		UserID:            user.ID,
+		Email:             user.Email,
+		DisplayName:       profile.DisplayName,
+		Bio:               profile.Bio,
+		ProfilePictureURL: profile.ProfilePictureURL,
+		RatingCount:       profile.RatingCount,
+		TotalReviewsCount: profile.TotalReviewsCount,
+		BayesianRating:    user.BayesianRating,
+		TotalRatings:      user.TotalRatings,
+		SoldItemsCount:    profile.SoldItemsCount,
+		FollowerCount:     profile.FollowerCount,
+		FollowingCount:    profile.FollowingCount,
+		JoinedAt:          profile.CreatedAt,
+		Role:              user.Role,
+	}
+
+	// Fetch student-specific public fields (major and academic year)
+	_, student, err := s.users.GetProfile(ctx, user.ID)
+	if err == nil && student != nil {
+		dto.Major = &student.Major
+		dto.AcademicYear = &student.AcademicYear
+		// NOTE: StudentID is NOT populated here for privacy
+	}
+
+	return dto, nil
 }
 
 func (s *ProfileService) UpdateProfile(ctx context.Context, userID string, displayName, bio, profilePictureURL *string) error {
@@ -161,7 +200,7 @@ func (s *ProfileService) UpdateProfile(ctx context.Context, userID string, displ
 			if daysSinceLastChange < 30 {
 				return middleware.NewValidationError("display_name", "Display name can only be changed once every 30 days")
 			}
-			
+
 			now := time.Now()
 			newDisplayNameLastChangedAt = &now
 		}

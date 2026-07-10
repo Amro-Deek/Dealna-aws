@@ -6,8 +6,8 @@ import (
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/database/generated"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type QueueRepository struct {

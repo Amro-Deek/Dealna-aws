@@ -11,6 +11,7 @@ import (
 
 	// Primary adapters
 	httpadapter "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary"
+	adminHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/admin/http"
 	authHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth"
 	authHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/http"
 	chatHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/chat/http"
@@ -20,6 +21,7 @@ import (
 	profileHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile"
 	profileHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile/http"
 	ratingsHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/ratings/http"
+	reportsHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/reports/http"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/social"
 	userHandler "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users"
 	userHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/http"
@@ -28,10 +30,10 @@ import (
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/auth"
 	authAdapter "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/auth"
 	emailAdapter "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/email"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/messaging"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/persistence"
 	postgres "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/persistence/postgres"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/storage"
-	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/secondary/messaging"
 
 	// AWS
 	context "context"
@@ -104,6 +106,7 @@ func main() {
 	universityRepo := repoFactory.University()
 	itemRepo := repoFactory.Item()
 	providerRepo := repoFactory.Provider()
+	adminRepo := persistence.NewAdminRepository(db)
 
 	// =========================
 	// Secondary adapters
@@ -171,6 +174,7 @@ func main() {
 	profileService := services.NewProfileService(userRepo)
 	storageService := services.NewStorageService(s3Provider)
 	itemService := services.NewItemService(itemRepo, s3Provider, lambdaPublisher, qdrantClient)
+	adminService := services.NewAdminService(adminRepo, s3Provider, emailAdapter.NewSMTPEmailService(cfg.SMTP), keycloakIdentity, appLogger, notificationSvc, itemRepo)
 
 	// =========================
 	// Handlers
@@ -181,12 +185,22 @@ func main() {
 	itemH := items.NewItemHandler(itemService, appLogger)
 
 	// =========================
+	// Reporting Setup
+	// =========================
+	reportRepo := postgres.NewReportRepository(generated.New(db))
+	reportSvc := services.NewReportService(reportRepo, appLogger)
+	reportH := reportsHTTP.NewReportHandler(reportSvc, s3Provider, appLogger)
+	reportRoutes := reportsHTTP.NewRoutes(reportH)
+
+	adminH := adminHTTP.NewAdminHandler(adminService, reportSvc, appLogger)
+
+	// =========================
 	// Routes
 	// =========================
 	authRoutes := authHTTP.NewRoutes(authH, appLogger)
 	userRoutes := userHTTP.NewRoutes(userH)
 	profileRoutes := profileHTTP.NewRoutes(profileH)
-	itemRoutes := items.NewRoutes(itemH)
+	itemRoutes := items.NewRoutes(itemH, appLogger)
 
 	// =========================
 	// Giveaway Setup
@@ -204,8 +218,8 @@ func main() {
 	transactionH := giveaway.NewTransactionHandler(transactionSvc)
 	notificationH := giveaway.NewNotificationHandler(notificationSvc)
 
-	giveawayRoutes := giveaway.NewRoutes(queueH, notificationH)
-	marketplaceRoutes := marketplace.NewRoutes(purchaseH, transactionH)
+	giveawayRoutes := giveaway.NewRoutes(queueH, notificationH, appLogger)
+	marketplaceRoutes := marketplace.NewRoutes(purchaseH, transactionH, appLogger)
 
 	ratingRepo := postgres.NewRatingRepository(generated.New(db))
 	ratingService := services.NewRatingService(ratingRepo, transactionRepo, userRepo, notificationSvc)
@@ -230,7 +244,7 @@ func main() {
 	}
 	chatSvc := services.NewChatService(firebaseAuthProv, notificationSvc)
 	chatH := chatHTTP.NewChatHandler(chatSvc, appLogger)
-	chatRoutes := chatHTTP.NewRoutes(chatH)
+	chatRoutes := chatHTTP.NewRoutes(chatH, appLogger)
 
 	// =========================
 	// HTTP Router Adapter
@@ -246,6 +260,8 @@ func main() {
 		socialRoutes,
 		chatRoutes,
 		ratingRoutes,
+		adminH,
+		reportRoutes,
 		jwtProvider,
 		appLogger,
 	)

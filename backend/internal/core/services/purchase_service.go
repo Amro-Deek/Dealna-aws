@@ -35,7 +35,7 @@ func (s *PurchaseService) SendRequest(ctx context.Context, itemID, buyerID strin
 	if item.OwnerID.String() == buyerID {
 		return nil, errors.New("you cannot purchase your own item")
 	}
-	
+
 	// Check for existing requests to prevent spam
 	existingReqs, err := s.repo.GetPurchaseRequestsByBuyer(ctx, buyerID)
 	if err != nil {
@@ -78,7 +78,7 @@ func (s *PurchaseService) AcceptRequest(ctx context.Context, requestID, itemID, 
 		return "", err
 	}
 	err = s.repo.FreezeOtherRequests(ctx, itemID, requestID)
-	
+
 	// Create Transaction
 	tx, err := s.txRepo.CreateTransaction(ctx, itemID, req.BuyerID, callerID)
 	if err != nil {
@@ -101,7 +101,7 @@ func (s *PurchaseService) RejectRequest(ctx context.Context, requestID, itemID, 
 	if err != nil || item.OwnerID.String() != callerID {
 		return errors.New("only the item owner can reject purchase requests")
 	}
-	
+
 	req, err := s.repo.GetPurchaseRequestByID(ctx, requestID)
 	if err != nil {
 		return err
@@ -125,7 +125,7 @@ func (s *PurchaseService) CancelRequest(ctx context.Context, requestID, itemID, 
 	if req.Status == domain.PurchaseRequestAccepted {
 		return errors.New("request already accepted; you must cancel the transaction instead")
 	}
-	
+
 	err = s.repo.UpdatePurchaseRequestStatus(ctx, requestID, domain.PurchaseRequestCancelled)
 	if err != nil {
 		return err

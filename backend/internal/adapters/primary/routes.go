@@ -5,11 +5,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/config"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
 
+	adminHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/admin/http"
 	authHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/http"
 	chatHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/chat/http"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/giveaway"
@@ -17,6 +19,7 @@ import (
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/marketplace"
 	profileHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/profile/http"
 	ratingsHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/ratings/http"
+	reportsHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/reports/http"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/social"
 	userHTTP "github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/users/http"
 
@@ -34,6 +37,8 @@ func NewRouter(
 	socialRoutes *social.Routes,
 	chatRoutes *chatHTTP.Routes,
 	ratingRoutes *ratingsHTTP.Routes,
+	adminHandler *adminHTTP.AdminHandler,
+	reportRoutes *reportsHTTP.Routes,
 	authProvider ports.IAuthContextProvider,
 	logger middleware.StructuredLoggerInterface,
 ) http.Handler {
@@ -45,6 +50,31 @@ func NewRouter(
 	// =========================
 	r.Use(chiMiddleware.Logger)
 	r.Use(chiMiddleware.Recoverer)
+
+	// =========================
+	// CORS Config
+	// =========================
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
+
+	// =========================
+	// Web Fallback Activation
+	// =========================
+	r.Get("/provider/activate", func(w http.ResponseWriter, req *http.Request) {
+		http.ServeFile(w, req, "internal/adapters/primary/auth/http/templates/activate.html")
+	})
+
+	// =========================
+	// App Links / Universal Links
+	// =========================
+	fs := http.FileServer(http.Dir("internal/adapters/primary/static"))
+	r.Handle("/.well-known/*", http.StripPrefix("/", fs))
 
 	// =========================
 	// Swagger
@@ -83,6 +113,7 @@ func NewRouter(
 			r.Get("/providers/activate", authRoutes.VerifyProviderActivationHandler)
 			r.Post("/providers/complete", authRoutes.CompleteProviderRegistrationHandler)
 			r.Post("/providers/resend", authRoutes.ResendProviderActivationHandler)
+			r.Get("/providers/status", authRoutes.GetProviderRegistrationStatusHandler)
 
 			// ---------
 			// Protected
@@ -102,14 +133,23 @@ func NewRouter(
 					r.Get("/status", authRoutes.GetProviderApplicationStatusHandler)
 				})
 
-				// =============================
-				// Admin Routes (Protected)
-				// =============================
-				r.Route("/admin", func(r chi.Router) {
-					r.Use(middleware.RequireRole("ADMIN", logger))
-					r.Post("/providers/{id}/approve", authRoutes.ApproveProviderApplicationHandler)
-					r.Post("/providers/{id}/reject", authRoutes.RejectProviderApplicationHandler)
-				})
+			})
+		})
+
+		// =============================
+		// Admin Routes (Protected)
+		// =============================
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.AuthMiddleware(authProvider, logger))
+			r.Route("/admin", func(r chi.Router) {
+				r.Use(middleware.RequireRole("ADMIN", logger))
+
+				// Dashboard APIs
+				adminHandler.Register(r)
+
+				// Provider actions
+				r.Post("/providers/{id}/approve", authRoutes.ApproveProviderApplicationHandler)
+				r.Post("/providers/{id}/reject", authRoutes.RejectProviderApplicationHandler)
 			})
 		})
 
@@ -131,6 +171,7 @@ func NewRouter(
 			socialRoutes.Register(r)
 			chatRoutes.RegisterProtected(r)
 			ratingRoutes.Register(r)
+			reportRoutes.RegisterProtected(r)
 		})
 	})
 

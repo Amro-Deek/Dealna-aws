@@ -1,6 +1,5 @@
 package auth
 
-
 import (
 	"context"
 
@@ -9,10 +8,10 @@ import (
 )
 
 type Handler struct {
-	authService      *services.AuthService
-	preRegService    *services.StudentRegistrationService
-	providerRegSvc   *services.ProviderRegistrationService
-	userService      *services.UserService
+	authService    *services.AuthService
+	preRegService  *services.StudentRegistrationService
+	providerRegSvc *services.ProviderRegistrationService
+	userService    *services.UserService
 }
 
 func NewHandler(
@@ -28,7 +27,6 @@ func NewHandler(
 		userService:    userService,
 	}
 }
-
 
 func (h *Handler) Login(ctx context.Context, email, password string) (*services.AuthResult, error) {
 	return h.authService.Login(ctx, email, password)
@@ -118,7 +116,7 @@ func (h *Handler) CompleteProviderRegistration(
 	ctx context.Context,
 	email string,
 	password string,
-) error {
+) (*services.AuthResult, error) {
 	return h.providerRegSvc.CompleteProviderRegistration(ctx, email, password)
 }
 
@@ -128,6 +126,14 @@ func (h *Handler) ResendProviderActivation(
 ) error {
 	return h.providerRegSvc.ResendProviderActivation(ctx, email)
 }
+
+func (h *Handler) GetProviderRegistrationStatus(
+	ctx context.Context,
+	email string,
+) (*domain.ProviderPreRegistration, error) {
+	return h.providerRegSvc.GetRegistrationStatus(ctx, email)
+}
+
 func (h *Handler) StartProviderApplication(
 	ctx context.Context,
 	userID string,

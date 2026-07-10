@@ -24,12 +24,12 @@ func (s *ChatService) SendChatNotification(ctx context.Context, senderID, receiv
 	if s.notifs == nil {
 		return nil
 	}
-	
+
 	notifCtx := NotificationContext{
 		ActingUserID: &senderID,
 		RoomID:       &roomID,
 		ItemID:       &itemID,
 	}
-	
+
 	return s.notifs.CreateNotification(ctx, receiverID, domain.NotifTypeChatMessage, notifCtx)
 }

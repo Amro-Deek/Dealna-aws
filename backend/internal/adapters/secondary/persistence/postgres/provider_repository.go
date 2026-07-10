@@ -3,9 +3,9 @@ package postgres
 import (
 	"context"
 
-	"github.com/Amro-Deek/Dealna-aws/backend/internal/database/generated"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/database/generated"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -54,6 +54,7 @@ func (r *ProviderRepository) GetProviderApplicationByApplicantID(ctx context.Con
 		UniversityID: row.UniversityID.String(),
 		BusinessName: row.BusinessName,
 		Status:       row.Status,
+		AdminComment: ptrFromNullableText(row.AdminComment),
 	}, nil
 }
 
@@ -95,6 +96,11 @@ func (r *ProviderRepository) UpdateProviderApplicationReview(ctx context.Context
 }
 
 func (r *ProviderRepository) CreateProviderApplicationDocument(ctx context.Context, applicationID, filePath, documentType, originalFilename, contentType string, sizeBytes int64, uploadStatus string) (*domain.ProviderApplicationDocument, error) {
+	// Remove any previously uploaded document of the same type for this application to avoid duplicates
+	if documentType != "" {
+		_, _ = r.db.Exec(ctx, "DELETE FROM providerapplicationdocument WHERE application_id = $1 AND document_type = $2", toUUID(applicationID), documentType)
+	}
+
 	row, err := r.q.CreateProviderApplicationDocument(ctx, generated.CreateProviderApplicationDocumentParams{
 		ApplicationID:    toUUID(applicationID),
 		FilePath:         filePath,
@@ -108,9 +114,9 @@ func (r *ProviderRepository) CreateProviderApplicationDocument(ctx context.Conte
 		return nil, err
 	}
 	return &domain.ProviderApplicationDocument{
-		ID:               row.DocumentID.String(),
-		ApplicationID:    row.ApplicationID.String(),
-		FilePath:         row.FilePath,
+		ID:            row.DocumentID.String(),
+		ApplicationID: row.ApplicationID.String(),
+		FilePath:      row.FilePath,
 	}, nil
 }
 

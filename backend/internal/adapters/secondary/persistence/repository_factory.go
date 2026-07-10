@@ -19,7 +19,6 @@ func (f *RepositoryFactory) User() ports.IUserRepository {
 	return postgres.NewUserRepository(f.pool)
 }
 
-
 func (f *RepositoryFactory) StudentPreRegistration() ports.IStudentPreRegistrationRepository {
 	return postgres.NewStudentPreRegistrationRepository(f.pool)
 }
@@ -35,4 +34,3 @@ func (f *RepositoryFactory) Item() ports.ItemRepository {
 func (f *RepositoryFactory) Provider() ports.IProviderRepository {
 	return postgres.NewProviderRepository(f.pool)
 }
-

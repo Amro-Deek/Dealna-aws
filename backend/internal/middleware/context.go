@@ -11,8 +11,7 @@ const (
 
 	ContextUserID contextKey = "user_id"
 	ContextRole   contextKey = "role"
-	ContextJTI    contextKey = "jti" 
-
+	ContextJTI    contextKey = "jti"
 )
 
 // =========================

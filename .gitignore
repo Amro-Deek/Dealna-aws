@@ -66,3 +66,87 @@ login_test.js
 student_test.js
 backend/test.json
 tests/drop_constraints.ts
+
+# Next.js
+.next/
+out/
+build/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ==========================================================
+# Backend root — one-shot utility/debug scripts (NOT for CI)
+# ==========================================================
+backend/change_admin_pass.go
+backend/check_admins.go
+backend/check_items.go
+backend/check_kc_admins.go
+backend/check_names.go
+backend/check_user_status.go
+backend/clean_docs.go
+backend/clear_firestore.py
+backend/clear_keycloak_user.go
+backend/clear_pre_reg.go
+backend/clear_reports.go
+backend/clear_user.go
+backend/count_db.go
+backend/delete_users.go
+backend/fix_missing_kc_user.go
+backend/fix_provider_profiles.go
+backend/fix2.py
+backend/force_kc_reset.go
+backend/get_ksub.go
+backend/list_s3.go
+backend/migrate_reports.js
+backend/package.json
+backend/package-lock.json
+backend/promote.go
+backend/raw_kc_reset.go
+backend/remove_duplicates.go
+backend/reset_rate_limit.go
+backend/sync_provider_profiles.go
+backend/test_email.go
+backend/test_login.go
+backend/test_warn.go
+backend/token.txt
+backend/update_admin_password.go
+backend/main.exe
+backend/server.exe
+fix2.py
+
+# Root-level stale test screenshots
+tcpr01_step1_welcome.png
+tcpr01_step2_email_entry.png
+tcpr01_step3_activation_email.png
+tcpr01_step4_password.png
+tcpr01_step5_business_details.png
+tcpr01_step7_document_upload.png
+comp4200.build.log
+texput.log
+
+# ==========================================================
+# Database folder — Python utility/fix scripts (NOT for CI)
+# ==========================================================
+database/append_schema.py
+database/clean_schema.py
+database/clean_schema2.py
+database/fix.py
+
+# ==========================================================
+# Design prototypes — mockup images, not deployable code
+# ==========================================================
+prototypesForAdminPanel/
+
+# ==========================================================
+# Dealna-Report — academic report PDFs / docs (large, not code)
+# ==========================================================
+Dealna-Report/
+
+# ==========================================================
+# Frontends — completely ignore nested frontend repositories
+# ==========================================================
+mobile/
+web/
+admin-web/

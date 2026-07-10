@@ -2,7 +2,7 @@ package dto
 
 import "time"
 
-type StudentRegistrationStatusResponse struct {
+type RegistrationStatusResponse struct {
 	Email                   string     `json:"email"`
 	IsVerified              bool       `json:"is_verified"`
 	IsUsed                  bool       `json:"is_used"`

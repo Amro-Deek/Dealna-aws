@@ -15,4 +15,5 @@ type Profile struct {
 	FollowerCount            int
 	FollowingCount           int
 	DeviceToken              *string
+	CreatedAt                time.Time
 }

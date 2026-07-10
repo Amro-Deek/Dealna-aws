@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/url"
 	"strings"
@@ -248,4 +249,61 @@ func (q *QdrantClient) SearchItems(ctx context.Context, vector []float32, filter
 	}
 
 	return ids, nil
+}
+
+// FindSimilar asks Qdrant to recommend items similar to the given itemID.
+func (q *QdrantClient) FindSimilar(ctx context.Context, itemID string, limit uint64) ([]uuid.UUID, error) {
+	collectionName := "dealna_items"
+
+	res, err := q.Client.Query(ctx, &qdrant.QueryPoints{
+		CollectionName: collectionName,
+		Query: qdrant.NewQueryRecommend(&qdrant.RecommendInput{
+			Positive: []*qdrant.VectorInput{
+				{
+					Variant: &qdrant.VectorInput_Id{
+						Id: &qdrant.PointId{
+							PointIdOptions: &qdrant.PointId_Uuid{Uuid: itemID},
+						},
+					},
+				},
+			},
+		}),
+		Filter: &qdrant.Filter{
+			Must: []*qdrant.Condition{
+				{
+					ConditionOneOf: &qdrant.Condition_Field{
+						Field: &qdrant.FieldCondition{
+							Key: "status",
+							Match: &qdrant.Match{
+								MatchValue: &qdrant.Match_Keyword{
+									Keyword: "AVAILABLE",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Limit: &limit,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("qdrant recommend failed: %w", err)
+	}
+
+	var uuids []uuid.UUID
+	for _, point := range res {
+		if idStr, ok := point.Id.PointIdOptions.(*qdrant.PointId_Uuid); ok {
+			// Don't return the original item itself if Qdrant includes it
+			if idStr.Uuid == itemID {
+				continue
+			}
+			parsed, err := uuid.Parse(idStr.Uuid)
+			if err == nil {
+				uuids = append(uuids, parsed)
+			}
+		}
+	}
+
+	return uuids, nil
 }

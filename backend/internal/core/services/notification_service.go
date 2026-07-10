@@ -30,6 +30,7 @@ type NotificationContext struct {
 	EntryID      *string
 	TxID         *string
 	RoomID       *string
+	Reason       *string
 }
 
 func (s *NotificationService) CreateNotification(ctx context.Context, userID string, typ domain.NotificationType, notifCtx NotificationContext) error {
@@ -58,7 +59,10 @@ func (s *NotificationService) CreateNotification(ctx context.Context, userID str
 	if notifCtx.RoomID != nil {
 		payloadMap["room_id"] = *notifCtx.RoomID
 	}
-	
+	if notifCtx.Reason != nil {
+		payloadMap["reason"] = *notifCtx.Reason
+	}
+
 	actingUserName := "System"
 	if notifCtx.ActingUserID != nil {
 		payloadMap["acting_user_id"] = *notifCtx.ActingUserID
@@ -86,10 +90,10 @@ func (s *NotificationService) CreateNotification(ctx context.Context, userID str
 		profile, _ := s.userRepo.GetProfileByUserID(ctx, userID)
 		if profile != nil && profile.DeviceToken != nil {
 			unreadCount, _ := s.CountUnreadNotifications(ctx, userID)
-			
+
 			// Map NotificationType to Title & Body
 			title, body := getNotificationText(typ, actingUserName, payloadMap)
-			
+
 			// Convert payloadMap to string map for FCM Data
 			data := make(map[string]string)
 			data["notification_type"] = string(typ)
@@ -144,6 +148,21 @@ func getNotificationText(typ domain.NotificationType, actingUserName string, pay
 		return "Request Cancelled ⚠️", actingUserName + " cancelled their request for " + itemTitle + "."
 	case domain.NotifTypeTransactionDone:
 		return "Transaction Completed! ✅", actingUserName + " confirmed the transaction for " + itemTitle + "."
+	case domain.NotifTypeAdminWarning:
+		reason, _ := payloadMap["reason"].(string)
+		if reason == "" {
+			reason = "Violation of community guidelines."
+		}
+		return "Admin Warning ⚠️", "You have received a warning: " + reason
+	case domain.NotifTypeAdminBan:
+		return "Account Restricted 🚫", "Your account has been restricted to read-only access due to multiple warnings."
+	case domain.NotifTypeItemDeleted:
+		reason, _ := payloadMap["reason"].(string)
+		msg := "Your item '" + itemTitle + "' was deleted by an admin."
+		if reason != "" {
+			msg += " Reason: " + reason
+		}
+		return "Item Deleted 🗑️", msg
 	case domain.NotifTypeUserJoinedQueue:
 		return "New Queue Entry! 🏃", actingUserName + " has joined the queue for " + itemTitle + "."
 	case domain.NotifTypeChatMessage:

@@ -96,8 +96,11 @@ func (k *KeycloakIdentityProvider) Login(
 			ErrorDescription string `json:"error_description"`
 		}
 		if err := json.Unmarshal(body, &kcError); err == nil {
-			if strings.Contains(strings.ToLower(kcError.ErrorDescription), "account is not fully set up") || strings.Contains(strings.ToLower(kcError.ErrorDescription), "account disabled") || strings.Contains(strings.ToLower(kcError.ErrorDescription), "account is temporarily disabled") {
+			if strings.Contains(strings.ToLower(kcError.ErrorDescription), "account disabled") || strings.Contains(strings.ToLower(kcError.ErrorDescription), "account is temporarily disabled") {
 				return nil, middleware.NewAccountLockedError()
+			}
+			if strings.Contains(strings.ToLower(kcError.ErrorDescription), "account is not fully set up") {
+				return nil, middleware.NewUnauthorizedError("account is not fully set up. please verify your email or contact support.")
 			}
 		}
 		return nil, middleware.NewInvalidCredentialsError()
@@ -243,7 +246,40 @@ func (k *KeycloakIdentityProvider) DeleteUser(ctx context.Context, keycloakSub s
 }
 
 func (k *KeycloakIdentityProvider) ResetPassword(ctx context.Context, email, newPassword string) error {
-	// Not implemented for this context yet
+	adminToken, err := k.getAdminToken(ctx)
+	if err != nil {
+		return err
+	}
+
+	userID, err := k.lookupUserIDByEmail(ctx, adminToken, email)
+	if err != nil {
+		return err
+	}
+
+	payload := map[string]interface{}{
+		"type":      "password",
+		"value":     newPassword,
+		"temporary": false,
+	}
+	body, _ := json.Marshal(payload)
+	url := k.baseURL + "/admin/realms/" + k.realm + "/users/" + userID + "/reset-password"
+
+	req, err := http.NewRequestWithContext(ctx, "PUT", url, strings.NewReader(string(body)))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+adminToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := k.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		return errors.New("failed to reset password, status: " + resp.Status)
+	}
 	return nil
 }
 
@@ -456,6 +492,62 @@ func (k *KeycloakIdentityProvider) AssignRoleToUser(ctx context.Context, keycloa
 
 	if resp2.StatusCode != http.StatusNoContent && resp2.StatusCode != http.StatusOK {
 		return middleware.NewInternalError(fmt.Errorf("failed to assign role, status: %d", resp2.StatusCode))
+	}
+
+	return nil
+}
+
+func (k *KeycloakIdentityProvider) RemoveRoleFromUser(ctx context.Context, keycloakSub string, roleName string) error {
+	token, err := k.getAdminToken(ctx)
+	if err != nil {
+		return err
+	}
+
+	// 1. Get Realm Role Representation
+	roleEndpoint := k.baseURL + "/admin/realms/" + k.realm + "/roles/" + url.PathEscape(roleName)
+	req1, err := http.NewRequestWithContext(ctx, http.MethodGet, roleEndpoint, nil)
+	if err != nil {
+		return middleware.NewInternalError(err)
+	}
+	req1.Header.Set("Authorization", "Bearer "+token)
+
+	resp1, err := k.httpClient.Do(req1)
+	if err != nil {
+		return middleware.NewInternalError(err)
+	}
+	defer resp1.Body.Close()
+
+	if resp1.StatusCode != http.StatusOK {
+		return middleware.NewInternalError(fmt.Errorf("failed to get role representation, status: %d", resp1.StatusCode))
+	}
+
+	var roleRep map[string]interface{}
+	if err := json.NewDecoder(resp1.Body).Decode(&roleRep); err != nil {
+		return middleware.NewInternalError(err)
+	}
+
+	// 2. Remove role from user
+	removeEndpoint := k.baseURL + "/admin/realms/" + k.realm + "/users/" + keycloakSub + "/role-mappings/realm"
+	bodyBytes, err := json.Marshal([]map[string]interface{}{roleRep})
+	if err != nil {
+		return middleware.NewInternalError(err)
+	}
+
+	req2, err := http.NewRequestWithContext(ctx, http.MethodDelete, removeEndpoint, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return middleware.NewInternalError(err)
+	}
+	req2.Header.Set("Authorization", "Bearer "+token)
+	req2.Header.Set("Content-Type", "application/json")
+
+	resp2, err := k.httpClient.Do(req2)
+	if err != nil {
+		return middleware.NewInternalError(err)
+	}
+	defer resp2.Body.Close()
+
+	if resp2.StatusCode != http.StatusNoContent && resp2.StatusCode != http.StatusOK {
+		return middleware.NewInternalError(fmt.Errorf("failed to remove role, status: %d", resp2.StatusCode))
 	}
 
 	return nil

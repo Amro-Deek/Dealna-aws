@@ -114,13 +114,13 @@ func (r *PurchaseRequestRepository) GetPurchaseRequestsByBuyer(ctx context.Conte
 		if s, ok := req.ItemImage.(string); ok {
 			img = s
 		}
-		
+
 		var txID *string
 		if req.TransactionID.Valid {
 			str := uuidToString(req.TransactionID)
 			txID = &str
 		}
-		
+
 		res[i] = domain.PurchaseRequest{
 			RequestID:     uuidToString(req.RequestID),
 			ItemID:        uuidToString(req.ItemID),

@@ -1306,19 +1306,31 @@ CREATE TABLE IF NOT EXISTS purchase_request (
 );
 
 
+CREATE TYPE public.report_entity_type AS ENUM ('USER', 'ITEM');
+CREATE TYPE public.report_type AS ENUM ('FRAUD', 'SCAM', 'HARASSMENT', 'DUPLICATE', 'INAPPROPRIATE');
+CREATE TYPE public.report_status AS ENUM ('PENDING', 'UNDER_INVESTIGATION', 'RESOLVED', 'ESCALATED');
 
+CREATE TABLE public.reports (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    reporter_id uuid NOT NULL REFERENCES public."User"(user_id) ON DELETE CASCADE,
+    reported_entity_id uuid NOT NULL,
+    entity_type public.report_entity_type NOT NULL,
+    type public.report_type NOT NULL,
+    description text,
+    attachment_url character varying(1024),
+    status public.report_status DEFAULT 'PENDING'::public.report_status NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
 
- C R E A T E   T A B L E   I F   N O T   E X I S T S   q u e u e _ e n t r y   ( 
-         e n t r y _ i d   u u i d   D E F A U L T   g e n _ r a n d o m _ u u i d ( )   P R I M A R Y   K E Y , 
-         i t e m _ i d   u u i d   N O T   N U L L   R E F E R E N C E S   i t e m ( i t e m _ i d )   O N   D E L E T E   C A S C A D E , 
-         u s e r _ i d   u u i d   N O T   N U L L   R E F E R E N C E S   \  
- U s e r \ ( u s e r _ i d )   O N   D E L E T E   C A S C A D E , 
-         j o i n e d _ a t   t i m e s t a m p   w i t h o u t   t i m e   z o n e   D E F A U L T   C U R R E N T _ T I M E S T A M P   N O T   N U L L , 
-         e n t r y _ s t a t u s   c h a r a c t e r   v a r y i n g ( 2 0 )   D E F A U L T   ' W A I T I N G '   N O T   N U L L , 
-         t u r n _ s t a r t e d _ a t   t i m e s t a m p   w i t h o u t   t i m e   z o n e , 
-         u p d a t e d _ a t   t i m e s t a m p   w i t h o u t   t i m e   z o n e   D E F A U L T   C U R R E N T _ T I M E S T A M P   N O T   N U L L 
- ) ; 
- C R E A T E   U N I Q U E   I N D E X   i d x _ q u e u e _ e n t r y _ a c t i v e _ u n i q u e   O N   q u e u e _ e n t r y   ( i t e m _ i d ,   u s e r _ i d )   W H E R E   e n t r y _ s t a t u s   I N   ( ' W A I T I N G ' ,   ' R E S E R V E D ' ,   ' C O N F I R M E D ' ,   ' H A N D E D _ O F F ' ) ; 
- C R E A T E   I N D E X   i d x _ q u e u e _ e n t r y _ e x p i r y   O N   q u e u e _ e n t r y   ( e n t r y _ s t a t u s ,   u p d a t e d _ a t )   W H E R E   e n t r y _ s t a t u s   I N   ( ' R E S E R V E D ' ,   ' C O N F I R M E D ' ,   ' H A N D E D _ O F F ' ) ; 
-  
- 
+ALTER TABLE ONLY public.reports ADD CONSTRAINT reports_pkey PRIMARY KEY (id);
+
+CREATE TABLE public.user_warnings (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    user_id uuid NOT NULL REFERENCES public."User"(user_id) ON DELETE CASCADE,
+    admin_id uuid NOT NULL REFERENCES public."User"(user_id) ON DELETE CASCADE,
+    reason text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+ALTER TABLE ONLY public.user_warnings ADD CONSTRAINT user_warnings_pkey PRIMARY KEY (id);

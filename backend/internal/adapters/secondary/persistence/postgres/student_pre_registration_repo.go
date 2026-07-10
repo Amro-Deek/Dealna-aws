@@ -71,7 +71,6 @@ func (r *StudentPreRegistrationRepository) Update(
 	})
 }
 
-
 func (r *StudentPreRegistrationRepository) GetByEmail(
 	ctx context.Context,
 	email string,
@@ -93,5 +92,3 @@ func (r *StudentPreRegistrationRepository) GetByEmail(
 		VerifiedAt:        fromNullableTimestamp(row.VerifiedAt),
 	}, nil
 }
-
-

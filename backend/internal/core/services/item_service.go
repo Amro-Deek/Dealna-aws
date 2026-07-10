@@ -9,16 +9,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
+	"github.com/google/uuid"
 )
 
 var (
-	ErrDailyItemLimitReached = errors.New("you have reached the maximum allowed items (5) for today")
-	ErrInvalidTitle          = errors.New("item title must be between 5 and 100 characters")
-	ErrInvalidPrice          = errors.New("item price cannot be negative")
-	ErrImagesRequired        = errors.New("at least one image must be attached to the item")
+	ErrDailyItemLimitReached   = errors.New("you have reached the maximum allowed items (5) for today")
+	ErrInvalidTitle            = errors.New("item title must be between 5 and 100 characters")
+	ErrInvalidPrice            = errors.New("item price cannot be negative")
+	ErrImagesRequired          = errors.New("at least one image must be attached to the item")
 	ErrInvalidStatusTransition = errors.New("invalid status transition")
 	ErrContentTypeNotSupported = errors.New("content type not supported. Please use image/jpeg or image/png")
 )
@@ -92,7 +92,7 @@ func (s *ItemService) CreateItem(ctx context.Context, cmd domain.CreateItemComma
 
 	// 6. Push to SQS (Async, after DB commit so we don't have ghost data in Qdrant)
 	univID, _ := s.repo.GetUniversityIDByUserID(ctx, cmd.OwnerID)
-	
+
 	var categoryStr string
 	if item.CategoryID != nil {
 		categoryStr = item.CategoryID.String()
@@ -355,3 +355,33 @@ func min(a, b int) int {
 	return b
 }
 
+// GetSimilarItems queries Qdrant for semantically similar items and hydrates them via Postgres.
+func (s *ItemService) GetSimilarItems(ctx context.Context, itemID string) ([]domain.FeedItem, error) {
+	// Qdrant recommendation (FindSimilar) gives us top 5 similar item IDs
+	similarIDs, err := s.searchRepo.FindSimilar(ctx, itemID, 5)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search similar items: %w", err)
+	}
+
+	if len(similarIDs) == 0 {
+		return []domain.FeedItem{}, nil
+	}
+
+	// Fetch full metadata for these IDs from Postgres
+	items, err := s.repo.GetFeedItemsByIDs(ctx, similarIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch items from db: %w", err)
+	}
+
+	// Pre-sign the first thumbnail for the UI feed
+	for i := range items {
+		if items[i].ThumbnailURL != "" {
+			url, err := s.storageProvider.GeneratePresignedDownloadURL(ctx, items[i].ThumbnailURL, 15*time.Minute)
+			if err == nil {
+				items[i].ThumbnailURL = url
+			}
+		}
+	}
+
+	return items, nil
+}

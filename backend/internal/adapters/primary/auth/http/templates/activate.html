@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activate Dealna Account</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: #312C51;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #48426D;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h2 {
+            margin-top: 0;
+            color: #F0C38E;
+        }
+        p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        input {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 16px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+        }
+        input:focus {
+            border: 1px solid #F0C38E;
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #F0C38E;
+            color: #312C51;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #e0b47e;
+        }
+        button:disabled {
+            background-color: #888;
+            cursor: not-allowed;
+        }
+        .error {
+            color: #CF6679;
+            font-size: 14px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .success {
+            color: #4CAF50;
+            font-size: 16px;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="activation-container">
+    <h2>Complete Your Account</h2>
+    <p>Please confirm your email address and set a secure password to activate your account.</p>
+    
+    <div id="error-message" class="error"></div>
+    <div id="success-message" class="success">Account activated successfully! You can now log in using the Dealna mobile app.</div>
+
+    <form id="activation-form">
+        <input type="email" id="email" placeholder="Your Email Address" required>
+        <input type="password" id="password" placeholder="Create a secure password" minlength="8" required>
+        <button type="submit" id="submit-btn">Activate Account</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('activation-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const errorDiv = document.getElementById('error-message');
+        const successDiv = document.getElementById('success-message');
+        const submitBtn = document.getElementById('submit-btn');
+        const form = document.getElementById('activation-form');
+
+        errorDiv.style.display = 'none';
+
+        if (!token) {
+            errorDiv.innerText = 'Invalid activation link. Missing token.';
+            errorDiv.style.display = 'block';
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Activating...';
+
+        try {
+            // First, Verify Token via GET /activate
+            const verifyRes = await fetch(`/api/v1/auth/providers/activate?token=${token}`, {
+                method: 'GET'
+            });
+
+            if (!verifyRes.ok) {
+                const data = await verifyRes.json();
+                throw new Error(data.message || 'Invalid or expired activation link.');
+            }
+
+            // Then, Complete Registration via POST /complete
+            const completeRes = await fetch('/api/v1/auth/providers/complete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (!completeRes.ok) {
+                const data = await completeRes.json();
+                throw new Error(data.message || 'Failed to set password.');
+            }
+
+            // Success!
+            form.style.display = 'none';
+            document.querySelector('p').style.display = 'none';
+            successDiv.style.display = 'block';
+
+        } catch (error) {
+            errorDiv.innerText = error.message;
+            errorDiv.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Activate Account';
+        }
+    });
+</script>
+
+</body>
+</html>

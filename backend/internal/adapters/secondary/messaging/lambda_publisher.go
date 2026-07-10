@@ -63,7 +63,7 @@ func (p *LambdaPublisher) GenerateEmbedding(ctx context.Context, text string) ([
 			"text": text,
 		},
 	}
-	
+
 	payloadBytes, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal embed_query event: %w", err)
@@ -95,7 +95,7 @@ func (p *LambdaPublisher) GenerateEmbedding(ctx context.Context, text string) ([
 		return nil, fmt.Errorf("lambda failed with status %d: %s", outerResp.StatusCode, string(outerResp.Body))
 	}
 
-	// Because of potential double JSON-encoding from Python's json.dumps, 
+	// Because of potential double JSON-encoding from Python's json.dumps,
 	// outerResp.Body might be a JSON string like `"{\"vector\":...}"` instead of an unescaped string `{"vector":...}`.
 	// Let's unmarshal it into a standard string first to unescape it, if it starts with a quote.
 	var bodyStr string

@@ -28,7 +28,6 @@ func NewProfileHandler(
 	}
 }
 
-
 // GetMyProfile retrieves the authenticated user's profile
 // @Summary [Self] Get My Profile
 // @Description Primary entry point for mobile apps. Returns aggregated user info, student data, and the unique `profile_id` required for all social/follow actions.

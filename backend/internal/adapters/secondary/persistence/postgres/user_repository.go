@@ -15,19 +15,20 @@ import (
 )
 
 type UserRepository struct {
-    q    *generated.Queries
-    pool *pgxpool.Pool
+	q    *generated.Queries
+	pool *pgxpool.Pool
 }
 
 // Compile-time interface check ✅
 var _ ports.IUserRepository = (*UserRepository)(nil)
 
 func NewUserRepository(pool *pgxpool.Pool) *UserRepository {
-    return &UserRepository{
-        q:    generated.New(pool),
-        pool: pool,
-    }
+	return &UserRepository{
+		q:    generated.New(pool),
+		pool: pool,
+	}
 }
+
 func (r *UserRepository) GetByID(
 	ctx context.Context,
 	userID string,
@@ -102,6 +103,7 @@ func (r *UserRepository) GetByKeycloakSub(
 		KeycloakSub: uuidToString(row.KeycloakSub),
 	}, nil
 }
+
 // -----------------------------
 // Shared mapper (DRY)
 // -----------------------------
@@ -113,10 +115,10 @@ func mapUser(
 	keycloakSub string,
 ) *coreDomain.User {
 	return &coreDomain.User{
-		ID:           id.String(),
-		Email:        email,
-		Role:         role,
-		KeycloakSub:  keycloakSub,
+		ID:          id.String(),
+		Email:       email,
+		Role:        role,
+		KeycloakSub: keycloakSub,
 	}
 }
 
@@ -149,6 +151,10 @@ func (r *UserRepository) UpdateUserRole(ctx context.Context, userID string, role
 	})
 }
 
+func (r *UserRepository) UpdateUserStatus(ctx context.Context, userID string, status string) error {
+	_, err := r.pool.Exec(ctx, `UPDATE "User" SET account_status = $1, email_verified = true WHERE user_id = $2`, status, userID)
+	return err
+}
 
 /*
 func (r *UserRepository) CreateStudent(
@@ -198,7 +204,6 @@ func (r *UserRepository) CreateStudent(
 }, nil
 }
 */
-
 
 func (r *UserRepository) CreateStudent(
 	ctx context.Context,
@@ -257,6 +262,7 @@ func (r *UserRepository) CreateStudent(
 		KeycloakSub: uuidToString(userRow.KeycloakSub),
 	}, nil
 }
+
 func extractStudentID(email string) string {
 	parts := strings.Split(email, "@")
 	local := parts[0]
@@ -286,16 +292,17 @@ func (r *UserRepository) GetProfile(ctx context.Context, userID string) (*coreDo
 		FollowerCount:            int(profileRow.FollowerCount),
 		FollowingCount:           int(profileRow.FollowingCount),
 		DeviceToken:              ptrFromNullableText(profileRow.DeviceToken),
+		CreatedAt:                fromNullableTime(profileRow.CreatedAt),
 	}
 
 	var student *coreDomain.Student
 	studentRow, err := r.q.GetStudentByUserID(ctx, uid)
 	if err == nil {
 		student = &coreDomain.Student{
-			UserID:             uuidToString(studentRow.UserID),
-			StudentID:          studentRow.StudentID,
-			Major:              fromNullableText(studentRow.Major),
-			AcademicYear:       int(fromNullableInt32(studentRow.AcademicYear)),
+			UserID:       uuidToString(studentRow.UserID),
+			StudentID:    studentRow.StudentID,
+			Major:        fromNullableText(studentRow.Major),
+			AcademicYear: int(fromNullableInt32(studentRow.AcademicYear)),
 		}
 	}
 
@@ -323,6 +330,7 @@ func (r *UserRepository) GetProfileByProfileID(ctx context.Context, profileID st
 		FollowerCount:            int(profileRow.FollowerCount),
 		FollowingCount:           int(profileRow.FollowingCount),
 		DeviceToken:              ptrFromNullableText(profileRow.DeviceToken),
+		CreatedAt:                fromNullableTime(profileRow.CreatedAt),
 	}, nil
 }
 
@@ -347,6 +355,7 @@ func (r *UserRepository) GetProfileByUserID(ctx context.Context, userID string) 
 		FollowerCount:            int(profileRow.FollowerCount),
 		FollowingCount:           int(profileRow.FollowingCount),
 		DeviceToken:              ptrFromNullableText(profileRow.DeviceToken),
+		CreatedAt:                fromNullableTime(profileRow.CreatedAt),
 	}, nil
 }
 
@@ -375,5 +384,23 @@ func (r *UserRepository) UpdateDeviceToken(ctx context.Context, userID string, t
 	})
 }
 
+func (r *UserRepository) GetAdminUserProfileStats(ctx context.Context, userID string) (int, int, int, error) {
+	var uid pgtype.UUID
+	if err := uid.Scan(userID); err != nil {
+		return 0, 0, 0, err
+	}
 
+	stats, err := r.q.GetAdminUserProfileStats(ctx, uid)
+	if err != nil {
+		return 0, 0, 0, err
+	}
 
+	return int(stats.ReportsReceived), int(stats.WarningsReceived), int(stats.TotalPosts), nil
+}
+
+func (r *UserRepository) CreateProfileForUser(ctx context.Context, userID string, displayName string) error {
+	return r.q.CreateProfile(ctx, generated.CreateProfileParams{
+		UserID:      toUUID(userID),
+		DisplayName: toNullableText(&displayName),
+	})
+}

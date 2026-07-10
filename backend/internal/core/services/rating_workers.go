@@ -34,7 +34,7 @@ func (s *RatingService) StartRatingReminderWorker(ctx context.Context) {
 
 func (s *RatingService) runReminderJob(ctx context.Context) {
 	log.Println("Running Rating Reminder Worker...")
-	
+
 	// Get transactions completed exactly 3 days ago where the buyer hasn't rated yet
 	pendingRatings, err := s.ratingRepo.GetTransactionsToRemind(ctx, 3)
 	if err != nil {
@@ -53,7 +53,7 @@ func (s *RatingService) runReminderJob(ctx context.Context) {
 		buyerIDStr := pending.BuyerID.String()
 
 		notifCtx := NotificationContext{
-			ItemID:       &itemIDStr,
+			ItemID: &itemIDStr,
 		}
 
 		err := s.notifs.CreateNotification(ctx, buyerIDStr, domain.NotifTypeRatingReminder, notifCtx)

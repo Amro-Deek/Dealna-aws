@@ -35,11 +35,11 @@ type PendingRating struct {
 }
 
 type Review struct {
-	RatingID   uuid.UUID `json:"rating_id"`
-	Stars      int       `json:"stars"`
-	Comment    string    `json:"comment"`
-	CreatedAt  time.Time `json:"created_at"`
-	RaterName  string    `json:"rater_name"`
+	RatingID  uuid.UUID `json:"rating_id"`
+	Stars     int       `json:"stars"`
+	Comment   string    `json:"comment"`
+	CreatedAt time.Time `json:"created_at"`
+	RaterName string    `json:"rater_name"`
 }
 
 type CreateRatingCommand struct {

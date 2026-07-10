@@ -23,6 +23,7 @@ func (rt *Routes) Register(router chi.Router) {
 		r.Get("/me", rt.getMe)
 	})
 }
+
 // GetMe godoc
 // @Summary Get current user
 // @Description Returns authenticated user profile -test

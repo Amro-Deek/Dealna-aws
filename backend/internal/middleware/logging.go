@@ -27,7 +27,6 @@ type StructuredLoggerInterface interface {
 // ==================================================
 //
 
-
 func CorrelationID(ctx context.Context) string {
 	if v, ok := ctx.Value(ContextCorrelationID).(string); ok {
 		return v

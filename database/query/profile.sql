@@ -31,3 +31,9 @@ WHERE user_id = $1;
 UPDATE profile
 SET device_token = $2
 WHERE user_id = $1;
+
+-- name: GetAdminUserProfileStats :one
+SELECT 
+    (SELECT COUNT(*) FROM public.reports WHERE reported_entity_id = $1 AND entity_type = 'USER')::int AS reports_received,
+    (SELECT COUNT(*) FROM public.user_warnings WHERE target_user_id = $1)::int AS warnings_received,
+    (SELECT COUNT(*) FROM public.item WHERE owner_id = $1)::int AS total_posts;

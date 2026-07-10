@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -44,4 +45,32 @@ func (p *S3Provider) GeneratePresignedUploadURL(ctx context.Context, objectKey s
 	}
 
 	return req.URL, nil
+}
+
+func (p *S3Provider) GeneratePresignedDownloadURL(ctx context.Context, objectKey string, expiry time.Duration) (string, error) {
+	req, err := p.presignCli.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(p.bucketName),
+		Key:    aws.String(objectKey),
+	}, s3.WithPresignExpires(expiry))
+
+	if err != nil {
+		return "", fmt.Errorf("unable to generate presigned download URL: %w", err)
+	}
+
+	return req.URL, nil
+}
+
+func (p *S3Provider) UploadFile(ctx context.Context, objectKey string, contentType string, content io.Reader) (string, error) {
+	_, err := p.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(p.bucketName),
+		Key:         aws.String(objectKey),
+		Body:        content,
+		ContentType: aws.String(contentType),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to upload file to S3: %w", err)
+	}
+
+	// Just return the S3 URL (assuming the bucket is public or it will be accessed via presigned URL later)
+	return fmt.Sprintf("s3://%s/%s", p.bucketName, objectKey), nil
 }

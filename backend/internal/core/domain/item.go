@@ -65,6 +65,7 @@ type FeedItem struct {
 
 	OwnerDisplayName   string `json:"owner_display_name"`
 	OwnerProfilePicURL string `json:"owner_profile_pic_url"`
+	OwnerRole          string `json:"owner_role"`
 	ThumbnailURL       string `json:"thumbnail_url"`
 }
 

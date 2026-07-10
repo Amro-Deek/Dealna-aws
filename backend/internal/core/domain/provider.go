@@ -3,18 +3,18 @@ package domain
 import "time"
 
 type ProviderApplication struct {
-	ID                 string     `json:"id"`
-	ApplicantID        string     `json:"applicant_id"`
-	UniversityID       string     `json:"university_id"`
-	BusinessName       string     `json:"business_name"`
-	PhoneNumber        *string    `json:"phone_number"`
-	BusinessType       *string    `json:"business_type"`
-	Address            *string    `json:"address"`
-	Status             string     `json:"status"`
-	SubmittedAt        time.Time  `json:"submitted_at"`
-	ReviewedAt         *time.Time `json:"reviewed_at"`
-	AdminComment       *string    `json:"admin_comment"`
-	ReviewedByAdminID  *string    `json:"reviewed_by_admin_id"`
+	ID                string     `json:"id"`
+	ApplicantID       string     `json:"applicant_id"`
+	UniversityID      string     `json:"university_id"`
+	BusinessName      string     `json:"business_name"`
+	PhoneNumber       *string    `json:"phone_number"`
+	BusinessType      *string    `json:"business_type"`
+	Address           *string    `json:"address"`
+	Status            string     `json:"status"`
+	SubmittedAt       time.Time  `json:"submitted_at"`
+	ReviewedAt        *time.Time `json:"reviewed_at"`
+	AdminComment      *string    `json:"admin_comment"`
+	ReviewedByAdminID *string    `json:"reviewed_by_admin_id"`
 }
 
 type ProviderApplicationDocument struct {

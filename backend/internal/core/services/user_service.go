@@ -1,26 +1,26 @@
 package services
 
 import (
-    "context"
+	"context"
 
-    "github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
-    "github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
 )
 
 type UserService struct {
-    users ports.IUserRepository
+	users ports.IUserRepository
 }
 
 func NewUserService(users ports.IUserRepository) *UserService {
-    return &UserService{users: users}
+	return &UserService{users: users}
 }
 
 func (s *UserService) GetByID(
-    ctx context.Context,
-    id string,
+	ctx context.Context,
+	id string,
 ) (*domain.User, error) {
 
-    return s.users.GetByID(ctx, id)
+	return s.users.GetByID(ctx, id)
 }
 
 func (s *UserService) GetByEmail(
@@ -30,5 +30,3 @@ func (s *UserService) GetByEmail(
 
 	return s.users.GetByEmail(ctx, email)
 }
-
-

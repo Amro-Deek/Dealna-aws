@@ -24,10 +24,10 @@ type Config struct {
 
 	SMTP SMTPConfig
 
-	KeycloakBaseURL string
-	KeycloakRealm   string
-	KeycloakClientID string
-	KeycloakAdminClientID string
+	KeycloakBaseURL           string
+	KeycloakRealm             string
+	KeycloakClientID          string
+	KeycloakAdminClientID     string
 	KeycloakAdminClientSecret string
 	SQSQueueURL               string
 	AWSRegion                 string
@@ -47,18 +47,18 @@ func Load() *Config {
 	_ = godotenv.Load() // safe in prod (no-op if missing)
 
 	cfg := &Config{
-		Port:       getEnv("PORT", "8080"),
-		JWTSecret:  mustEnv("JWT_SECRET"),
-		DBHost:     mustEnv("DB_HOST"),
-		DBPort:     mustEnv("DB_PORT"),
-		DBUser:     mustEnv("DB_USER"),
-		DBPassword: mustEnv("DB_PASSWORD"),
-		DBName:     mustEnv("DB_NAME"),
-		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
-		KeycloakBaseURL: getEnv("KEYCLOAK_BASE_URL", ""),
-		KeycloakRealm:   getEnv("KEYCLOAK_REALM", ""),
-		KeycloakClientID: getEnv("KEYCLOAK_CLIENT_ID", ""),
-		KeycloakAdminClientID: getEnv("KEYCLOAK_ADMIN_CLIENT_ID", ""),
+		Port:                      getEnv("PORT", "8080"),
+		JWTSecret:                 mustEnv("JWT_SECRET"),
+		DBHost:                    mustEnv("DB_HOST"),
+		DBPort:                    mustEnv("DB_PORT"),
+		DBUser:                    mustEnv("DB_USER"),
+		DBPassword:                mustEnv("DB_PASSWORD"),
+		DBName:                    mustEnv("DB_NAME"),
+		DBSSLMode:                 getEnv("DB_SSLMODE", "disable"),
+		KeycloakBaseURL:           getEnv("KEYCLOAK_BASE_URL", ""),
+		KeycloakRealm:             getEnv("KEYCLOAK_REALM", ""),
+		KeycloakClientID:          getEnv("KEYCLOAK_CLIENT_ID", ""),
+		KeycloakAdminClientID:     getEnv("KEYCLOAK_ADMIN_CLIENT_ID", ""),
 		KeycloakAdminClientSecret: getEnv("KEYCLOAK_ADMIN_CLIENT_SECRET", ""),
 		SMTP: SMTPConfig{
 			Host:     getEnv("SMTP_HOST", ""),
@@ -67,11 +67,11 @@ func Load() *Config {
 			Password: getEnv("SMTP_PASSWORD", ""),
 			From:     getEnv("SMTP_FROM", ""),
 		},
-		SQSQueueURL:   getEnv("SQS_QUEUE_URL", ""),
-		AWSRegion:     getEnv("AWS_REGION", "us-east-1"),
+		SQSQueueURL:        getEnv("SQS_QUEUE_URL", ""),
+		AWSRegion:          getEnv("AWS_REGION", "us-east-1"),
 		LambdaFunctionName: getEnv("LAMBDA_FUNCTION_NAME", "dealna-search-worker"),
-		QdrantURL:     getEnv("QDRANT_URL", ""),
-		QdrantAPIKey:  getEnv("QDRANT_API_KEY", ""),
+		QdrantURL:          getEnv("QDRANT_URL", ""),
+		QdrantAPIKey:       getEnv("QDRANT_API_KEY", ""),
 	}
 
 	return cfg

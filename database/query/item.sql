@@ -17,6 +17,7 @@ SELECT
     p.display_name AS owner_display_name,
     p.profile_picture_url AS owner_profile_picture_url,
     u.university_id,
+    u.role AS owner_role,
     c.name AS category_name
 FROM public.item i
 JOIN public."User" u ON i.owner_id = u.user_id
@@ -29,6 +30,7 @@ SELECT
     i.item_id, i.owner_id, i.category_id, i.title, i.description, i.price, i.pickup_location, i.item_status, i.created_at,
     p.display_name AS owner_display_name,
     p.profile_picture_url AS owner_profile_picture_url,
+    u.role AS owner_role,
     c.name AS category_name,
     COALESCE((
         SELECT a.file_path 
@@ -57,6 +59,7 @@ SELECT
     i.item_id, i.owner_id, i.category_id, i.title, i.description, i.price, i.pickup_location, i.item_status, i.created_at,
     p.display_name AS owner_display_name,
     p.profile_picture_url AS owner_profile_picture_url,
+    u.role AS owner_role,
     c.name AS category_name,
     COALESCE((
         SELECT a.file_path 
@@ -103,6 +106,7 @@ ORDER BY uploaded_at ASC;
 SELECT 
     i.item_id, i.title, i.price, i.item_status, i.created_at,
     c.name AS category_name,
+    u.role AS owner_role,
     COALESCE((
         SELECT a.file_path 
         FROM public.attachment a 
@@ -111,6 +115,7 @@ SELECT
         LIMIT 1
     ), '') AS thumbnail_url
 FROM public.item i
+JOIN public."User" u ON i.owner_id = u.user_id
 LEFT JOIN public.category c ON i.category_id = c.category_id
 WHERE i.owner_id = $1 
   AND i.deleted_at IS NULL

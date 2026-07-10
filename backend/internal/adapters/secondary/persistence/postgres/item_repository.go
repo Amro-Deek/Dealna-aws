@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/database/generated"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ItemRepository struct {
@@ -151,7 +151,7 @@ func (r *ItemRepository) GetFeedItems(ctx context.Context, filter domain.ItemFil
 	items := make([]domain.FeedItem, 0, len(rows))
 	for _, row := range rows {
 		price, _ := row.Price.Float64Value()
-		
+
 		var catID *uuid.UUID
 		if row.CategoryID.Valid {
 			id := uuid.UUID(row.CategoryID.Bytes)
@@ -171,6 +171,7 @@ func (r *ItemRepository) GetFeedItems(ctx context.Context, filter domain.ItemFil
 			CreatedAt:          row.CreatedAt.Time,
 			OwnerDisplayName:   row.OwnerDisplayName.String,
 			OwnerProfilePicURL: row.OwnerProfilePictureUrl.String,
+			OwnerRole:          row.OwnerRole,
 			ThumbnailURL:       row.ThumbnailUrl.(string),
 		})
 	}
@@ -195,7 +196,7 @@ func (r *ItemRepository) GetFeedItemsByIDs(ctx context.Context, ids []uuid.UUID)
 	items := make([]domain.FeedItem, 0, len(rows))
 	for _, row := range rows {
 		price, _ := row.Price.Float64Value()
-		
+
 		var catID *uuid.UUID
 		if row.CategoryID.Valid {
 			id := uuid.UUID(row.CategoryID.Bytes)
@@ -215,6 +216,7 @@ func (r *ItemRepository) GetFeedItemsByIDs(ctx context.Context, ids []uuid.UUID)
 			CreatedAt:          row.CreatedAt.Time,
 			OwnerDisplayName:   row.OwnerDisplayName.String,
 			OwnerProfilePicURL: row.OwnerProfilePictureUrl.String,
+			OwnerRole:          row.OwnerRole,
 			ThumbnailURL:       row.ThumbnailUrl.(string), // NOTE: We can keep the string cast or handle interface depending on sqlc type
 		})
 	}
@@ -223,7 +225,7 @@ func (r *ItemRepository) GetFeedItemsByIDs(ctx context.Context, ids []uuid.UUID)
 
 func (r *ItemRepository) GetItemDetail(ctx context.Context, itemID uuid.UUID) (*domain.ItemDetail, error) {
 	idPg := pgtype.UUID{Bytes: itemID, Valid: true}
-	
+
 	row, err := r.queries.GetItemDetails(ctx, idPg)
 	if err != nil {
 		return nil, err
@@ -250,6 +252,7 @@ func (r *ItemRepository) GetItemDetail(ctx context.Context, itemID uuid.UUID) (*
 			CreatedAt:          row.CreatedAt.Time,
 			OwnerDisplayName:   row.OwnerDisplayName.String,
 			OwnerProfilePicURL: row.OwnerProfilePictureUrl.String,
+			OwnerRole:          row.OwnerRole,
 		},
 	}
 
@@ -295,12 +298,13 @@ func (r *ItemRepository) GetUserStorefront(ctx context.Context, ownerID uuid.UUI
 	for _, row := range rows {
 		price, _ := row.Price.Float64Value()
 		items = append(items, domain.FeedItem{
-			ID:             row.ItemID.Bytes,
-			Title:          row.Title,
-			Price:          price.Float64,
-			Status:         domain.ItemStatus(row.ItemStatus),
-			CreatedAt:      row.CreatedAt.Time,
-			ThumbnailURL:   row.ThumbnailUrl.(string),
+			ID:           row.ItemID.Bytes,
+			Title:        row.Title,
+			Price:        price.Float64,
+			Status:       domain.ItemStatus(row.ItemStatus),
+			CreatedAt:    row.CreatedAt.Time,
+			OwnerRole:    row.OwnerRole,
+			ThumbnailURL: row.ThumbnailUrl.(string),
 		})
 	}
 	return items, nil
@@ -384,5 +388,3 @@ func (r *ItemRepository) KeywordSearchItems(ctx context.Context, query string, f
 	}
 	return ids, rows.Err()
 }
-
-

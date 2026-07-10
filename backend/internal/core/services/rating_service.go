@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
+	"github.com/google/uuid"
 )
 
 type IRatingRepository interface {
@@ -52,7 +52,7 @@ func (s *RatingService) CreateRating(ctx context.Context, cmd domain.CreateRatin
 	if tx.Status != domain.TransactionCompleted {
 		return domain.Rating{}, domain.ErrRatingNotAllowed
 	}
-	
+
 	var targetUserID uuid.UUID
 	if cmd.RaterID.String() == tx.BuyerID {
 		target, _ := uuid.Parse(tx.SellerID)
@@ -89,7 +89,7 @@ func (s *RatingService) CreateRating(ctx context.Context, cmd domain.CreateRatin
 
 	// Fetch Global Average
 	globalAvg, totalRatingsSystem, _ := s.ratingRepo.GetGlobalRatingAverage(ctx)
-	
+
 	// Cold Start protection
 	if totalRatingsSystem < 100 {
 		globalAvg = 4.0
@@ -99,7 +99,7 @@ func (s *RatingService) CreateRating(ctx context.Context, cmd domain.CreateRatin
 	m := 10.0
 	rAvg := float64(newSum) / float64(newTotal)
 	n := float64(newTotal)
-	
+
 	bayesian := (n*rAvg + m*globalAvg) / (n + m)
 
 	_ = s.ratingRepo.UpdateUserRating(ctx, targetUserID, newTotal, newSum, bayesian)

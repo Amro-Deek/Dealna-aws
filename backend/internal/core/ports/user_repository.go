@@ -30,7 +30,7 @@ type IUserRepository interface {
 	) (*domain.User, error)
 
 	UpdateUserRole(ctx context.Context, userID string, role string) error
-
+	UpdateUserStatus(ctx context.Context, userID string, status string) error
 
 	GetProfile(ctx context.Context, userID string) (*domain.Profile, *domain.Student, error)
 	GetProfileByProfileID(ctx context.Context, profileID string) (*domain.Profile, error)
@@ -38,4 +38,7 @@ type IUserRepository interface {
 	UpdateProfile(ctx context.Context, userID string, displayName, bio, profilePictureURL *string, displayNameLastChangedAt *time.Time) error
 	UpdateStudent(ctx context.Context, userID string, major *string, year *int) error
 	UpdateDeviceToken(ctx context.Context, userID string, token string) error
+	CreateProfileForUser(ctx context.Context, userID string, displayName string) error
+
+	GetAdminUserProfileStats(ctx context.Context, userID string) (int, int, int, error)
 }

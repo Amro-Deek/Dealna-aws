@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/services"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type ItemHandler struct {
@@ -157,6 +157,14 @@ func (h *ItemHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.logger.Info(r.Context(), "GetFeed executed", map[string]any{
+		"user_id":        userIDStr,
+		"items_returned": len(items),
+		"category":       filter.CategoryID,
+		"limit":          filter.Limit,
+		"offset":         filter.Offset,
+	})
+
 	middleware.WriteJSONResponse(w, http.StatusOK, items)
 }
 
@@ -186,6 +194,33 @@ func (h *ItemHandler) GetItemDetail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	middleware.WriteJSONResponse(w, http.StatusOK, detail)
+}
+
+// GetSimilarItems godoc
+// @Summary      Get Similar Items
+// @Description  Returns a list of 5 items that are semantically similar to the provided item.
+// @Tags         Items
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id   path     string  true  "Item UUID"
+// @Success      200  {array}  domain.FeedItem
+// @Failure      400  {object} middleware.ErrorFrame
+// @Failure      401  {object} middleware.ErrorFrame
+// @Router       /api/v1/items/{id}/similar [get]
+func (h *ItemHandler) GetSimilarItems(w http.ResponseWriter, r *http.Request) {
+	itemIDStr := chi.URLParam(r, "id")
+	if _, err := uuid.Parse(itemIDStr); err != nil {
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("id", "invalid item id"), h.logger)
+		return
+	}
+
+	items, err := h.itemService.GetSimilarItems(r.Context(), itemIDStr)
+	if err != nil {
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewInternalError(err), h.logger)
+		return
+	}
+
+	middleware.WriteJSONResponse(w, http.StatusOK, items)
 }
 
 // GetMyItems godoc
@@ -404,7 +439,7 @@ func (h *ItemHandler) SearchItems(w http.ResponseWriter, r *http.Request) {
 	if userIDStr != "" {
 		if userID, err := uuid.Parse(userIDStr); err == nil {
 			filter.ExcludedOwnerID = userID
-			
+
 			// Try to get university ID directly if possible, else the service will fetch it.
 			// Since UniversityIDFromContext doesn't exist, we will rely on ItemService to fetch it.
 		}
@@ -417,6 +452,49 @@ func (h *ItemHandler) SearchItems(w http.ResponseWriter, r *http.Request) {
 	items, err := h.itemService.SearchItems(r.Context(), queryStr, filter)
 	if err != nil {
 		h.logger.Error(r.Context(), "failed to search items", map[string]any{"error": err.Error()})
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewInternalError(err), h.logger)
+		return
+	}
+
+	middleware.WriteJSONResponse(w, http.StatusOK, items)
+}
+
+// GetUserItems godoc
+// @Summary      Get Items by User
+// @Description  Returns items owned by a specific user.
+// @Tags         Items
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id      path     string true "User ID"
+// @Param        limit   query    int  false  "Items per page (default 20)"
+// @Param        offset  query    int  false  "Pagination offset"
+// @Success      200     {array}  domain.FeedItem
+// @Failure      400     {object} middleware.ErrorFrame
+// @Failure      401     {object} middleware.ErrorFrame
+// @Router       /api/v1/users/{id}/items [get]
+func (h *ItemHandler) GetUserItems(w http.ResponseWriter, r *http.Request) {
+	targetUserIDStr := chi.URLParam(r, "id")
+	targetUserID, err := uuid.Parse(targetUserIDStr)
+	if err != nil {
+		middleware.WriteErrorResponse(w, r.Context(), middleware.NewValidationError("invalid user ID", "id"), h.logger)
+		return
+	}
+
+	limit := 20
+	offset := 0
+	if lStr := r.URL.Query().Get("limit"); lStr != "" {
+		if l, err := strconv.Atoi(lStr); err == nil {
+			limit = l
+		}
+	}
+	if oStr := r.URL.Query().Get("offset"); oStr != "" {
+		if o, err := strconv.Atoi(oStr); err == nil {
+			offset = o
+		}
+	}
+
+	items, err := h.itemService.GetUserStorefront(r.Context(), targetUserID, int32(limit), int32(offset))
+	if err != nil {
 		middleware.WriteErrorResponse(w, r.Context(), middleware.NewInternalError(err), h.logger)
 		return
 	}

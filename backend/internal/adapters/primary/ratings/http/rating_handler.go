@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/services"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type RatingHandler struct {

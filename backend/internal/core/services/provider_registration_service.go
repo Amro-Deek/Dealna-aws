@@ -2,9 +2,12 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
@@ -54,7 +57,15 @@ func (s *ProviderRegistrationService) RequestProviderActivation(
 
 	if existingPre, err := s.preRegs.GetByEmail(ctx, email); err == nil && existingPre != nil {
 		if existingPre.UsedAt == nil {
-			return middleware.NewValidationError("email", "Activation already requested. Please check your email or use the resend endpoint.")
+			token := uuid.NewString()
+			existingPre.Token = token
+			existingPre.ExpiresAt = time.Now().Add(24 * time.Hour)
+			existingPre.VerifiedAt = nil
+			if err := s.preRegs.Update(ctx, existingPre); err != nil {
+				return middleware.NewDatabaseError("update prereg", err)
+			}
+			link := fmt.Sprintf("http://98.92.82.224:8080/api/v1/auth/providers/activate?token=%s", token)
+			return s.email.SendActivationLink(email, link, "provider")
 		}
 		return middleware.NewEmailAlreadyUsedError(email)
 	}
@@ -71,7 +82,8 @@ func (s *ProviderRegistrationService) RequestProviderActivation(
 		return middleware.NewDatabaseError("create prereg", err)
 	}
 
-	return s.email.SendActivationLink(email, token)
+	link := fmt.Sprintf("http://98.92.82.224:8080/api/v1/auth/providers/activate?token=%s", token)
+	return s.email.SendActivationLink(email, link, "provider")
 }
 
 func (s *ProviderRegistrationService) VerifyProviderActivation(
@@ -101,28 +113,35 @@ func (s *ProviderRegistrationService) VerifyProviderActivation(
 	return nil
 }
 
+func (s *ProviderRegistrationService) GetRegistrationStatus(
+	ctx context.Context,
+	email string,
+) (*domain.ProviderPreRegistration, error) {
+	return s.preRegs.GetByEmail(ctx, email)
+}
+
 func (s *ProviderRegistrationService) CompleteProviderRegistration(
 	ctx context.Context,
 	email string,
 	password string,
-) error {
+) (*AuthResult, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
 
 	pre, err := s.preRegs.GetByEmail(ctx, email)
 	if err != nil {
-		return middleware.NewUnauthorizedError("activation not requested")
+		return nil, middleware.NewUnauthorizedError("activation not requested")
 	}
 
 	if pre.VerifiedAt == nil {
-		return middleware.NewUnauthorizedError("email not verified")
+		return nil, middleware.NewUnauthorizedError("email not verified")
 	}
 
 	if pre.UsedAt != nil {
-		return middleware.NewUnauthorizedError("registration already completed")
+		return nil, middleware.NewUnauthorizedError("registration already completed")
 	}
 
 	if time.Now().After(pre.ExpiresAt) {
-		return middleware.NewUnauthorizedError("activation expired")
+		return nil, middleware.NewUnauthorizedError("activation expired")
 	}
 
 	nameParts := strings.Split(email, "@")
@@ -132,18 +151,24 @@ func (s *ProviderRegistrationService) CompleteProviderRegistration(
 	keycloakSub, err := s.identity.RegisterUser(ctx, email, password, firstName, firstName)
 	if err != nil {
 		fmt.Printf("Error registering user in Keycloak: %v\n", err)
-		return err
+		return nil, err
 	}
 
 	// Make sure Keycloak sets email verified
 	_ = s.identity.ExecuteActionsEmail(ctx, keycloakSub, []string{}) // clear any actions if needed, though they shouldn't exist since we didn't trigger VERIFY_EMAIL
+
+	err = s.identity.AssignRoleToUser(ctx, keycloakSub, "APPLICANT")
+	if err != nil {
+		fmt.Printf("Error assigning APPLICANT role in Keycloak: %v\n", err)
+		// We can continue, but it might cause issues. Let's log it.
+	}
 
 	// Create local user with APPLICANT role
 	user, err := s.users.CreateApplicantUser(ctx, email, keycloakSub)
 	if err != nil {
 		fmt.Printf("Error creating local applicant user: %v\n", err)
 		_ = s.identity.DeleteUser(ctx, keycloakSub)
-		return middleware.NewDatabaseError("create applicant user", err)
+		return nil, middleware.NewDatabaseError("create applicant user", err)
 	}
 
 	// Mark token as used
@@ -153,8 +178,22 @@ func (s *ProviderRegistrationService) CompleteProviderRegistration(
 		// non-fatal
 	}
 
-	_ = user
-	return nil
+	// Log the user in to get JWT tokens
+	loginRes, err := s.identity.Login(ctx, email, password)
+	if err != nil {
+		fmt.Printf("Error logging in after registration: %v\n", err)
+		// Account was created but auto-login failed - still a success
+		return &AuthResult{
+			User: user,
+		}, nil
+	}
+
+	return &AuthResult{
+		AccessToken:  loginRes.AccessToken,
+		RefreshToken: loginRes.RefreshToken,
+		ExpiresIn:    loginRes.ExpiresIn,
+		User:         user,
+	}, nil
 }
 
 func (s *ProviderRegistrationService) ResendProviderActivation(
@@ -196,7 +235,8 @@ func (s *ProviderRegistrationService) ResendProviderActivation(
 		return middleware.NewDatabaseError("update prereg", err)
 	}
 
-	return s.email.SendActivationLink(email, newToken)
+	link := fmt.Sprintf("http://dealna-web-hosting.s3-website-us-east-1.amazonaws.com/provider/activate/index.html?token=%s", newToken)
+	return s.email.SendActivationLink(email, link, "provider")
 }
 
 func (s *ProviderRegistrationService) GetDocumentUploadURL(
@@ -208,7 +248,7 @@ func (s *ProviderRegistrationService) GetDocumentUploadURL(
 ) (string, string, error) {
 	// We generate a unique object key using userID and documentType
 	// Or we can just use a UUID.
-	
+
 	// Create application if it doesn't exist
 	app, err := s.providers.GetProviderApplicationByApplicantID(ctx, userID)
 	if err != nil {
@@ -348,19 +388,37 @@ func (s *ProviderRegistrationService) ApproveApplication(ctx context.Context, ad
 		return middleware.NewDatabaseError("update status", err)
 	}
 
-	// 3. Create Provider profile
+	// 3. Create Provider profile in provider table
 	_, err = s.providers.CreateProvider(ctx, applicantID, app.BusinessName, nil, nil, nil)
 	if err != nil {
 		return middleware.NewDatabaseError("create provider", err)
 	}
 
-	// 4. Update user role in DB
+	// 4. Update user role and status in DB
 	err = s.users.UpdateUserRole(ctx, applicantID, "PROVIDER")
 	if err != nil {
 		return middleware.NewDatabaseError("update user role", err)
 	}
 
-	// 5. Update user role in Keycloak
+	err = s.users.UpdateUserStatus(ctx, applicantID, "ACTIVE")
+	if err != nil {
+		return middleware.NewDatabaseError("update user status", err)
+	}
+
+	// 5. Create or update Profile row with Business Name as display name
+	existingProfile, _, profileErr := s.users.GetProfile(ctx, applicantID)
+	if profileErr != nil || existingProfile == nil {
+		// Profile doesn't exist yet — create it
+		if createErr := s.users.CreateProfileForUser(ctx, applicantID, app.BusinessName); createErr != nil {
+			fmt.Printf("[WARNING] CreateProfileForUser failed: %v\n", createErr)
+		}
+	} else {
+		// Profile exists — update display name to business name
+		now := time.Now()
+		s.users.UpdateProfile(ctx, applicantID, &app.BusinessName, &existingProfile.Bio, &existingProfile.ProfilePictureURL, &now)
+	}
+
+	// 6. Update user role in Keycloak
 	user, err := s.users.GetByID(ctx, applicantID)
 	if err != nil {
 		return middleware.NewDatabaseError("get user", err)
@@ -406,8 +464,10 @@ func (s *ProviderRegistrationService) RejectApplication(ctx context.Context, adm
 func (s *ProviderRegistrationService) GetApplicationStatus(ctx context.Context, applicantID string) (*domain.ProviderApplication, error) {
 	app, err := s.providers.GetProviderApplicationByApplicantID(ctx, applicantID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, middleware.NewUserNotFoundError("Application not found")
+		}
 		return nil, middleware.NewDatabaseError("application not found", err)
 	}
 	return app, nil
 }
-

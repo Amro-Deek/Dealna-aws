@@ -240,7 +240,7 @@ func (h *QueueHandler) GetQueueEntries(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
-	
+
 	entries, err := h.qService.GetQueueEntriesByItem(r.Context(), itemID, userID)
 	if err != nil {
 		if err.Error() == "only the item owner can view its queue entries" {

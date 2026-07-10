@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/adapters/primary/auth/dto"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/middleware"
+	"github.com/Amro-Deek/Dealna-aws/backend/internal/utils"
 )
 
 type Routes struct {
@@ -26,6 +28,7 @@ func NewRoutes(
 		logger:  logger,
 	}
 }
+
 // Register public auth routes (no auth middleware)
 func (rt *Routes) RegisterPublic(router chi.Router) {
 	router.Route("/auth", func(r chi.Router) {
@@ -57,7 +60,7 @@ func (rt *Routes) RegisterProtected(router chi.Router) {
 	})
 }
 
-	// Register public student registration routes
+// Register public student registration routes
 func (rt *Routes) RegisterRegistration(router chi.Router) {
 	router.Route("/auth/student", func(r chi.Router) {
 		r.Post("/request-activation", rt.RequestActivationHandler)
@@ -72,6 +75,7 @@ func (rt *Routes) RegisterRegistration(router chi.Router) {
 		r.Get("/activate", rt.VerifyProviderActivationHandler)
 		r.Post("/complete", rt.CompleteProviderRegistrationHandler)
 		r.Post("/resend", rt.ResendProviderActivationHandler)
+		r.Get("/status", rt.GetProviderRegistrationStatusHandler)
 	})
 }
 
@@ -122,22 +126,22 @@ func (rt *Routes) LoginHandler(w http.ResponseWriter, req *http.Request) {
 // @Failure 401 {object} middleware.ErrorFrame
 // @Router /api/v1/auth/refresh [post]
 func (rt *Routes) RefreshHandler(w http.ResponseWriter, req *http.Request) {
-    var body dto.RefreshRequest
-    if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
-        middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)
-        return
-    }
+	var body dto.RefreshRequest
+	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)
+		return
+	}
 
-    result, err := rt.handler.Refresh(req.Context(), body.RefreshToken)
-    if err != nil {
-        middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
-        return
-    }
+	result, err := rt.handler.Refresh(req.Context(), body.RefreshToken)
+	if err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		return
+	}
 
-    middleware.WriteJSONResponse(w, http.StatusOK, dto.RefreshResponse{
-        AccessToken:  result.AccessToken,
-        RefreshToken: result.RefreshToken,
-    })
+	middleware.WriteJSONResponse(w, http.StatusOK, dto.RefreshResponse{
+		AccessToken:  result.AccessToken,
+		RefreshToken: result.RefreshToken,
+	})
 }
 
 // LogoutHandler handles session revocation
@@ -152,20 +156,19 @@ func (rt *Routes) RefreshHandler(w http.ResponseWriter, req *http.Request) {
 // @Failure 401 {object} middleware.ErrorFrame
 // @Router /api/v1/auth/logout [post]
 func (rt *Routes) LogoutHandler(w http.ResponseWriter, req *http.Request) {
-    var body dto.RefreshRequest
-    if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
-        middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)
-        return
-    }
+	var body dto.RefreshRequest
+	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)
+		return
+	}
 
-    if err := rt.handler.Logout(req.Context(), body.RefreshToken); err != nil {
-        middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
-        return
-    }
+	if err := rt.handler.Logout(req.Context(), body.RefreshToken); err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		return
+	}
 
-    w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusNoContent)
 }
-
 
 // @Summary Request activation link
 // @Description Send activation email to university address
@@ -181,6 +184,11 @@ func (rt *Routes) RequestActivationHandler(w http.ResponseWriter, req *http.Requ
 	var body dto.RequestActivationRequest
 	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)
+		return
+	}
+
+	if !utils.IsValidEmail(body.Email) {
+		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("email", "invalid email address format"), rt.logger)
 		return
 	}
 
@@ -209,11 +217,13 @@ func (rt *Routes) VerifyActivationHandler(w http.ResponseWriter, req *http.Reque
 	}
 
 	if err := rt.handler.VerifyStudentActivation(req.Context(), token); err != nil {
-		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		redirectURL := fmt.Sprintf("http://dealna-web-hosting.s3-website-us-east-1.amazonaws.com/student/activate/index.html?token=%s", token)
+		http.Redirect(w, req, redirectURL, http.StatusFound)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	redirectURL := fmt.Sprintf("http://dealna-web-hosting.s3-website-us-east-1.amazonaws.com/student/activate/index.html?token=%s", token)
+	http.Redirect(w, req, redirectURL, http.StatusFound)
 }
 
 // @Summary Complete registration
@@ -294,7 +304,39 @@ func (rt *Routes) GetRegistrationStatusHandler(w http.ResponseWriter, req *http.
 		return
 	}
 
-	middleware.WriteJSONResponse(w, http.StatusOK, dto.StudentRegistrationStatusResponse{
+	middleware.WriteJSONResponse(w, http.StatusOK, dto.RegistrationStatusResponse{
+		Email:                   pre.Email,
+		IsVerified:              pre.VerifiedAt != nil,
+		IsUsed:                  pre.UsedAt != nil,
+		ExpiresAt:               pre.ExpiresAt,
+		VerifiedAt:              pre.VerifiedAt,
+		CanCompleteRegistration: pre.VerifiedAt != nil && pre.UsedAt == nil && time.Now().Before(pre.ExpiresAt),
+	})
+}
+
+// @Summary Get provider registration status
+// @Description Get provider registration status by email
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param email query string true "Provider email"
+// @Success 200 {object} dto.RegistrationStatusResponse
+// @Failure 401 {object} middleware.ErrorFrame
+// @Router /api/v1/auth/providers/status [get]
+func (rt *Routes) GetProviderRegistrationStatusHandler(w http.ResponseWriter, req *http.Request) {
+	email := req.URL.Query().Get("email")
+	if email == "" {
+		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("email", "required"), rt.logger)
+		return
+	}
+
+	pre, err := rt.handler.GetProviderRegistrationStatus(req.Context(), email)
+	if err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		return
+	}
+
+	middleware.WriteJSONResponse(w, http.StatusOK, dto.RegistrationStatusResponse{
 		Email:                   pre.Email,
 		IsVerified:              pre.VerifiedAt != nil,
 		IsUsed:                  pre.UsedAt != nil,
@@ -317,6 +359,11 @@ func (rt *Routes) RequestProviderActivationHandler(w http.ResponseWriter, req *h
 	var body dto.RequestActivationRequest
 	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)
+		return
+	}
+
+	if !utils.IsValidEmail(body.Email) {
+		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("email", "invalid email address format"), rt.logger)
 		return
 	}
 
@@ -344,11 +391,16 @@ func (rt *Routes) VerifyProviderActivationHandler(w http.ResponseWriter, req *ht
 	}
 
 	if err := rt.handler.VerifyProviderActivation(req.Context(), token); err != nil {
-		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		// Even if error (e.g. already verified), we might still want to redirect
+		// But let's just let it fall through or redirect to the same page so they can try to login.
+		// Actually, if it's already verified, it's fine, redirect them anyway!
+		redirectURL := fmt.Sprintf("http://dealna-web-hosting.s3-website-us-east-1.amazonaws.com/provider/activate/index.html?token=%s", token)
+		http.Redirect(w, req, redirectURL, http.StatusFound)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	redirectURL := fmt.Sprintf("http://dealna-web-hosting.s3-website-us-east-1.amazonaws.com/provider/activate/index.html?token=%s", token)
+	http.Redirect(w, req, redirectURL, http.StatusFound)
 }
 
 // @Summary Complete provider registration
@@ -367,12 +419,22 @@ func (rt *Routes) CompleteProviderRegistrationHandler(w http.ResponseWriter, req
 		return
 	}
 
-	if err := rt.handler.CompleteProviderRegistration(req.Context(), body.Email, body.Password); err != nil {
+	result, err := rt.handler.CompleteProviderRegistration(req.Context(), body.Email, body.Password)
+	if err != nil {
 		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	middleware.WriteJSONResponse(w, http.StatusOK, dto.LoginResponse{
+		AccessToken:  result.AccessToken,
+		RefreshToken: result.RefreshToken,
+		ExpiresIn:    result.ExpiresIn,
+		User: dto.LoginUser{
+			ID:    result.User.ID,
+			Email: result.User.Email,
+			Role:  result.User.Role,
+		},
+	})
 }
 
 // @Summary Resend activation link
@@ -417,7 +479,7 @@ func (rt *Routes) StartProviderApplicationHandler(w http.ResponseWriter, req *ht
 	}
 
 	userID := middleware.UserIDFromContext(req.Context())
-	
+
 	app, err := rt.handler.StartProviderApplication(
 		req.Context(),
 		userID,
@@ -598,7 +660,7 @@ func (rt *Routes) RejectProviderApplicationHandler(w http.ResponseWriter, req *h
 		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("id", "applicant id is required"), rt.logger)
 		return
 	}
-	
+
 	var body dto.RejectProviderApplicationRequest
 	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)

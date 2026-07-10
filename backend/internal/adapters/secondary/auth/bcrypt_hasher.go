@@ -6,15 +6,15 @@ import "golang.org/x/crypto/bcrypt"
 type BcryptHasher struct{}
 
 func NewBcryptHasher() *BcryptHasher {
-	
-    return &BcryptHasher{}
+
+	return &BcryptHasher{}
 }
 
 func (b *BcryptHasher) Compare(hash string, password string) error {
-    return bcrypt.CompareHashAndPassword(
-        []byte(hash),
-        []byte(password),
-    )
+	return bcrypt.CompareHashAndPassword(
+		[]byte(hash),
+		[]byte(password),
+	)
 }
 
 func (b *BcryptHasher) Hash(password string) (string, error) {

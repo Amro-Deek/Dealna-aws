@@ -1,4 +1,5 @@
-package domain 
+package domain
+
 import "time"
 
 type Session struct {
