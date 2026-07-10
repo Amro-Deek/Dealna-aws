@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/config"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/database"
@@ -91,11 +92,21 @@ func main() {
 		}
 	}
 
-	// 2. Lambda Publisher for Search Sync (direct invoke, no SQS)
 	lambdaPublisher, err := messaging.NewLambdaPublisher(context.TODO(), cfg.LambdaFunctionName, cfg.AWSRegion)
 	if err != nil {
 		log.Fatalf("failed to initialize Lambda Publisher: %v", err)
 	}
+
+	// 3. Keep Lambda warm to prevent 3-second cold starts!
+	go func() {
+		ticker := time.NewTicker(4 * time.Minute)
+		defer ticker.Stop()
+		for {
+			<-ticker.C
+			// Silently ping the lambda to keep the container permanently hot
+			_, _ = lambdaPublisher.GenerateEmbedding(context.Background(), "warmup")
+		}
+	}()
 
 	// =========================
 	// Repositories
