@@ -41,4 +41,5 @@ type IUserRepository interface {
 	CreateProfileForUser(ctx context.Context, userID string, displayName string) error
 
 	GetAdminUserProfileStats(ctx context.Context, userID string) (int, int, int, error)
+	CheckDisplayNameExists(ctx context.Context, displayName string) (bool, error)
 }

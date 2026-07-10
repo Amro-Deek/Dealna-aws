@@ -404,3 +404,12 @@ func (r *UserRepository) CreateProfileForUser(ctx context.Context, userID string
 		DisplayName: toNullableText(&displayName),
 	})
 }
+
+func (r *UserRepository) CheckDisplayNameExists(ctx context.Context, displayName string) (bool, error) {
+	var exists bool
+	err := r.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM profile WHERE display_name = $1)", displayName).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}

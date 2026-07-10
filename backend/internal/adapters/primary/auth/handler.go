@@ -84,6 +84,10 @@ func (h *Handler) CompleteStudentRegistration(
 	)
 }
 
+func (h *Handler) CheckDisplayName(ctx context.Context, displayName string) error {
+	return h.preRegService.CheckDisplayName(ctx, displayName)
+}
+
 func (h *Handler) ResendStudentActivation(
 	ctx context.Context,
 	email string,

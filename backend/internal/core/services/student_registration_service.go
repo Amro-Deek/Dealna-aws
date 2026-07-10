@@ -221,6 +221,11 @@ func (s *StudentRegistrationService) CompleteStudentRegistration(
 		studentID,
 	)
 	if err != nil {
+		if strings.Contains(err.Error(), "profile_display_name_key") {
+			// Compensation: Delete Keycloak user if DB creation fails
+			_ = s.identity.DeleteUser(ctx, keycloakSub)
+			return middleware.NewValidationError("displayName", "This display name is already taken. Please choose another one.")
+		}
 		// Compensation: Delete Keycloak user if DB creation fails
 		delErr := s.identity.DeleteUser(ctx, keycloakSub)
 		if delErr != nil {
@@ -303,4 +308,15 @@ func extractStudentID(email string) string {
 		return ""
 	}
 	return parts[0] // numbers before @
+}
+
+func (s *StudentRegistrationService) CheckDisplayName(ctx context.Context, displayName string) error {
+	exists, err := s.users.CheckDisplayNameExists(ctx, displayName)
+	if err != nil {
+		return middleware.NewDatabaseError("check display name", err)
+	}
+	if exists {
+		return middleware.NewValidationError("displayName", "This display name is already taken. Please choose another one.")
+	}
+	return nil
 }

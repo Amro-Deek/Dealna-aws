@@ -69,6 +69,7 @@ func (rt *Routes) RegisterRegistration(router chi.Router) {
 		r.Post("/complete", rt.CompleteStudentRegistrationHandler)
 		r.Post("/resend", rt.ResendActivationHandler)
 		r.Get("/status", rt.GetRegistrationStatusHandler)
+		r.Get("/check-name", rt.CheckDisplayNameHandler)
 	})
 
 	router.Route("/auth/providers", func(r chi.Router) {
@@ -293,6 +294,31 @@ func (rt *Routes) ResendActivationHandler(w http.ResponseWriter, req *http.Reque
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// CheckDisplayNameHandler handles checking if a display name is available
+// @Summary Check Display Name Availability
+// @Description Check if a display name is available for registration
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param name query string true "Display Name"
+// @Success 200 {object} map[string]bool
+// @Failure 400 {object} middleware.ErrorFrame
+// @Router /api/v1/auth/student/check-name [get]
+func (rt *Routes) CheckDisplayNameHandler(w http.ResponseWriter, req *http.Request) {
+	name := req.URL.Query().Get("name")
+	if name == "" {
+		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("name", "name is required"), rt.logger)
+		return
+	}
+
+	if err := rt.handler.CheckDisplayName(req.Context(), name); err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		return
+	}
+
+	middleware.WriteJSONResponse(w, http.StatusOK, map[string]bool{"available": true})
 }
 
 // @Summary Get registration status
