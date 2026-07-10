@@ -28,6 +28,15 @@ func (r *FollowRepository) Follow(ctx context.Context, followerProfileID, follow
 	followerUUID := toUUID(followerProfileID)
 	followingUUID := toUUID(followingProfileID)
 
+	// Check if already following to prevent duplicate count increments
+	alreadyFollowing, err := r.IsFollowing(ctx, followerProfileID, followingProfileID)
+	if err != nil {
+		return err
+	}
+	if alreadyFollowing {
+		return nil
+	}
+
 	if err := r.q.FollowUser(ctx, generated.FollowUserParams{
 		FollowerProfileID:  followerUUID,
 		FollowingProfileID: followingUUID,
@@ -43,6 +52,15 @@ func (r *FollowRepository) Follow(ctx context.Context, followerProfileID, follow
 func (r *FollowRepository) Unfollow(ctx context.Context, followerProfileID, followingProfileID string) error {
 	followerUUID := toUUID(followerProfileID)
 	followingUUID := toUUID(followingProfileID)
+
+	// Check if actually following to prevent negative or redundant decrements
+	alreadyFollowing, err := r.IsFollowing(ctx, followerProfileID, followingProfileID)
+	if err != nil {
+		return err
+	}
+	if !alreadyFollowing {
+		return nil
+	}
 
 	if err := r.q.UnfollowUser(ctx, generated.UnfollowUserParams{
 		FollowerProfileID:  followerUUID,
