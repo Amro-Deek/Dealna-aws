@@ -105,6 +105,7 @@ func NewRouter(
 			r.Post("/student/complete", authRoutes.CompleteStudentRegistrationHandler)
 			r.Post("/student/resend", authRoutes.ResendActivationHandler)
 			r.Get("/student/status", authRoutes.GetRegistrationStatusHandler)
+			r.Get("/student/check-name", authRoutes.CheckDisplayNameHandler)
 
 			// =============================
 			// Provider Registration Flow (Public)
