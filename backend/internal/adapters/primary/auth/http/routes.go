@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -216,14 +217,25 @@ func (rt *Routes) VerifyActivationHandler(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
+	wantsHTML := strings.Contains(req.Header.Get("Accept"), "text/html")
+
 	if err := rt.handler.VerifyStudentActivation(req.Context(), token); err != nil {
+		if wantsHTML {
+			redirectURL := fmt.Sprintf("http://dealna-web-hosting.s3-website-us-east-1.amazonaws.com/student/activate/index.html?error=true")
+			http.Redirect(w, req, redirectURL, http.StatusFound)
+			return
+		}
+		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		return
+	}
+
+	if wantsHTML {
 		redirectURL := fmt.Sprintf("http://dealna-web-hosting.s3-website-us-east-1.amazonaws.com/student/activate/index.html?token=%s", token)
 		http.Redirect(w, req, redirectURL, http.StatusFound)
 		return
 	}
 
-	redirectURL := fmt.Sprintf("http://dealna-web-hosting.s3-website-us-east-1.amazonaws.com/student/activate/index.html?token=%s", token)
-	http.Redirect(w, req, redirectURL, http.StatusFound)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // @Summary Complete registration
@@ -390,17 +402,25 @@ func (rt *Routes) VerifyProviderActivationHandler(w http.ResponseWriter, req *ht
 		return
 	}
 
+	wantsHTML := strings.Contains(req.Header.Get("Accept"), "text/html")
+
 	if err := rt.handler.VerifyProviderActivation(req.Context(), token); err != nil {
-		// Even if error (e.g. already verified), we might still want to redirect
-		// But let's just let it fall through or redirect to the same page so they can try to login.
-		// Actually, if it's already verified, it's fine, redirect them anyway!
+		if wantsHTML {
+			redirectURL := fmt.Sprintf("http://dealna-web-hosting.s3-website-us-east-1.amazonaws.com/provider/activate/index.html?error=true")
+			http.Redirect(w, req, redirectURL, http.StatusFound)
+			return
+		}
+		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		return
+	}
+
+	if wantsHTML {
 		redirectURL := fmt.Sprintf("http://dealna-web-hosting.s3-website-us-east-1.amazonaws.com/provider/activate/index.html?token=%s", token)
 		http.Redirect(w, req, redirectURL, http.StatusFound)
 		return
 	}
 
-	redirectURL := fmt.Sprintf("http://dealna-web-hosting.s3-website-us-east-1.amazonaws.com/provider/activate/index.html?token=%s", token)
-	http.Redirect(w, req, redirectURL, http.StatusFound)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // @Summary Complete provider registration
