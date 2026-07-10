@@ -254,8 +254,8 @@ test.describe.serial('Provider Registration API Flow', () => {
     expect(body.user.role).toBe('ADMIN');
   });
 
-  test('POST /api/v1/auth/admin/providers/{id}/reject - Rejects with comment', async ({ request }) => {
-    const response = await request.post(`/api/v1/auth/admin/providers/${applicantId}/reject`, {
+  test('POST /api/v1/admin/providers/{id}/reject - Rejects with comment', async ({ request }) => {
+    const response = await request.post(`/api/v1/admin/providers/${applicantId}/reject`, {
       headers: { Authorization: `Bearer ${adminToken}` },
       data: { comment: 'Need better documentation' }
     });
@@ -273,11 +273,11 @@ test.describe.serial('Provider Registration API Flow', () => {
     expect(body.status).toBe('REJECTED');
   });
 
-  test('POST /api/v1/auth/admin/providers/{id}/approve - Approves Application', async ({ request }) => {
+  test('POST /api/v1/admin/providers/{id}/approve - Approves Application', async ({ request }) => {
     // Manually set back to PENDING_REVIEW for testing approve
     await dbHelper.getPool().query(`UPDATE providerapplication SET status = 'PENDING_REVIEW' WHERE applicant_id = $1`, [applicantId]);
 
-    const response = await request.post(`/api/v1/auth/admin/providers/${applicantId}/approve`, {
+    const response = await request.post(`/api/v1/admin/providers/${applicantId}/approve`, {
       headers: { Authorization: `Bearer ${adminToken}` }
     });
 
