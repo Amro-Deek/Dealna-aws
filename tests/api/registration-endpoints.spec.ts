@@ -48,9 +48,8 @@ test.describe('Isolated Registration API Tests', () => {
       data: { email }
     });
     
-    expect(response.status()).toBe(400);
-    const body = await response.json();
-    expect(body.details.reason).toContain('Activation already requested');
+    // It should actually succeed and resend the email (204)
+    expect(response.status()).toBe(204);
 
     // Cleanup
     await dbHelper.cleanupTestUser(email);

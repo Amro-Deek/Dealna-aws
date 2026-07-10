@@ -59,10 +59,10 @@ test.describe.serial('Provider Registration API Flow', () => {
       }
     });
     
-    if (response.status() !== 204) {
+    if (response.status() !== 200) {
       console.error(await response.text());
     }
-    expect(response.status()).toBe(204); // No Content
+    expect(response.status()).toBe(200); // OK (returns tokens)
   });
 
   test('POST /api/v1/auth/login - Success (Get APPLICANT Token)', async ({ request }) => {

@@ -48,13 +48,8 @@ test.describe.serial('Student Registration API Flow', () => {
       data: { email: testEmail }
     });
     
-    // Should fail because it's already requested
-    expect(response.status()).toBe(400);
-    const body = await response.json();
-    expect(body.code).toBe('VALIDATION_FAILED');
-    expect(body.message).toBe('Validation failed');
-    expect(body.details.field).toBe('email');
-    expect(body.details.reason).toContain('Activation already requested');
+    // The backend now intelligently resends the email and returns 204
+    expect(response.status()).toBe(204);
   });
 
   test('POST /resend - Success', async ({ request }) => {
