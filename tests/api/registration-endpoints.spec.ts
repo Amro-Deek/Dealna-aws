@@ -29,7 +29,7 @@ test.describe('Isolated Registration API Tests', () => {
   });
 
   test('POST /request-activation - Success', async ({ request }) => {
-    const email = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+    const email = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
     const response = await request.post('/api/v1/auth/student/request-activation', {
       data: { email }
     });
@@ -40,7 +40,7 @@ test.describe('Isolated Registration API Tests', () => {
   });
 
   test('POST /request-activation - Failure (Already Requested)', async ({ request }) => {
-    const email = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+    const email = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
     // Seed database state directly
     await dbHelper.seedPendingPreRegistration(email, crypto.randomUUID());
 
@@ -56,7 +56,7 @@ test.describe('Isolated Registration API Tests', () => {
   });
 
   test('GET /activate - Success', async ({ request }) => {
-    const email = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+    const email = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
     const token = crypto.randomUUID();
     // Seed pending pre-registration
     await dbHelper.seedPendingPreRegistration(email, token);
@@ -69,7 +69,7 @@ test.describe('Isolated Registration API Tests', () => {
   });
 
   test('GET /activate - Failure (Already Verified)', async ({ request }) => {
-    const email = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+    const email = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
     // Seed verified pre-registration
     await dbHelper.seedVerifiedPreRegistration(email);
     
@@ -86,7 +86,7 @@ test.describe('Isolated Registration API Tests', () => {
   });
 
   test('POST /complete - Success', async ({ request }) => {
-    const email = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+    const email = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
     // Seed database so the user is verified and ready to complete
     await dbHelper.seedVerifiedPreRegistration(email);
 
@@ -111,7 +111,7 @@ test.describe('Isolated Registration API Tests', () => {
   });
 
   test('POST /complete - Failure (Not Verified Yet)', async ({ request }) => {
-    const email = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+    const email = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
     // Seed pending (NOT verified)
     await dbHelper.seedPendingPreRegistration(email, crypto.randomUUID());
 
@@ -132,7 +132,7 @@ test.describe('Isolated Registration API Tests', () => {
   });
 
   test('POST /complete - Failure (Already Completed)', async ({ request }) => {
-    const email = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+    const email = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
     // Seed already completed state
     await dbHelper.seedCompletedPreRegistration(email);
 

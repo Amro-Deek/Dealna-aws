@@ -47,9 +47,9 @@ func (s *StudentRegistrationService) isValidUniversityEmail(
 		return false
 	}
 
-	// The local part must be exactly 6 digits
+	// The local part must be exactly 7 digits
 	localPart := parts[0]
-	if len(localPart) != 6 {
+	if len(localPart) != 7 {
 		return false
 	}
 	for _, char := range localPart {

@@ -61,8 +61,8 @@ test.describe.serial('Purchase Requests — Happy Path', () => {
   const ts = Date.now();
   const password = 'StrongPassword123!';
 
-  const buyerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
-  const ownerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+  const buyerEmail = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
+  const ownerEmail = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
 
   let buyerToken: string;
   let ownerToken: string;
@@ -154,8 +154,8 @@ test.describe.serial('Purchase Requests — Reject Flow', () => {
   const ts = Date.now() + 1;
   const password = 'StrongPassword123!';
 
-  const buyerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
-  const ownerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+  const buyerEmail = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
+  const ownerEmail = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
 
   let buyerToken: string;
   let ownerToken: string;
@@ -210,8 +210,8 @@ test.describe.serial('Purchase Requests — Cancel Flow (Buyer)', () => {
   const ts = Date.now() + 2;
   const password = 'StrongPassword123!';
 
-  const buyerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
-  const ownerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+  const buyerEmail = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
+  const ownerEmail = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
 
   let buyerToken: string;
   let ownerToken: string;
@@ -265,8 +265,8 @@ test.describe.serial('Purchase Requests — Security & Edge Cases', () => {
   const ts = Date.now() + 3;
   const password = 'StrongPassword123!';
 
-  const ownerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
-  const buyerEmail = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+  const ownerEmail = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
+  const buyerEmail = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
 
   let ownerToken: string;
   let buyerToken: string;

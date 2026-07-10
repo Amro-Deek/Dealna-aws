@@ -88,7 +88,7 @@ test.describe.serial('Marketplace Feed & Item Posting API', () => {
   const kcHelper = new KeycloakHelper();
 
   const ts           = Date.now();
-  const testEmail    = `${Math.floor(100000 + Math.random() * 900000)}@student.birzeit.edu`;
+  const testEmail    = `${Math.floor(1000000 + Math.random() * 9000000)}@student.birzeit.edu`;
   const testPassword = 'StrongPassword123!';
   const testDisplay  = `Market Tester ${ts}`;
 
