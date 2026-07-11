@@ -407,7 +407,8 @@ func (r *UserRepository) CreateProfileForUser(ctx context.Context, userID string
 
 func (r *UserRepository) CheckDisplayNameExists(ctx context.Context, displayName string) (bool, error) {
 	var exists bool
-	err := r.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM profile WHERE display_name = $1)", displayName).Scan(&exists)
+	// Check case-insensitively to prevent duplicates like "Ahmad" and "ahmad"
+	err := r.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM profile WHERE LOWER(display_name) = LOWER($1))", displayName).Scan(&exists)
 	if err != nil {
 		return false, err
 	}

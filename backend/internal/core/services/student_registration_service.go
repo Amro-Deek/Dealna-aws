@@ -193,6 +193,15 @@ func (s *StudentRegistrationService) CompleteStudentRegistration(
 		lastName = firstName
 	}
 
+	// ✅ Ensure display name is actually available before creating anything
+	exists, err := s.users.CheckDisplayNameExists(ctx, displayName)
+	if err != nil {
+		return middleware.NewDatabaseError("check display name", err)
+	}
+	if exists {
+		return middleware.NewValidationError("displayName", "This display name is already taken. Please choose another one.")
+	}
+
 	// ✅ 1. Register in Keycloak
 	keycloakSub, err := s.identity.RegisterUser(ctx, email, password, firstName, lastName)
 	if err != nil {
