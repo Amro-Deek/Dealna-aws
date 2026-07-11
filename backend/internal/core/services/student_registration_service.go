@@ -199,7 +199,7 @@ func (s *StudentRegistrationService) CompleteStudentRegistration(
 		return middleware.NewDatabaseError("check display name", err)
 	}
 	if exists {
-		return middleware.NewValidationError("displayName", "This display name is already taken. Please choose another one.")
+		return middleware.NewValidationError("displayName", fmt.Sprintf("This name \"%s\" is in use already.", displayName))
 	}
 
 	// ✅ 1. Register in Keycloak
@@ -325,7 +325,7 @@ func (s *StudentRegistrationService) CheckDisplayName(ctx context.Context, displ
 		return middleware.NewDatabaseError("check display name", err)
 	}
 	if exists {
-		return middleware.NewValidationError("displayName", "This display name is already taken. Please choose another one.")
+		return middleware.NewValidationError("displayName", fmt.Sprintf("This name \"%s\" is in use already.", displayName))
 	}
 	return nil
 }
