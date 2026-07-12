@@ -51,14 +51,13 @@ WHERE t.transaction_status = 'COMPLETED'
   AND ((t.buyer_id = $1 AND t.seller_id = $2) OR (t.buyer_id = $2 AND t.seller_id = $1))
   AND t.completed_at >= CURRENT_TIMESTAMP - INTERVAL '30 days';
 
--- name: UpdateUserRating :one
-UPDATE "User"
+-- name: UpdateUserRating :exec
+UPDATE public."User"
 SET 
-    total_ratings = $2,
-    sum_ratings = $3,
-    bayesian_rating = $4
-WHERE user_id = $1
-RETURNING *;
+    total_ratings = @total_ratings::int,
+    sum_ratings = @sum_ratings::int,
+    bayesian_rating = CAST(@bayesian_rating::float8 AS numeric(3,2))
+WHERE user_id = @user_id::uuid;
 
 -- name: GetGlobalRatingAverage :one
 SELECT 

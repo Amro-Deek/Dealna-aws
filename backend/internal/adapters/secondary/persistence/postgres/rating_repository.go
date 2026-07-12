@@ -104,11 +104,19 @@ func (r *RatingRepository) CountRatingsBetweenUsers(ctx context.Context, user1, 
 	return int(count), err
 }
 func (r *RatingRepository) UpdateUserRating(ctx context.Context, userID uuid.UUID, total int, sum int, bayesian float64) error {
-	// Stub for now, update queries to use correctly named parameters.
-	return nil
+	return r.q.UpdateUserRating(ctx, generated.UpdateUserRatingParams{
+		UserID:         toUUID(userID.String()),
+		TotalRatings:   int32(total),
+		SumRatings:     int32(sum),
+		BayesianRating: bayesian,
+	})
 }
 func (r *RatingRepository) GetGlobalRatingAverage(ctx context.Context) (float64, int, error) {
-	return 4.0, 0, nil // Stub for now
+	row, err := r.q.GetGlobalRatingAverage(ctx)
+	if err != nil {
+		return 4.0, 0, err
+	}
+	return row.GlobalAvg, int(row.TotalCount), nil
 }
 func (r *RatingRepository) UpdateSysConfig(ctx context.Context, key, value string) error {
 	return nil
