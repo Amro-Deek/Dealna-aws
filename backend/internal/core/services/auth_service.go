@@ -122,7 +122,7 @@ func (s *AuthService) ConfirmPasswordReset(ctx context.Context, email, token, ne
 		return errors.New("reset code has expired")
 	}
 
-	user, err := s.users.GetByEmail(ctx, email)
+	_, err = s.users.GetByEmail(ctx, email)
 	if err != nil {
 		return errors.New("user not found")
 	}
