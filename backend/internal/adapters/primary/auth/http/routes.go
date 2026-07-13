@@ -35,6 +35,8 @@ func (rt *Routes) RegisterPublic(router chi.Router) {
 	router.Route("/auth", func(r chi.Router) {
 		r.Post("/login", rt.LoginHandler)
 		r.Post("/refresh", rt.RefreshHandler)
+		r.Post("/password/reset/request", rt.RequestPasswordResetHandler)
+		r.Post("/password/reset/confirm", rt.ConfirmPasswordResetHandler)
 	})
 }
 
@@ -722,4 +724,41 @@ func (rt *Routes) RejectProviderApplicationHandler(w http.ResponseWriter, req *h
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (rt *Routes) RequestPasswordResetHandler(w http.ResponseWriter, req *http.Request) {
+	var body struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)
+		return
+	}
+	body.Email = strings.TrimSpace(body.Email)
+
+	if err := rt.handler.RequestPasswordReset(req.Context(), body.Email); err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		return
+	}
+
+	middleware.WriteJSONResponse(w, http.StatusOK, map[string]string{"message": "Password reset email sent"})
+}
+
+func (rt *Routes) ConfirmPasswordResetHandler(w http.ResponseWriter, req *http.Request) {
+	var body struct {
+		Email    string `json:"email"`
+		Token    string `json:"token"`
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), middleware.NewValidationError("body", "invalid json"), rt.logger)
+		return
+	}
+
+	if err := rt.handler.ConfirmPasswordReset(req.Context(), body.Email, body.Token, body.Password); err != nil {
+		middleware.WriteErrorResponse(w, req.Context(), err, rt.logger)
+		return
+	}
+
+	middleware.WriteJSONResponse(w, http.StatusOK, map[string]string{"message": "Password reset successfully"})
 }

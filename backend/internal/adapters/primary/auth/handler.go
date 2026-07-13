@@ -187,3 +187,11 @@ func (h *Handler) RejectProviderApplication(ctx context.Context, adminID, applic
 func (h *Handler) GetProviderApplicationStatus(ctx context.Context, applicantID string) (*domain.ProviderApplication, error) {
 	return h.providerRegSvc.GetApplicationStatus(ctx, applicantID)
 }
+
+func (h *Handler) RequestPasswordReset(ctx context.Context, email string) error {
+	return h.authService.RequestPasswordReset(ctx, email)
+}
+
+func (h *Handler) ConfirmPasswordReset(ctx context.Context, email, token, newPassword string) error {
+	return h.authService.ConfirmPasswordReset(ctx, email, token, newPassword)
+}

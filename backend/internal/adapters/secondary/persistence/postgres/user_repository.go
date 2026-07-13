@@ -414,3 +414,31 @@ func (r *UserRepository) CheckDisplayNameExists(ctx context.Context, displayName
 	}
 	return exists, nil
 }
+
+func (r *UserRepository) CreatePasswordResetToken(ctx context.Context, email, token string, expiresAt time.Time) error {
+	return r.q.CreatePasswordResetToken(ctx, generated.CreatePasswordResetTokenParams{
+		Email:     email,
+		Token:     token,
+		ExpiresAt: toTimestamp(expiresAt),
+	})
+}
+
+func (r *UserRepository) GetPasswordResetToken(ctx context.Context, email, token string) (*coreDomain.PasswordResetToken, error) {
+	row, err := r.q.GetPasswordResetToken(ctx, generated.GetPasswordResetTokenParams{
+		Email: email,
+		Token: token,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &coreDomain.PasswordResetToken{
+		Email:     row.Email,
+		Token:     row.Token,
+		ExpiresAt: row.ExpiresAt.Time,
+	}, nil
+}
+
+func (r *UserRepository) DeletePasswordResetToken(ctx context.Context, email string) error {
+	return r.q.DeletePasswordResetToken(ctx, email)
+}

@@ -2,6 +2,11 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
+	"errors"
+	"fmt"
+	"math/big"
+	"time"
 
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/domain"
 	"github.com/Amro-Deek/Dealna-aws/backend/internal/core/ports"
@@ -11,15 +16,18 @@ import (
 type AuthService struct {
 	users    ports.IUserRepository
 	identity ports.IIdentityProvider
+	email    ports.IEmailService
 }
 
 func NewAuthService(
 	users ports.IUserRepository,
 	identity ports.IIdentityProvider,
+	email ports.IEmailService,
 ) *AuthService {
 	return &AuthService{
 		users:    users,
 		identity: identity,
+		email:    email,
 	}
 }
 
@@ -78,4 +86,53 @@ func (s *AuthService) Refresh(
 
 func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
 	return s.identity.Logout(ctx, refreshToken)
+}
+
+func generateResetCode() string {
+	max := big.NewInt(1000000)
+	n, _ := rand.Int(rand.Reader, max)
+	return fmt.Sprintf("%06d", n.Int64())
+}
+
+func (s *AuthService) RequestPasswordReset(ctx context.Context, email string) error {
+	_, err := s.users.GetByEmail(ctx, email)
+	if err != nil {
+		// Silent failure to prevent email enumeration
+		return nil
+	}
+
+	code := generateResetCode()
+	expiresAt := time.Now().Add(15 * time.Minute)
+
+	err = s.users.CreatePasswordResetToken(ctx, email, code, expiresAt)
+	if err != nil {
+		return err
+	}
+
+	return s.email.SendPasswordResetEmail(email, code)
+}
+
+func (s *AuthService) ConfirmPasswordReset(ctx context.Context, email, token, newPassword string) error {
+	resetToken, err := s.users.GetPasswordResetToken(ctx, email, token)
+	if err != nil {
+		return errors.New("invalid or expired reset code")
+	}
+
+	if time.Now().After(resetToken.ExpiresAt) {
+		return errors.New("reset code has expired")
+	}
+
+	user, err := s.users.GetByEmail(ctx, email)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	err = s.identity.ResetPassword(ctx, user.KeycloakSub, newPassword)
+	if err != nil {
+		return err
+	}
+
+	_ = s.users.DeletePasswordResetToken(ctx, email)
+
+	return nil
 }

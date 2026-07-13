@@ -1,6 +1,10 @@
 package domain
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type User struct {
 	ID             string
@@ -11,4 +15,10 @@ type User struct {
 	TotalRatings   int
 	SumRatings     int
 	BayesianRating float64
+}
+
+type PasswordResetToken struct {
+	Email     string
+	Token     string
+	ExpiresAt time.Time
 }

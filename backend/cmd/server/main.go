@@ -156,6 +156,7 @@ func main() {
 	authService := services.NewAuthService(
 		userRepo,
 		keycloakIdentity,
+		emailAdapter.NewSMTPEmailService(cfg.SMTP),
 	)
 	userService := services.NewUserService(userRepo)
 	StudentRegistrationService := services.NewStudentRegistrationService(

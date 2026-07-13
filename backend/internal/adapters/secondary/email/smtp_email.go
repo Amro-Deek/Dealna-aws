@@ -89,3 +89,26 @@ func (s *SMTPEmailService) SendApplicationStatusEmail(email, status, comment str
 
 	return smtp.SendMail(addr, auth, s.from, []string{email}, msg)
 }
+
+func (s *SMTPEmailService) SendPasswordResetEmail(email, code string) error {
+	if s.host == "mock" || s.host == "" {
+		fmt.Printf("📧 [MOCK EMAIL] To: %s, Password Reset Code: %s\n", email, code)
+		return nil
+	}
+
+	auth := smtp.PlainAuth("", s.username, s.password, s.host)
+	addr := fmt.Sprintf("%s:%s", s.host, s.port)
+
+	subject := "Dealna Password Reset"
+	body := fmt.Sprintf("<h2>Password Reset Request</h2><p>You requested a password reset. Use the following 6-digit code to reset your password:</p><h3>%s</h3><p>If you did not request this, please ignore this email.</p><p>This code will expire in 15 minutes.</p>", code)
+
+	headers := "MIME-version: 1.0;\r\n" +
+		"Content-Type: text/html; charset=\"UTF-8\";\r\n" +
+		"From: " + s.from + "\r\n" +
+		"To: " + email + "\r\n" +
+		"Subject: " + subject + "\r\n\r\n"
+
+	msg := []byte(headers + body)
+
+	return smtp.SendMail(addr, auth, s.from, []string{email}, msg)
+}

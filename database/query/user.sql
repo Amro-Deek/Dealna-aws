@@ -69,3 +69,18 @@ INSERT INTO "User" (
 UPDATE "User"
 SET role = $2
 WHERE user_id = $1;
+
+-- name: CreatePasswordResetToken :exec
+INSERT INTO password_reset (email, token, expires_at)
+VALUES ($1, $2, $3)
+ON CONFLICT (email) DO UPDATE SET token = EXCLUDED.token, expires_at = EXCLUDED.expires_at, created_at = CURRENT_TIMESTAMP;
+
+-- name: GetPasswordResetToken :one
+SELECT email, token, expires_at, created_at
+FROM password_reset
+WHERE email = $1 AND token = $2
+LIMIT 1;
+
+-- name: DeletePasswordResetToken :exec
+DELETE FROM password_reset
+WHERE email = $1;

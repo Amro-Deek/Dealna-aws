@@ -42,4 +42,8 @@ type IUserRepository interface {
 
 	GetAdminUserProfileStats(ctx context.Context, userID string) (int, int, int, error)
 	CheckDisplayNameExists(ctx context.Context, displayName string) (bool, error)
+
+	CreatePasswordResetToken(ctx context.Context, email, token string, expiresAt time.Time) error
+	GetPasswordResetToken(ctx context.Context, email, token string) (*domain.PasswordResetToken, error)
+	DeletePasswordResetToken(ctx context.Context, email string) error
 }
