@@ -127,7 +127,7 @@ func (s *AuthService) ConfirmPasswordReset(ctx context.Context, email, token, ne
 		return errors.New("user not found")
 	}
 
-	err = s.identity.ResetPassword(ctx, user.KeycloakSub, newPassword)
+	err = s.identity.ResetPassword(ctx, email, newPassword)
 	if err != nil {
 		return err
 	}
