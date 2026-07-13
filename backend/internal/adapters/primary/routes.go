@@ -96,6 +96,8 @@ func NewRouter(
 			// ---------
 			r.Post("/login", authRoutes.LoginHandler)
 			r.Post("/refresh", authRoutes.RefreshHandler)
+			r.Post("/password/reset/request", authRoutes.RequestPasswordResetHandler)
+			r.Post("/password/reset/confirm", authRoutes.ConfirmPasswordResetHandler)
 
 			// =============================
 			// Student Registration Flow
